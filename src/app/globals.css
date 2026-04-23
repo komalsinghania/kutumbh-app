@@ -1,26 +1,291 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-bg:      #F9F6F0;
+  --color-card:    #FFFFFF;
+  --color-gold:    #C4A265;
+  --color-ink:     #1C1612;
+  --color-warm:    #6A5D4E;
+  --color-muted:   #9A8A75;
+  --color-border:  #E8E0D2;
+  --color-success: #2D6B4F;
+  --color-danger:  #8B2A2A;
+  --color-warn:    #8B6914;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* ── Base ──────────────────────────────────────────────────────────────────── */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  overflow-y: auto;           /* never let Tailwind preflight or resets block scroll */
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #F9F6F0;
+  color: #1C1612;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-y: auto;           /* window-scroll for non-dashboard pages */
+}
+
+h1, h2, h3 {
+  font-family: var(--font-playfair, 'Playfair Display', Georgia, serif);
+}
+
+/* ── Logo ──────────────────────────────────────────────────────────────────── */
+
+.logo {
+  font-family: var(--font-playfair, 'Playfair Display', Georgia, serif);
+  font-weight: 600;
+  color: #C4A265;
+  letter-spacing: 0.02em;
+}
+
+/* ── Section label ─────────────────────────────────────────────────────────── */
+
+.section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #C4A265;
+}
+
+/* ── Suite header ──────────────────────────────────────────────────────────── */
+
+.suite-header {
+  background: linear-gradient(170deg, #241C14, #1C1612);
+  border-bottom: 1px solid rgba(196, 162, 101, 0.15);
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+
+.btn-primary {
+  background: #C4A265;
+  color: #1C1612;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.2px;
+  padding: 0.875rem 1.75rem;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-primary:hover   { filter: brightness(1.08); }
+.btn-primary:active  { transform: scale(0.98); }
+
+.btn-secondary {
+  background: transparent;
+  border: 1.5px solid #C4A265;
+  color: #C4A265;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 0.2px;
+  padding: 0.875rem 1.75rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-secondary:hover  { background: rgba(196, 162, 101, 0.08); }
+.btn-secondary:active { transform: scale(0.98); }
+
+.btn-danger {
+  background: #8B2A2A;
+  color: white;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.875rem 1.75rem;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+/* ── Cards ─────────────────────────────────────────────────────────────────── */
+
+.card {
+  background: white;
+  border-radius: 12px;
+  border: 0.5px solid #E8E0D2;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+  padding: 1rem;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 3px 16px rgba(0, 0, 0, 0.07);
+}
+
+/* Glass card — for stat overlays */
+.glass-card {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 0.5px solid #E8E0D2;
+  border-top: 2px solid #C4A265;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Inputs ────────────────────────────────────────────────────────────────── */
+
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+input[type="time"],
+textarea,
+select {
+  width: 100%;
+  border: 1.5px solid #E8E0D2;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  outline: none;
+  background: white;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #1C1612;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+textarea:focus,
+select:focus {
+  border-color: #C4A265;
+  box-shadow: 0 0 0 3px rgba(196, 162, 101, 0.15);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9A8A75;
+}
+
+/* ── Pill active ───────────────────────────────────────────────────────────── */
+
+.pill-active {
+  background: #C4A265;
+  color: #1C1612;
+  border-color: transparent;
+}
+
+/* ── Hero gradient (detail pages) ─────────────────────────────────────────── */
+
+.hero-gradient {
+  background: linear-gradient(170deg, #241C14, #1C1612);
+}
+
+/* ── Skeleton ──────────────────────────────────────────────────────────────── */
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #EDE8E1 25%, #E6E0D6 50%, #EDE8E1 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite;
+  border-radius: 8px;
+}
+
+/* ── Gold spinner ──────────────────────────────────────────────────────────── */
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.gold-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(196, 162, 101, 0.25);
+  border-top-color: #C4A265;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  display: inline-block;
+}
+
+/* ── Page enter ────────────────────────────────────────────────────────────── */
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: fadeSlideUp 0.2s ease-out;
+}
+
+/* ── Board animations ──────────────────────────────────────────────────────── */
+
+@keyframes journeyLineDraw {
+  from { transform: scaleX(0); }
+}
+
+@keyframes fadeUpIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes barFillIn {
+  from { transform: scaleX(0); }
+}
+
+@keyframes stagePulse {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  70%  { transform: scale(2.2); opacity: 0;   }
+  100% { transform: scale(2.2); opacity: 0;   }
+}
+
+.stage-pulse-ring {
+  animation: stagePulse 1.8s ease-out infinite;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* ── Bottom tab safe padding ───────────────────────────────────────────────── */
+
+.pb-tab-safe {
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
+}
+
+/* ── Stage progress dots ───────────────────────────────────────────────────── */
+
+.stage-dot-done {
+  background: #C4A265;
+  border: 2px solid #C4A265;
+}
+
+.stage-dot-current {
+  background: white;
+  border: 2.5px solid #C4A265;
+  box-shadow: 0 0 0 3px rgba(196,162,101,0.2);
+}
+
+.stage-dot-future {
+  background: white;
+  border: 1.5px solid #E8E0D2;
 }

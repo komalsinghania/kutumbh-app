@@ -1,0 +1,615 @@
+'use client';
+import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
+import { addProspect } from '@/lib/firestore';
+import { calculateGunaScore, calculateCompatScore } from '@/lib/scoring';
+import { compressImage } from '@/lib/compress-image';
+import {
+  NAKSHATRAS, ProspectSource, ProspectStage, ExtractedBiodata,
+} from '@/types';
+import { calculateKundli } from '@/lib/kundli';
+import CitySearch from '@/components/CitySearch';
+import { getCityByName } from '@/lib/indian-cities';
+import toast from 'react-hot-toast';
+
+const SOURCES: ProspectSource[] = [
+  'Matrimonial Website', 'Relative', 'Family Friend', 'Pandit ji', 'Community Event', 'Other',
+];
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#C4A265' }}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function PillSelect({ options, value, onSelect }: { options: string[]; value: string; onSelect: (v: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map(opt => (
+        <button key={opt} type="button" onClick={() => onSelect(opt)}
+          className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${value === opt ? 'pill-active' : ''}`}
+          style={value !== opt ? { background: 'white', color: '#6A5D4E', borderColor: '#E8E0D2' } : {}}>
+          {opt}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export default function NewProspectPage() {
+  const { user, profile } = useAuth();
+  const router = useRouter();
+  const [showUpload, setShowUpload] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [extractError, setExtractError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [compressing, setCompressing] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
+
+  const [form, setForm] = useState({
+    name: '', age: '', city: '', height: '', education: '', profession: '',
+    income: '', familyType: '', diet: '', manglik: '', gotra: '', rashi: '',
+    nakshatra: -1, rashiIndex: -1, dobDate: '', dobTime: '', dobPlace: '', fatherOcc: '',
+    motherOcc: '', siblings: '', property: '', phone: '',
+    source: '' as ProspectSource | '',
+    stage: 'new' as ProspectStage,
+    firstImpression: '',
+  });
+  const [kundliManualMode, setKundliManualMode] = useState(false);
+  const [kundliCalcDone, setKundliCalcDone] = useState(false);
+  const [showPasteText, setShowPasteText] = useState(false);
+  const [pasteText, setPasteText] = useState('');
+
+  const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
+
+  const ageFromDob = (dob: string): number | null => {
+    if (!dob) return null;
+    const birth = new Date(dob);
+    if (isNaN(birth.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age > 0 ? age : null;
+  };
+
+  const calcKundliFromValues = (dobDate: string, dobTime: string, dobPlace: string) => {
+    const city = getCityByName(dobPlace);
+    if (!city) { toast('City not found in database — enter nakshatra manually.', { icon: 'ℹ️' }); setKundliManualMode(true); return false; }
+    try {
+      const result = calculateKundli({ date: dobDate, time: dobTime, lat: city.lat, lng: city.lng, tzOffset: city.tz });
+      setForm(f => ({ ...f, nakshatra: result.nakshatra, rashiIndex: result.rashi, rashi: result.rashiName }));
+      setKundliCalcDone(true);
+      toast.success(`Nakshatra: ${result.nakshatraName} (${result.rashiName})`);
+      return true;
+    } catch {
+      toast.error('Could not calculate nakshatra — enter manually.');
+      setKundliManualMode(true);
+      return false;
+    }
+  };
+
+  const tryCalcKundliProspect = () => {
+    if (!form.dobDate || !form.dobTime || !form.dobPlace) return;
+    calcKundliFromValues(form.dobDate, form.dobTime, form.dobPlace);
+  };
+
+  const handlePhotoSelect = async (files: FileList | null) => {
+    if (!files) return;
+    const remaining = 3 - photos.length;
+    if (remaining <= 0) { toast.error('Maximum 3 photos allowed.'); return; }
+    const selected = Array.from(files).slice(0, remaining);
+    setCompressing(true);
+    try {
+      const compressed = await Promise.all(selected.map(f => compressImage(f)));
+      setPhotos(prev => [...prev, ...compressed]);
+    } catch {
+      toast.error('Failed to process image.');
+    } finally {
+      setCompressing(false);
+      if (photoRef.current) photoRef.current.value = '';
+    }
+  };
+
+  const applyExtracted = (d: ExtractedBiodata) => {
+    const nakshatraIdx = d.nakshatra
+      ? NAKSHATRAS.findIndex(n => n.toLowerCase() === d.nakshatra!.toLowerCase())
+      : -1;
+    const newDobDate = d.dobDate || '';
+    const newDobTime = d.dobTime || '';
+    const newDobPlace = d.dobPlace || '';
+    const computedAge = !d.age && newDobDate ? ageFromDob(newDobDate) : null;
+    setForm(f => ({
+      ...f,
+      name: d.name || f.name,
+      age: d.age ? String(d.age) : computedAge ? String(computedAge) : f.age,
+      city: d.city || f.city,
+      height: d.height || f.height,
+      education: d.education || f.education,
+      profession: d.profession || f.profession,
+      income: d.income || f.income,
+      familyType: d.familyType || f.familyType,
+      diet: d.diet || f.diet,
+      manglik: d.manglik || f.manglik,
+      gotra: d.gotra || f.gotra,
+      rashi: d.rashi || f.rashi,
+      nakshatra: nakshatraIdx >= 0 ? nakshatraIdx : f.nakshatra,
+      dobDate: newDobDate || f.dobDate,
+      dobTime: newDobTime || f.dobTime,
+      dobPlace: newDobPlace || f.dobPlace,
+      fatherOcc: d.fatherOcc || f.fatherOcc,
+      motherOcc: d.motherOcc || f.motherOcc,
+      siblings: d.siblings || f.siblings,
+      property: d.property || f.property,
+      phone: d.phone || f.phone,
+    }));
+    const extracted: string[] = [];
+    if (d.name) extracted.push('Name');
+    if (d.age || computedAge) extracted.push('Age');
+    if (d.city) extracted.push('City');
+    if (d.dobDate) extracted.push('DOB');
+    if (d.dobTime) extracted.push('Birth Time');
+    if (d.dobPlace) extracted.push('Birth Place');
+    if (d.gotra) extracted.push('Gotra');
+    if (d.rashi) extracted.push('Rashi');
+    if (d.nakshatra) extracted.push('Nakshatra');
+    if (d.manglik) extracted.push('Manglik');
+    if (d.education) extracted.push('Education');
+    if (d.profession) extracted.push('Profession');
+    if (d.income) extracted.push('Income');
+    if (d.phone) extracted.push('Phone');
+    toast.success(`Extracted: ${extracted.join(', ')}`, { duration: 5000 });
+    setShowUpload(false);
+    if (newDobDate && newDobTime && newDobPlace && nakshatraIdx < 0) {
+      setTimeout(() => calcKundliFromValues(newDobDate, newDobTime, newDobPlace), 300);
+    }
+  };
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    setExtractError(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/extract-biodata', { method: 'POST', body: fd });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `Server error ${res.status}`);
+      applyExtracted(json.data);
+    } catch (err: any) {
+      setExtractError(err?.message || 'Unknown error');
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  const handleExtractFromText = async () => {
+    if (!pasteText.trim()) return;
+    setUploading(true);
+    setExtractError(null);
+    setShowPasteText(false);
+    try {
+      const res = await fetch('/api/extract-biodata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: pasteText }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `Server error ${res.status}`);
+      applyExtracted(json.data);
+    } catch (err: any) {
+      setExtractError(err?.message || 'Unknown error');
+      setShowPasteText(true);
+    } finally {
+      setUploading(false);
+      setPasteText('');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user || !profile) return;
+    if (!form.name || !form.source) {
+      toast.error('Name and source are required.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const gunaScore =
+        profile.nakshatra >= 0 && form.nakshatra >= 0
+          ? calculateGunaScore(profile.nakshatra, form.nakshatra)
+          : null;
+
+      const prospectForCompat = {
+        age: Number(form.age) || 0,
+        city: form.city,
+        diet: form.diet,
+        familyType: form.familyType,
+        manglik: form.manglik,
+        education: form.education,
+        income: form.income,
+      };
+
+      const compatScore = calculateCompatScore(profile, {
+        ...prospectForCompat,
+        id: '', name: form.name, profession: form.profession,
+        source: form.source as ProspectSource,
+        stage: form.stage,
+        gunaScore: null, compatScore: null,
+        addedDate: new Date().toLocaleDateString('en-IN'),
+        createdAt: 0, updatedAt: 0,
+      });
+
+      const prospectId = await addProspect(user.uid, {
+        name: form.name,
+        age: Number(form.age) || 0,
+        city: form.city,
+        height: form.height,
+        education: form.education,
+        profession: form.profession,
+        income: form.income,
+        familyType: form.familyType,
+        diet: form.diet,
+        manglik: form.manglik,
+        gotra: form.gotra,
+        rashi: form.rashi,
+        nakshatra: form.nakshatra >= 0 ? form.nakshatra : undefined,
+        rashiIndex: form.rashiIndex >= 0 ? form.rashiIndex : undefined,
+        dobDate: form.dobDate,
+        dobTime: form.dobTime,
+        dobPlace: form.dobPlace,
+        fatherOcc: form.fatherOcc,
+        motherOcc: form.motherOcc,
+        siblings: form.siblings,
+        property: form.property,
+        phone: form.phone,
+        source: form.source as ProspectSource,
+        stage: form.stage,
+        gunaScore,
+        compatScore,
+        firstImpression: form.firstImpression,
+        photos: photos.length > 0 ? photos : undefined,
+        addedDate: new Date().toLocaleDateString('en-IN'),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+      toast.success('Prospect added!');
+      router.replace(`/prospects/${prospectId}`);
+    } catch {
+      toast.error('Failed to save prospect.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (showUpload) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-5" style={{ background: '#F9F6F0' }}>
+        <div className="w-full max-w-sm text-center space-y-5">
+          <div className="logo text-4xl">कुटुम्भ</div>
+          <h2 style={{ fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)', color: '#1C1612' }} className="text-2xl font-semibold">
+            Add New Prospect
+          </h2>
+          <p className="text-sm" style={{ color: '#9A8A75' }}>Upload their biodata and we'll extract details using AI.</p>
+          {extractError && (
+            <div className="rounded-xl px-4 py-3 text-left" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
+              <p className="text-xs font-bold mb-1" style={{ color: '#991B1B' }}>Extraction failed</p>
+              <p className="text-xs leading-relaxed" style={{ color: '#7F1D1D', wordBreak: 'break-word' }}>{extractError}</p>
+            </div>
+          )}
+          {/* Option 1: File upload */}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="*/*"
+            className="hidden"
+            onChange={e => {
+              setExtractError(null);
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+              if (!allowed.includes(file.type)) {
+                toast.error('Please upload a PDF or image file (JPG, PNG, WEBP)');
+                if (fileRef.current) fileRef.current.value = '';
+                return;
+              }
+              handleUpload(file);
+            }}
+          />
+          <button className="btn-primary w-full" onClick={() => { setShowPasteText(false); fileRef.current?.click(); }} disabled={uploading}>
+            {uploading && !showPasteText ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="gold-spinner" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} />
+                Extracting…
+              </span>
+            ) : extractError ? 'Try Again' : 'Choose File (PDF or Image)'}
+          </button>
+          <p className="text-xs -mt-2" style={{ color: '#9A8A75' }}>Accepts PDF, JPG, PNG</p>
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px" style={{ background: '#E8DFD3' }} />
+            <span className="text-xs font-medium" style={{ color: '#B8AFA6' }}>or</span>
+            <div className="flex-1 h-px" style={{ background: '#E8DFD3' }} />
+          </div>
+          {/* Option 2: Paste text */}
+          {!showPasteText ? (
+            <button type="button" className="btn-secondary w-full" onClick={() => setShowPasteText(true)}>
+              Paste Biodata Text
+            </button>
+          ) : (
+            <div className="space-y-2 text-left">
+              <textarea
+                value={pasteText}
+                onChange={e => setPasteText(e.target.value)}
+                placeholder="Paste the full biodata text here…"
+                rows={6}
+                className="w-full rounded-xl border p-3 text-sm"
+                style={{ borderColor: '#C4A265', resize: 'vertical', background: 'white', color: '#3D2B1F' }}
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button type="button" className="btn-primary flex-1" onClick={handleExtractFromText}
+                  disabled={!pasteText.trim() || uploading}>
+                  {uploading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="gold-spinner" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} />
+                      Extracting…
+                    </span>
+                  ) : 'Extract'}
+                </button>
+                <button type="button" className="btn-secondary px-5"
+                  onClick={() => { setShowPasteText(false); setPasteText(''); }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          <button type="button" className="text-sm" style={{ color: '#9A8A75' }}
+            onClick={() => { setExtractError(null); setShowUpload(false); }}>
+            Skip — Fill Manually
+          </button>
+          <button className="text-sm underline" style={{ color: '#9A8A75' }} onClick={() => router.back()}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen pb-24" style={{ background: '#F9F6F0', overflowY: 'auto' }}>
+      <div className="suite-header px-4 flex items-center gap-3 sticky top-0 z-10" style={{ height: 56 }}>
+        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center rounded-full" style={{ color: 'rgba(249,246,240,0.8)' }}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+        <h1 style={{ fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)', color: '#F9F6F0', fontSize: '1.125rem' }} className="font-semibold">
+          Add Prospect
+        </h1>
+      </div>
+
+      <div className="max-w-2xl mx-auto px-4 pt-5 space-y-5">
+        <div className="card p-5 space-y-4">
+          <h3 className="section-label">Basic Info</h3>
+          <Field label="Full Name *">
+            <input type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Name" />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Age">
+              <input type="number" value={form.age} onChange={e => set('age', e.target.value)} placeholder="Age" />
+            </Field>
+            <Field label="Height">
+              <input type="text" value={form.height} onChange={e => set('height', e.target.value)} placeholder="5'6&quot;" />
+            </Field>
+          </div>
+          <Field label="City">
+            <input type="text" value={form.city} onChange={e => set('city', e.target.value)} placeholder="City" />
+          </Field>
+          <Field label="Education">
+            <input type="text" value={form.education} onChange={e => set('education', e.target.value)} placeholder="e.g. B.Tech, MBA" />
+          </Field>
+          <Field label="Profession">
+            <input type="text" value={form.profession} onChange={e => set('profession', e.target.value)} placeholder="Profession" />
+          </Field>
+          <Field label="Income">
+            <PillSelect
+              options={['< 5 LPA', '5-10', '10-20', '20-35', '35-50', '50+']}
+              value={form.income}
+              onSelect={v => set('income', v)}
+            />
+          </Field>
+        </div>
+
+        <div className="card p-5 space-y-4">
+          <h3 className="section-label">Family & Background</h3>
+          <Field label="Family Type">
+            <PillSelect options={['Joint', 'Nuclear']} value={form.familyType} onSelect={v => set('familyType', v)} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Father's Occupation">
+              <input type="text" value={form.fatherOcc} onChange={e => set('fatherOcc', e.target.value)} placeholder="Father's Occ" />
+            </Field>
+            <Field label="Mother's Occupation">
+              <input type="text" value={form.motherOcc} onChange={e => set('motherOcc', e.target.value)} placeholder="Mother's Occ" />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Siblings">
+              <input type="text" value={form.siblings} onChange={e => set('siblings', e.target.value)} placeholder="e.g. 1 brother" />
+            </Field>
+            <Field label="Property">
+              <input type="text" value={form.property} onChange={e => set('property', e.target.value)} placeholder="e.g. Own house" />
+            </Field>
+          </div>
+          <Field label="Phone">
+            <input type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="Contact number" />
+          </Field>
+        </div>
+
+        <div className="card p-5 space-y-4">
+          <h3 className="section-label">Kundli Details</h3>
+          <Field label="Diet">
+            <PillSelect
+              options={['Pure Veg', 'Jain', 'Eggetarian', 'Non-Veg']}
+              value={form.diet}
+              onSelect={v => set('diet', v)}
+            />
+          </Field>
+          <Field label="Manglik">
+            <PillSelect
+              options={['Yes', 'No', 'Partial', "Don't Know"]}
+              value={form.manglik}
+              onSelect={v => set('manglik', v)}
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Gotra">
+              <input type="text" value={form.gotra} onChange={e => set('gotra', e.target.value)} placeholder="Gotra" />
+            </Field>
+            <Field label="Rashi">
+              <input type="text" value={form.rashi} onChange={e => set('rashi', e.target.value)} placeholder="Rashi" />
+            </Field>
+          </div>
+          <Field label="Date of Birth">
+            <input type="date" value={form.dobDate} onChange={e => {
+              const dob = e.target.value;
+              const computed = ageFromDob(dob);
+              setForm(f => ({ ...f, dobDate: dob, age: computed ? String(computed) : f.age }));
+              setKundliCalcDone(false);
+            }} max={new Date().toISOString().split('T')[0]} />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Birth Time (IST)">
+              <input type="time" value={form.dobTime} onChange={e => { set('dobTime', e.target.value); setKundliCalcDone(false); }} />
+            </Field>
+            <Field label="Birth Place">
+              <CitySearch value={form.dobPlace} onChange={(name) => { set('dobPlace', name); setKundliCalcDone(false); }} placeholder="Birth city…" />
+            </Field>
+          </div>
+          {form.dobDate && form.dobTime && form.dobPlace && !kundliCalcDone && (
+            <button type="button" onClick={tryCalcKundliProspect} className="btn-primary w-full">
+              ✨ Auto-calculate Nakshatra
+            </button>
+          )}
+          {kundliCalcDone && form.nakshatra >= 0 && (
+            <div className="rounded-xl p-3 text-center" style={{ background: '#F0FAF4', border: '1px solid rgba(45,107,79,0.25)' }}>
+              <p className="font-semibold text-sm" style={{ color: '#2D6B4F' }}>{NAKSHATRAS[form.nakshatra]}</p>
+              <p className="text-xs mt-0.5" style={{ color: '#2D6B4F' }}>Nakshatra calculated from birth data</p>
+            </div>
+          )}
+          {!kundliCalcDone && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setKundliManualMode(m => !m)}
+                className="text-xs underline"
+                style={{ color: '#9A8A75' }}
+              >
+                {kundliManualMode ? 'Hide manual picker' : 'Enter Nakshatra manually'}
+              </button>
+              {kundliManualMode && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {NAKSHATRAS.map((n, i) => (
+                    <button key={n} type="button" onClick={() => set('nakshatra', i)}
+                      className={`px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${form.nakshatra === i ? 'pill-active' : ''}`}
+                      style={form.nakshatra !== i ? { background: 'white', color: '#C4A265', borderColor: 'rgba(139,105,20,0.35)' } : {}}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Photos */}
+        <div className="card p-5 space-y-3">
+          <h3 className="section-label">Photos ({photos.length}/3)</h3>
+          <div className="flex gap-3 flex-wrap">
+            {photos.map((src, i) => (
+              <div key={i} className="relative">
+                <img src={src} alt="" className="w-20 h-20 rounded-xl object-cover" style={{ border: '1px solid #E8DFD3' }} />
+                <button
+                  type="button"
+                  onClick={() => setPhotos(p => p.filter((_, j) => j !== i))}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-white text-xs flex items-center justify-center leading-none"
+                  style={{ background: '#8B1A2B' }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            {photos.length < 3 && (
+              <button
+                type="button"
+                onClick={() => photoRef.current?.click()}
+                disabled={compressing}
+                className="w-20 h-20 rounded-xl flex flex-col items-center justify-center transition-colors disabled:opacity-50"
+                style={{ border: '2px dashed #C4A265', color: '#C4A265', background: 'rgba(201,168,76,0.04)' }}
+              >
+                {compressing
+                  ? <span className="gold-spinner" />
+                  : <><span className="text-2xl leading-none">+</span><span className="text-xs mt-1">Photo</span></>
+                }
+              </button>
+            )}
+          </div>
+          <input
+            ref={photoRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            className="hidden"
+            onChange={e => handlePhotoSelect(e.target.files)}
+          />
+          <p className="text-xs" style={{ color: '#9A8A75' }}>Images are compressed and stored securely. Max 3 photos.</p>
+        </div>
+
+        <div className="card p-5 space-y-4">
+          <h3 className="section-label">Tracking</h3>
+          <Field label="Source *">
+            <PillSelect
+              options={SOURCES}
+              value={form.source}
+              onSelect={v => set('source', v)}
+            />
+          </Field>
+          <Field label="Stage">
+            <select
+              value={form.stage}
+              onChange={e => set('stage', e.target.value)}
+            >
+              {(['new', 'photo_exchanged', 'kundli_sent', 'kundli_matched', 'call_done', 'family_call', 'meeting_fixed', 'met', 'interested', 'on_hold', 'rejected'] as ProspectStage[]).map(s => (
+                <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="First Impression">
+            <textarea
+              value={form.firstImpression}
+              onChange={e => set('firstImpression', e.target.value)}
+              placeholder="Your initial thoughts…"
+              rows={3}
+              className="resize-none"
+            />
+          </Field>
+        </div>
+
+        <div className="sticky bottom-6">
+          <button
+            className="btn-primary w-full disabled:opacity-50"
+            style={{ boxShadow: '0 4px 20px rgba(139,105,20,0.4)' }}
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? <span className="flex items-center justify-center gap-2"><span className="gold-spinner" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} />Saving…</span> : 'Save Prospect'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
