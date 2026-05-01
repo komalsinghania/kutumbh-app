@@ -1,4 +1,4 @@
-Add all of the following features to the Kutumbh app. Every feature must use tappable buttons, selectable tags, star ratings, and checklists — users should NEVER need to type unless adding a custom note. Everything is tap-to-select.
+Add all of the following features to the RokaMaybe app. Every feature must use tappable buttons, selectable tags, star ratings, and checklists — users should NEVER need to type unless adding a custom note. Everything is tap-to-select.
 
 ===========================================
 FEATURE 1: CONVERSATION TRACKER

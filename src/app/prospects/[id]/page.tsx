@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -27,6 +27,7 @@ import StarRating from '@/components/StarRating';
 import EmojiPicker from '@/components/EmojiPicker';
 import StagePromptModal from '@/components/StagePromptModal';
 import toast from 'react-hot-toast';
+import { Logo } from '@/components/Logo';
 
 type Tab = 'overview' | 'conversations' | 'flags' | 'family' | 'meeting' | 'kundli';
 
@@ -263,9 +264,9 @@ export default function ProspectDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F9F6F0' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5ede0' }}>
         <div className="flex flex-col items-center gap-4">
-          <div className="logo text-4xl">कुटुम्भ</div>
+          <Logo className="text-4xl" />
           <div className="gold-spinner" />
         </div>
       </div>
@@ -274,9 +275,9 @@ export default function ProspectDetailPage() {
 
   if (!prospect) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F9F6F0' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5ede0' }}>
         <div className="text-center">
-          <p style={{ color: '#9A8A75' }}>Prospect not found.</p>
+          <p style={{ color: '#6b5e4d' }}>Prospect not found.</p>
           <button onClick={() => router.replace('/dashboard')} className="btn-primary mt-4">Back to Dashboard</button>
         </div>
       </div>
@@ -310,15 +311,15 @@ export default function ProspectDetailPage() {
   const DetailRow = ({ label, value }: { label: string; value?: string | number | null }) => {
     if (!value && value !== 0) return null;
     return (
-      <div className="flex justify-between py-2.5" style={{ borderBottom: '1px solid #F5EFE8' }}>
-        <span className="text-sm font-semibold" style={{ color: '#C4A265', minWidth: '40%' }}>{label}</span>
-        <span className="text-sm font-medium text-right" style={{ color: '#1C1612', maxWidth: '58%' }}>{String(value)}</span>
+      <div className="flex justify-between py-2.5" style={{ borderBottom: '1px solid #f5ede0' }}>
+        <span className="text-sm font-semibold" style={{ color: '#c13e2a', minWidth: '40%' }}>{label}</span>
+        <span className="text-sm font-medium text-right" style={{ color: '#1a1410', maxWidth: '58%' }}>{String(value)}</span>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen pb-6" style={{ background: '#F9F6F0', overflowY: 'auto' }}>
+    <div className="min-h-screen pb-20" style={{ background: '#f5ede0' }}>
       {/* Lightbox */}
       {lightboxSrc && (
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setLightboxSrc(null)}>
@@ -336,13 +337,13 @@ export default function ProspectDetailPage() {
         />
       )}
 
-      {/* Compact dark header */}
-      <div style={{ background: 'linear-gradient(170deg, #241C14, #1C1612)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      {/* Compact sindoor header */}
+      <div style={{ background: '#c13e2a', borderBottom: '1px solid rgba(255,255,255,0.15)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         {/* Nav row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 44, padding: '0 12px' }}>
           <button
             onClick={() => router.back()}
-            style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(249,246,240,0.8)', background: 'none', border: 'none', cursor: 'pointer', borderRadius: '50%' }}
+            style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', background: 'none', border: 'none', cursor: 'pointer', borderRadius: '50%' }}
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -350,7 +351,7 @@ export default function ProspectDetailPage() {
           </button>
           <button
             onClick={handleDelete}
-            style={{ fontSize: '0.7rem', fontWeight: 500, color: 'rgba(250,190,190,0.75)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
+            style={{ fontSize: '0.7rem', fontWeight: 500, color: 'rgba(255,255,255,0.7)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
           >
             Delete
           </button>
@@ -362,14 +363,14 @@ export default function ProspectDetailPage() {
             <img
               src={photos[0]} alt=""
               onClick={() => setLightboxSrc(photos[0])}
-              style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid #C4A265', cursor: 'pointer' }}
+              style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid #ffffff', cursor: 'pointer' }}
             />
           ) : (
             <div style={{
               width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '2px solid #C4A265', background: 'rgba(196,162,101,0.15)',
-              color: '#C4A265', fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)',
+              border: '2px solid rgba(255,255,255,0.4)', background: '#ffffff',
+              color: '#1a1410', fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)',
               fontSize: '1.25rem', fontWeight: 600,
             }}>
               {prospect.name[0]}
@@ -377,13 +378,13 @@ export default function ProspectDetailPage() {
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
             <h1 style={{
-              fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)',
-              color: '#F9F6F0', fontSize: '1.25rem', fontWeight: 700,
+              fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)',
+              color: '#ffffff', fontSize: '1.25rem', fontWeight: 700,
               lineHeight: 1.2, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
               {prospect.name}
             </h1>
-            <p style={{ color: 'rgba(249,246,240,0.6)', fontSize: '0.72rem', margin: '3px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.72rem', margin: '3px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {[prospect.age && `${prospect.age} yrs`, prospect.city, prospect.source].filter(Boolean).join(' · ')}
             </p>
           </div>
@@ -391,24 +392,24 @@ export default function ProspectDetailPage() {
       </div>
 
       {/* Score cards — on light background, fully visible */}
-      <div style={{ padding: '12px 16px 4px', background: '#F9F6F0', maxWidth: 672, margin: '0 auto' }}>
+      <div style={{ padding: '12px 16px 4px', background: '#f5ede0', maxWidth: 672, margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
           {[
-            { label: 'Overall', value: overall !== null ? `${overall}%` : '—', color: '#C4A265', topColor: '#C4A265' },
-            { label: 'Kundli', value: prospect.gunaScore !== null && prospect.gunaScore !== undefined ? `${prospect.gunaScore}/36` : '—', color: '#1C1612', topColor: '#4A3728' },
+            { label: 'Overall', value: overall !== null ? `${overall}%` : '—', color: '#c13e2a', topColor: '#c13e2a' },
+            { label: 'Kundli', value: prospect.gunaScore !== null && prospect.gunaScore !== undefined ? `${prospect.gunaScore}/36` : '—', color: '#1a1410', topColor: '#4A3728' },
             { label: 'Compat.', value: prospect.compatScore !== null && prospect.compatScore !== undefined ? `${prospect.compatScore}%` : '—', color: '#2D6B4F', topColor: '#2D6B4F' },
           ].map(({ label, value, color, topColor }) => (
             <div key={label} style={{
               background: 'white',
               borderRadius: 12,
-              border: '1px solid #E8DFD3',
+              border: '1px solid #d6c9b0',
               borderTop: `3px solid ${topColor}`,
               padding: '10px 6px',
               textAlign: 'center',
               boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
             }}>
               <div style={{
-                fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)',
+                fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)',
                 color,
                 fontSize: '1.6rem',
                 fontWeight: 700,
@@ -416,7 +417,7 @@ export default function ProspectDetailPage() {
               }}>
                 {value}
               </div>
-              <div style={{ fontSize: '0.68rem', color: '#9A8A75', marginTop: 4 }}>{label}</div>
+              <div style={{ fontSize: '0.68rem', color: '#6b5e4d', marginTop: 4 }}>{label}</div>
             </div>
           ))}
         </div>
@@ -434,10 +435,10 @@ export default function ProspectDetailPage() {
             return (
               <div key={rowIdx} style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', marginTop: rowIdx > 0 ? 10 : 0, paddingBottom: 4 }}>
                 {/* Grey track */}
-                <div style={{ position: 'absolute', top: 9, left: `${(0.5 / n) * 100}%`, right: `${(0.5 / n) * 100}%`, height: 2, background: '#E8DFD3', borderRadius: 1, zIndex: 0 }} />
+                <div style={{ position: 'absolute', top: 9, left: `${(0.5 / n) * 100}%`, right: `${(0.5 / n) * 100}%`, height: 2, background: '#d6c9b0', borderRadius: 1, zIndex: 0 }} />
                 {/* Gold progress */}
                 {goldFraction > 0 && (
-                  <div style={{ position: 'absolute', top: 9, left: `${(0.5 / n) * 100}%`, width: `${goldFraction * (1 - 1 / n) * 100}%`, height: 2, background: '#C4A265', borderRadius: 1, zIndex: 0 }} />
+                  <div style={{ position: 'absolute', top: 9, left: `${(0.5 / n) * 100}%`, width: `${goldFraction * (1 - 1 / n) * 100}%`, height: 2, background: '#c13e2a', borderRadius: 1, zIndex: 0 }} />
                 )}
                 {rowStages.map((stage, idx) => {
                   const globalIdx = startIdx + idx;
@@ -449,7 +450,7 @@ export default function ProspectDetailPage() {
                         {isCurrent && (
                           <span className="stage-pulse-ring" style={{
                             position: 'absolute', inset: 0, borderRadius: '50%',
-                            background: 'rgba(196,162,101,0.35)',
+                            background: 'rgba(193,62,42,0.35)',
                           }} />
                         )}
                         <button
@@ -464,9 +465,9 @@ export default function ProspectDetailPage() {
                             flexShrink: 0, position: 'relative', zIndex: 1,
                             transition: 'width 0.15s, height 0.15s',
                             ...(isDone
-                              ? { background: '#C4A265', border: 'none' }
+                              ? { background: '#c13e2a', border: 'none' }
                               : isCurrent
-                              ? { background: 'white', border: '2.5px solid #C4A265' }
+                              ? { background: 'white', border: '2.5px solid #c13e2a' }
                               : { background: 'white', border: '2px solid #D5CEC5' }
                             ),
                           }}
@@ -477,13 +478,13 @@ export default function ProspectDetailPage() {
                             </svg>
                           )}
                           {isCurrent && (
-                            <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#C4A265' }} />
+                            <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#c13e2a' }} />
                           )}
                         </button>
                       </div>
                       <span style={{
                         fontSize: 9,
-                        color: isDone ? '#C4A265' : isCurrent ? '#1C1612' : '#B8B0A8',
+                        color: isDone ? '#c13e2a' : isCurrent ? '#1a1410' : '#B8B0A8',
                         fontWeight: isCurrent ? 700 : isDone ? 500 : 400,
                         marginTop: 3,
                         textAlign: 'center',
@@ -501,17 +502,17 @@ export default function ProspectDetailPage() {
 
           {isTerminal && (
             <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #F0EDE8', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <button onClick={() => changeStage('interested')} style={{ fontSize: '0.7rem', fontWeight: 600, color: '#C4A265', background: 'none', border: '1px solid #C4A265', borderRadius: 20, padding: '3px 10px', cursor: 'pointer' }}>
+              <button onClick={() => changeStage('interested')} style={{ fontSize: '0.7rem', fontWeight: 600, color: '#c13e2a', background: 'none', border: '1px solid #c13e2a', borderRadius: 20, padding: '3px 10px', cursor: 'pointer' }}>
                 ↺ Reopen
               </button>
-              <span style={{ fontSize: '0.7rem', color: '#9A8A75' }}>Move back to active tracking</span>
+              <span style={{ fontSize: '0.7rem', color: '#6b5e4d' }}>Move back to active tracking</span>
             </div>
           )}
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="sticky top-0 z-10 bg-white" style={{ borderBottom: '1px solid #E8E0D2' }}>
+      <div className="sticky top-0 z-10 bg-white" style={{ borderBottom: '1px solid #d6c9b0' }}>
         <div className="flex overflow-x-auto scrollbar-none px-2 max-w-2xl mx-auto">
           {tabs.map(t => (
             <button
@@ -519,8 +520,8 @@ export default function ProspectDetailPage() {
               onClick={() => setActiveTab(t.id)}
               className="shrink-0 px-4 py-3 text-sm border-b-2 transition-colors"
               style={{
-                borderColor: activeTab === t.id ? '#C4A265' : 'transparent',
-                color: activeTab === t.id ? '#1C1612' : '#9A8A75',
+                borderColor: activeTab === t.id ? '#c13e2a' : 'transparent',
+                color: activeTab === t.id ? '#1a1410' : '#6b5e4d',
                 fontWeight: activeTab === t.id ? 700 : 500,
               }}
             >
@@ -541,7 +542,7 @@ export default function ProspectDetailPage() {
                 <p className="section-label">Photos ({photos.length}/3)</p>
                 {photos.length < 3 && (
                   <>
-                    <button onClick={() => photoRef.current?.click()} disabled={addingPhoto} className="text-xs font-semibold disabled:opacity-50" style={{ color: '#C4A265' }}>
+                    <button onClick={() => photoRef.current?.click()} disabled={addingPhoto} className="text-xs font-semibold disabled:opacity-50" style={{ color: '#c13e2a' }}>
                       {addingPhoto ? 'Adding…' : '+ Add Photo'}
                     </button>
                     <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={e => handleAddPhotos(e.target.files)} />
@@ -552,13 +553,13 @@ export default function ProspectDetailPage() {
                 <div className="flex gap-3 overflow-x-auto pb-1">
                   {photos.map((src, i) => (
                     <div key={i} className="relative shrink-0 group">
-                      <img src={src} alt="" className="w-24 h-24 rounded-xl object-cover cursor-pointer" style={{ border: '1px solid #E8E0D2' }} onClick={() => setLightboxSrc(src)} />
+                      <img src={src} alt="" className="w-24 h-24 rounded-xl object-cover cursor-pointer" style={{ border: '1px solid #d6c9b0' }} onClick={() => setLightboxSrc(src)} />
                       <button onClick={() => handleDeletePhoto(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-white text-xs items-center justify-center leading-none hidden group-hover:flex" style={{ background: '#8B2A2A' }}>×</button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <button onClick={() => photoRef.current?.click()} disabled={addingPhoto} className="w-full rounded-xl py-6 text-sm transition-colors disabled:opacity-50" style={{ border: '2px dashed #E8E0D2', color: '#9A8A75' }}>
+                <button onClick={() => photoRef.current?.click()} disabled={addingPhoto} className="w-full rounded-xl py-6 text-sm transition-colors disabled:opacity-50" style={{ border: '2px dashed #d6c9b0', color: '#6b5e4d' }}>
                   {addingPhoto ? 'Compressing image…' : '📷 Add photos'}
                 </button>
               )}
@@ -595,7 +596,7 @@ export default function ProspectDetailPage() {
             {prospect.firstImpression && (
               <div className="card p-5">
                 <p className="section-label mb-2">First Impression</p>
-                <p className="text-sm leading-relaxed" style={{ color: '#1C1612' }}>{prospect.firstImpression}</p>
+                <p className="text-sm leading-relaxed" style={{ color: '#1a1410' }}>{prospect.firstImpression}</p>
               </div>
             )}
 
@@ -615,12 +616,12 @@ export default function ProspectDetailPage() {
               </div>
               <div className="space-y-3">
                 {notes.map(n => (
-                  <div key={n.id} className="pl-3" style={{ borderLeft: '3px solid #C4A265' }}>
-                    <p className="text-sm" style={{ color: '#1C1612' }}>{n.text}</p>
-                    <p className="text-xs mt-0.5" style={{ color: '#9A8A75' }}>{n.date} {n.time}</p>
+                  <div key={n.id} className="pl-3" style={{ borderLeft: '3px solid #c13e2a' }}>
+                    <p className="text-sm" style={{ color: '#1a1410' }}>{n.text}</p>
+                    <p className="text-xs mt-0.5" style={{ color: '#6b5e4d' }}>{n.date} {n.time}</p>
                   </div>
                 ))}
-                {notes.length === 0 && <p className="text-sm text-center py-4" style={{ color: '#9A8A75' }}>No notes yet</p>}
+                {notes.length === 0 && <p className="text-sm text-center py-4" style={{ color: '#6b5e4d' }}>No notes yet</p>}
               </div>
             </div>
           </>
@@ -721,10 +722,10 @@ export default function ProspectDetailPage() {
                   }}>
                     <div>
                       <span className="text-sm font-medium" style={{ color: f.type === 'green' ? '#2D6B4F' : '#8B2A2A' }}>{f.type === 'green' ? '💚 ' : '🚩 '}{f.text}</span>
-                      {f.isCustom && <span className="text-xs ml-2" style={{ color: '#9A8A75' }}>(custom)</span>}
-                      <p className="text-xs mt-0.5" style={{ color: '#9A8A75' }}>{f.date}</p>
+                      {f.isCustom && <span className="text-xs ml-2" style={{ color: '#6b5e4d' }}>(custom)</span>}
+                      <p className="text-xs mt-0.5" style={{ color: '#6b5e4d' }}>{f.date}</p>
                     </div>
-                    <button onClick={() => handleDeleteFlag(f.id, f.type)} className="text-lg leading-none ml-3" style={{ color: '#D4C9BC' }}>×</button>
+                    <button onClick={() => handleDeleteFlag(f.id, f.type)} className="text-lg leading-none ml-3" style={{ color: '#d6c9b0' }}>×</button>
                   </div>
                 ))}
               </div>
@@ -739,13 +740,13 @@ export default function ProspectDetailPage() {
               <div className="glass-card p-4 text-center">
                 <div
                   className="font-bold leading-none"
-                  style={{ fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)', color: '#C4A265', fontSize: '3rem' }}
+                  style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', color: '#c13e2a', fontSize: '3rem' }}
                 >
                   {familySC.average}
                 </div>
-                <div className="text-sm mt-1" style={{ color: '#9A8A75' }}>Overall Family Score / 5</div>
+                <div className="text-sm mt-1" style={{ color: '#6b5e4d' }}>Overall Family Score / 5</div>
                 <div className="mt-2 flex justify-center">
-                  <StarRating value={Math.round(familySC.average)} size="lg" color="#C4A265" />
+                  <StarRating value={Math.round(familySC.average)} size="lg" color="#c13e2a" />
                 </div>
               </div>
             )}
@@ -755,15 +756,15 @@ export default function ProspectDetailPage() {
               {FAMILY_SCORECARD_DIMENSIONS.map(dim => (
                 <div key={dim.key}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium" style={{ color: '#1C1612' }}>{dim.label}</span>
+                    <span className="text-sm font-medium" style={{ color: '#1a1410' }}>{dim.label}</span>
                     <StarRating
                       value={familyScores[dim.key as FamilyScorecardKey] ?? 0}
                       onChange={v => setFamilyScores(prev => ({ ...prev, [dim.key]: v }))}
                       size="md"
-                      color="#C4A265"
+                      color="#c13e2a"
                     />
                   </div>
-                  <div className="flex justify-between text-xs" style={{ color: '#9A8A75' }}>
+                  <div className="flex justify-between text-xs" style={{ color: '#6b5e4d' }}>
                     <span>{dim.low}</span>
                     <span>{dim.high}</span>
                   </div>
@@ -788,13 +789,13 @@ export default function ProspectDetailPage() {
                     {meetingLocal.plannedDate && (
                       <div>
                         <p className="section-label mb-0.5">Date</p>
-                        <p className="text-sm font-medium" style={{ color: '#1C1612' }}>{meetingLocal.plannedDate}</p>
+                        <p className="text-sm font-medium" style={{ color: '#1a1410' }}>{meetingLocal.plannedDate}</p>
                       </div>
                     )}
                     {meetingLocal.location && (
                       <div>
                         <p className="section-label mb-0.5">Location</p>
-                        <p className="text-sm font-medium" style={{ color: '#1C1612' }}>{meetingLocal.location}</p>
+                        <p className="text-sm font-medium" style={{ color: '#1a1410' }}>{meetingLocal.location}</p>
                       </div>
                     )}
                   </div>
@@ -808,12 +809,12 @@ export default function ProspectDetailPage() {
                       return (
                         <button key={item} type="button" onClick={() => toggleMeetingItem(item, 'checkedItems')}
                           className="w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all"
-                          style={{ background: checked ? '#F0FAF4' : 'white', border: `1px solid ${checked ? 'rgba(45,107,79,0.25)' : '#E8E0D2'}` }}>
+                          style={{ background: checked ? '#F0FAF4' : 'white', border: `1px solid ${checked ? 'rgba(45,107,79,0.25)' : '#d6c9b0'}` }}>
                           <span className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 text-xs"
-                            style={checked ? { background: '#2D6B4F', borderColor: '#2D6B4F', color: 'white' } : { borderColor: '#D4C9BC' }}>
+                            style={checked ? { background: '#2D6B4F', borderColor: '#2D6B4F', color: 'white' } : { borderColor: '#d6c9b0' }}>
                             {checked && '✓'}
                           </span>
-                          <span className="text-sm font-medium" style={{ color: checked ? '#2D6B4F' : '#1C1612', textDecoration: checked ? 'line-through' : 'none' }}>{item}</span>
+                          <span className="text-sm font-medium" style={{ color: checked ? '#2D6B4F' : '#1a1410', textDecoration: checked ? 'line-through' : 'none' }}>{item}</span>
                         </button>
                       );
                     })}
@@ -822,19 +823,19 @@ export default function ProspectDetailPage() {
 
                 <div className="card p-5">
                   <p className="section-label mb-1">Questions to Ask</p>
-                  <p className="text-xs mb-3" style={{ color: '#9A8A75' }}>Uncheck questions not relevant for this person</p>
+                  <p className="text-xs mb-3" style={{ color: '#6b5e4d' }}>Uncheck questions not relevant for this person</p>
                   <div className="space-y-2">
                     {[...(MEETING_QUESTIONS as readonly string[]), ...(meetingLocal.customQuestions ?? [])].map(q => {
                       const selected = meetingLocal.questionsAsked.includes(q);
                       return (
                         <button key={q} type="button" onClick={() => toggleMeetingItem(q, 'questionsAsked')}
                           className="w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all"
-                          style={{ background: selected ? 'rgba(196,162,101,0.06)' : 'white', border: `1px solid ${selected ? 'rgba(196,162,101,0.3)' : '#E8E0D2'}` }}>
+                          style={{ background: selected ? 'rgba(193,62,42,0.06)' : 'white', border: `1px solid ${selected ? 'rgba(193,62,42,0.3)' : '#d6c9b0'}` }}>
                           <span className="w-5 h-5 rounded shrink-0 mt-0.5 flex items-center justify-center border-2 text-xs"
-                            style={selected ? { background: '#C4A265', borderColor: '#C4A265', color: '#1C1612' } : { borderColor: '#D4C9BC' }}>
+                            style={selected ? { background: '#c13e2a', borderColor: '#c13e2a', color: '#1a1410' } : { borderColor: '#d6c9b0' }}>
                             {selected && '✓'}
                           </span>
-                          <span className="text-sm flex-1" style={{ color: '#1C1612', fontWeight: selected ? 500 : 400 }}>{q}</span>
+                          <span className="text-sm flex-1" style={{ color: '#1a1410', fontWeight: selected ? 500 : 400 }}>{q}</span>
                         </button>
                       );
                     })}
@@ -858,7 +859,7 @@ export default function ProspectDetailPage() {
                       }}
                       placeholder="Type a custom question…"
                       className="flex-1"
-                      style={{ borderColor: '#C4A265' }}
+                      style={{ borderColor: '#c13e2a' }}
                     />
                     <button
                       type="button"
@@ -894,7 +895,7 @@ export default function ProspectDetailPage() {
                       type="button"
                       onClick={addMeeting}
                       className="text-xs font-semibold px-3 py-1 rounded-full"
-                      style={{ background: 'rgba(196,162,101,0.12)', color: '#C4A265', border: '1px solid rgba(196,162,101,0.3)' }}
+                      style={{ background: 'rgba(193,62,42,0.12)', color: '#c13e2a', border: '1px solid rgba(193,62,42,0.3)' }}
                     >
                       + Add Meeting
                     </button>
@@ -907,8 +908,8 @@ export default function ProspectDetailPage() {
                         onClick={() => setActiveMeetingIdx(i)}
                         className="px-3 py-1.5 rounded-full border text-xs font-medium transition-all"
                         style={activeMeetingIdx === i
-                          ? { background: '#C4A265', color: '#1C1612', borderColor: '#C4A265' }
-                          : { background: 'white', color: '#6A5D4E', borderColor: '#E8E0D2' }}
+                          ? { background: '#c13e2a', color: '#1a1410', borderColor: '#c13e2a' }
+                          : { background: 'white', color: '#6b5e4d', borderColor: '#d6c9b0' }}
                       >
                         {MEETING_ORDINALS[i] ?? `${i + 1}th`} Meeting
                         {savedMeetings[i]?.savedAt ? ' ✓' : ''}
@@ -925,15 +926,15 @@ export default function ProspectDetailPage() {
                   {POST_MEETING_DIMENSIONS.map(({ label, key, low, high }) => (
                     <div key={key}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium" style={{ color: '#1C1612' }}>{label}</span>
+                        <span className="text-sm font-medium" style={{ color: '#1a1410' }}>{label}</span>
                         <StarRating
                           value={activeMeeting[key as MeetingDimensionKey] ?? 0}
                           onChange={v => updateActiveMeeting({ [key]: v })}
                           size="md"
-                          color="#C4A265"
+                          color="#c13e2a"
                         />
                       </div>
-                      <div className="flex justify-between text-xs" style={{ color: '#9A8A75' }}>
+                      <div className="flex justify-between text-xs" style={{ color: '#6b5e4d' }}>
                         <span>{low}</span><span>{high}</span>
                       </div>
                     </div>
@@ -987,11 +988,11 @@ export default function ProspectDetailPage() {
                           {saved.map((m, i) => {
                             const avg = meetingAvg(m);
                             return (
-                              <div key={i} className="flex items-center justify-between py-1.5" style={{ borderBottom: i < saved.length - 1 ? '1px solid #F5EFE8' : 'none' }}>
-                                <span className="text-sm font-medium" style={{ color: '#1C1612' }}>
+                              <div key={i} className="flex items-center justify-between py-1.5" style={{ borderBottom: i < saved.length - 1 ? '1px solid #f5ede0' : 'none' }}>
+                                <span className="text-sm font-medium" style={{ color: '#1a1410' }}>
                                   {MEETING_ORDINALS[i] ?? `${i + 1}th`} Meeting
                                 </span>
-                                <span className="text-sm font-semibold" style={{ color: '#C4A265' }}>
+                                <span className="text-sm font-semibold" style={{ color: '#c13e2a' }}>
                                   {avg !== null ? `${avg} / 5 avg` : 'No ratings yet'}
                                 </span>
                               </div>
@@ -1006,9 +1007,9 @@ export default function ProspectDetailPage() {
                           <div className="space-y-2">
                             {improvements.map(({ label, from, to, delta }) => (
                               <div key={label} className="flex items-center justify-between">
-                                <span className="text-sm" style={{ color: '#6A5D4E' }}>{label}</span>
+                                <span className="text-sm" style={{ color: '#6b5e4d' }}>{label}</span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs" style={{ color: '#9A8A75' }}>{from}→{to}</span>
+                                  <span className="text-xs" style={{ color: '#6b5e4d' }}>{from}→{to}</span>
                                   <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
                                     style={delta > 0
                                       ? { background: '#F0FAF4', color: '#2D6B4F' }
@@ -1047,7 +1048,7 @@ export default function ProspectDetailPage() {
             ) : (
               <div className="card p-5 text-center">
                 <p className="section-label mb-2">Kundli Milan</p>
-                <p className="text-sm" style={{ color: '#9A8A75' }}>Add your Nakshatra in your profile to see the full Kundli Milan report.</p>
+                <p className="text-sm" style={{ color: '#6b5e4d' }}>Add your Nakshatra in your profile to see the full Kundli Milan report.</p>
                 <button onClick={() => router.push('/profile')} className="btn-primary mt-4" style={{ fontSize: '0.875rem', padding: '0.75rem 1.5rem' }}>Edit Profile</button>
               </div>
             )}

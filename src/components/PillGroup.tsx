@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 interface Props {
   options: readonly string[];
@@ -38,8 +38,8 @@ export default function PillGroup({
             onClick={() => handleClick(opt)}
             className={`${padding} rounded-full border ${textSize} font-medium transition-all ${activeClass && inactiveClass ? (isActive ? activeClass : inactiveClass) : ''}`}
             style={!activeClass || !inactiveClass ? (isActive
-              ? { background: '#C4A265', color: '#1C1612', borderColor: 'transparent' }
-              : { background: 'white', color: '#6A5D4E', borderColor: '#E8E0D2' }
+              ? { background: '#c13e2a', color: '#1a1410', borderColor: 'transparent' }
+              : { background: 'white', color: '#6b5e4d', borderColor: '#d6c9b0' }
             ) : undefined}
           >
             {opt}

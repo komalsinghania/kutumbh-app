@@ -3,7 +3,7 @@ Redesign the Board tab (dashboard home screen) to be visually rich, interactive,
 ===========================================
 SECTION 1: HEADER (already exists, keep it)
 ===========================================
-Keep: "Kutumbh कुटुम्भ" left, "Komal KS" right, dark gradient background.
+Keep: "RokaMaybe RokaMaybe" left, "Komal KS" right, dark gradient background.
 
 ===========================================
 SECTION 2: JOURNEY SNAPSHOT (NEW — replaces plain stat cards)

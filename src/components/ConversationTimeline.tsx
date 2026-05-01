@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState } from 'react';
 import {
   ConversationLog, CALL_TYPES, CALL_DURATIONS, CONVERSATION_TOPICS,
@@ -26,9 +26,9 @@ const TYPE_ICONS: Record<string, string> = {
 
 const FOLLOW_UP_COLORS: Record<string, { bg: string; color: string }> = {
   'Definitely want to talk again': { bg: 'rgba(45,107,79,0.12)', color: '#2D6B4F' },
-  'Maybe, need to think': { bg: 'rgba(184,134,11,0.12)', color: '#B8860B' },
-  'Not sure about this one': { bg: 'rgba(196,162,101,0.12)', color: '#C4A265' },
-  "Don't want to continue": { bg: 'rgba(139,26,43,0.1)', color: '#8B1A2B' },
+  'Maybe, need to think': { bg: 'rgba(193,62,42,0.12)', color: '#c13e2a' },
+  'Not sure about this one': { bg: 'rgba(193,62,42,0.12)', color: '#c13e2a' },
+  "Don't want to continue": { bg: 'rgba(139,26,43,0.1)', color: '#c13e2a' },
 };
 
 export default function ConversationTimeline({ conversations, onAdd, onDelete, presetType }: Props) {
@@ -85,7 +85,7 @@ export default function ConversationTimeline({ conversations, onAdd, onDelete, p
       )}
 
       {showForm && (
-        <div className="card p-5 space-y-5" style={{ borderColor: 'rgba(201,168,76,0.4)', borderWidth: '1.5px' }}>
+        <div className="card p-5 space-y-5" style={{ borderColor: 'rgba(193,62,42,0.4)', borderWidth: '1.5px' }}>
           <h3 className="section-label">Log Conversation</h3>
 
           <div>
@@ -139,7 +139,7 @@ export default function ConversationTimeline({ conversations, onAdd, onDelete, p
       )}
 
       {conversations.length === 0 && !showForm && (
-        <p className="text-sm text-center py-6" style={{ color: '#9A8A75' }}>No conversations logged yet.</p>
+        <p className="text-sm text-center py-6" style={{ color: '#6b5e4d' }}>No conversations logged yet.</p>
       )}
 
       <div className="space-y-3">
@@ -149,40 +149,40 @@ export default function ConversationTimeline({ conversations, onAdd, onDelete, p
               <div className="flex items-center gap-2">
                 <span className="text-xl">{TYPE_ICONS[c.callType] ?? '💬'}</span>
                 <div>
-                  <span className="text-sm font-semibold" style={{ color: '#1C1612' }}>{c.callType}</span>
-                  <span className="text-xs ml-2" style={{ color: '#9A8A75' }}>{c.duration}</span>
+                  <span className="text-sm font-semibold" style={{ color: '#1a1410' }}>{c.callType}</span>
+                  <span className="text-xs ml-2" style={{ color: '#6b5e4d' }}>{c.duration}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-lg">{c.mood}</span>
-                <button onClick={() => onDelete(c.id)} className="text-lg leading-none" style={{ color: '#D4C9BC' }}>×</button>
+                <button onClick={() => onDelete(c.id)} className="text-lg leading-none" style={{ color: '#d6c9b0' }}>×</button>
               </div>
             </div>
 
             {c.topics.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {c.topics.map(t => (
-                  <span key={t} className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(196,162,101,0.1)', color: '#C4A265', border: '1px solid rgba(196,162,101,0.25)' }}>{t}</span>
+                  <span key={t} className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(193,62,42,0.1)', color: '#c13e2a', border: '1px solid rgba(193,62,42,0.25)' }}>{t}</span>
                 ))}
               </div>
             )}
 
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              <span className="text-xs" style={{ color: '#6B5D52' }}>{c.theirVibe}</span>
+              <span className="text-xs" style={{ color: '#6b5e4d' }}>{c.theirVibe}</span>
               {c.followUp && (() => {
                 const fc = FOLLOW_UP_COLORS[c.followUp];
                 return (
                   <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-                    style={fc ? { background: fc.bg, color: fc.color } : { background: '#F5EFE8', color: '#6B5D52' }}>
+                    style={fc ? { background: fc.bg, color: fc.color } : { background: '#f5ede0', color: '#6b5e4d' }}>
                     {c.followUp}
                   </span>
                 );
               })()}
             </div>
 
-            {c.note && <p className="text-xs mt-2 italic" style={{ color: '#9A8A75' }}>"{c.note}"</p>}
+            {c.note && <p className="text-xs mt-2 italic" style={{ color: '#6b5e4d' }}>"{c.note}"</p>}
 
-            <p className="text-xs mt-2" style={{ color: '#D4C9BC' }}>{c.date} {c.time}</p>
+            <p className="text-xs mt-2" style={{ color: '#d6c9b0' }}>{c.date} {c.time}</p>
           </div>
         ))}
       </div>

@@ -1,4 +1,4 @@
-Completely redesign the UI/UX of the Kutumbh app with a PREMIUM LUXURY WEDDING INVITATION aesthetic. The app should feel like opening an expensive wedding card — elegant, rich, and sophisticated. This is a visual overhaul of every screen. Do NOT change any functionality, just the design.
+Completely redesign the UI/UX of the RokaMaybe app with a PREMIUM LUXURY WEDDING INVITATION aesthetic. The app should feel like opening an expensive wedding card — elegant, rich, and sophisticated. This is a visual overhaul of every screen. Do NOT change any functionality, just the design.
 
 ===========================================
 DESIGN SYSTEM
@@ -20,7 +20,7 @@ COLOR PALETTE:
 - Hover/Active: rgba(139,105,20,0.08) (gold tint)
 
 TYPOGRAPHY:
-- Logo: Use a decorative serif — "Playfair Display" for कुटुम्भ
+- Logo: Use a decorative serif — "Playfair Display" for RokaMaybe
 - Headings: "Cormorant Garamond" (already installed) — italic for section titles
 - Body: "Nunito Sans" (already installed)
 - Scores/Numbers: "Cormorant Garamond" bold
@@ -39,7 +39,7 @@ GLOBAL ELEMENTS
 
 HEADER/NAVBAR:
 - Sticky top bar with deep gradient background (#2C1810 → #3D2417)
-- Logo कुटुम्भ in Playfair Display, champagne gold color, left side
+- Logo RokaMaybe in Playfair Display, champagne gold color, left side
 - User name + circular avatar on right
 - Subtle gold bottom border (1px solid rgba(201,168,76,0.3))
 - Height: 64px
@@ -76,7 +76,7 @@ SCREEN 1: DASHBOARD
 
 HERO SECTION (replaces current flat header):
 - Full width gradient background (#2C1810 → #3D2417 → #5C2E1E)
-- कुटुम्भ logo large, centered, in champagne gold
+- RokaMaybe logo large, centered, in champagne gold
 - "Namaste, Komal" below in light ivory, italic Cormorant
 - 3 stat cards in a row, overlapping the hero bottom by 30px:
   - Glass-morphism style: white bg with rgba(255,255,255,0.9), backdrop-blur, gold border
@@ -193,7 +193,7 @@ SCREEN 6: LOGIN PAGE
 
 - Full screen with background: subtle mandala/paisley pattern in very light gold on ivory
 - Center card: White, large border-radius (24px), generous padding
-- कुटुम्भ logo large at top, gold color
+- RokaMaybe logo large at top, gold color
 - Tagline: "Your matrimonial journey, elegantly organized" in Cormorant italic
 - Google Sign-In button: White with Google colors, rounded, shadow
 - Email/password fields below

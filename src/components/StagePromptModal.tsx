@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState } from 'react';
 import { ProspectStage, STAGE_PROMPT_CONFIG, StagePromptData, STAGE_LABELS } from '@/types';
 import PillGroup from './PillGroup';
@@ -29,12 +29,12 @@ export default function StagePromptModal({ stage, onConfirm, onDismiss }: Props)
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={onDismiss}>
       <div
         className="w-full max-w-lg rounded-t-3xl p-5 pb-8 max-h-[85vh] overflow-y-auto"
-        style={{ background: '#F9F6F0', borderTop: '3px solid #C4A265' }}
+        style={{ background: '#f5ede0', borderTop: '3px solid #c13e2a' }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: '#E8DFD3' }} />
+        <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: '#d6c9b0' }} />
         <p className="section-label mb-1">{STAGE_LABELS[stage]}</p>
-        <h3 style={{ fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)', color: '#1C1612' }} className="text-xl font-bold mb-4">
+        <h3 style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', color: '#1a1410' }} className="text-xl font-bold mb-4">
           {config.title}
         </h3>
 
@@ -47,14 +47,14 @@ export default function StagePromptModal({ stage, onConfirm, onDismiss }: Props)
         {config.hasRating1 && (
           <div className="mb-4">
             <label className="section-label block mb-1">{config.hasRating1.label}</label>
-            <StarRating value={rating1} onChange={setRating1} size="lg" color="#C4A265" />
+            <StarRating value={rating1} onChange={setRating1} size="lg" color="#c13e2a" />
           </div>
         )}
 
         {config.hasRating2 && (
           <div className="mb-4">
             <label className="section-label block mb-1">{config.hasRating2.label}</label>
-            <StarRating value={rating2} onChange={setRating2} size="lg" color="#C4A265" />
+            <StarRating value={rating2} onChange={setRating2} size="lg" color="#c13e2a" />
           </div>
         )}
 

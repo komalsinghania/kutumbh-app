@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -12,6 +12,7 @@ import { calculateKundli } from '@/lib/kundli';
 import CitySearch from '@/components/CitySearch';
 import { getCityByName } from '@/lib/indian-cities';
 import toast from 'react-hot-toast';
+import { Logo } from '@/components/Logo';
 
 function PillGroup({ options, value, onSelect }: {
   options: string[]; value: string; onSelect: (v: string) => void;
@@ -24,7 +25,7 @@ function PillGroup({ options, value, onSelect }: {
           type="button"
           onClick={() => onSelect(opt)}
           className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${value === opt ? 'pill-active' : ''}`}
-          style={value !== opt ? { background: 'white', color: '#C4A265', borderColor: 'rgba(139,105,20,0.35)' } : {}}
+          style={value !== opt ? { background: 'white', color: '#c13e2a', borderColor: 'rgba(193,62,42,0.35)' } : {}}
         >
           {opt}
         </button>
@@ -248,33 +249,33 @@ export default function OnboardingPage() {
   const progress = step === 0 ? 0 : Math.round((step / 16) * 100);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#F9F6F0', overflowY: 'auto' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#f5ede0',  }}>
       {step > 0 && (
-        <div className="w-full h-0.5" style={{ background: '#E8DFD3' }}>
+        <div className="w-full h-0.5" style={{ background: '#d6c9b0' }}>
           <div
             className="h-full transition-all duration-300"
-            style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #C4A265, #C4A265)' }}
+            style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #c13e2a, #c13e2a)' }}
           />
         </div>
       )}
       {step > 0 && (
-        <div className="text-right px-5 pt-2 text-xs font-semibold" style={{ color: '#C4A265' }}>
+        <div className="text-right px-5 pt-2 text-xs font-semibold" style={{ color: '#c13e2a' }}>
           {step} / 16
         </div>
       )}
 
       <div className="flex-1 flex flex-col items-center justify-center px-5 py-8">
         <div className="w-full max-w-sm">
-          <div className="logo text-4xl text-center mb-6">कुटुम्भ</div>
+          <Logo className="text-4xl text-center mb-6" />
 
           {/* Step 0: Upload biodata */}
           {step === 0 && (
             <div className="text-center space-y-5">
-              <h2 style={{ fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)', color: '#1C1612' }} className="text-2xl font-semibold">
+              <h2 style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', color: '#1a1410' }} className="text-2xl font-semibold">
                 Upload your Biodata
               </h2>
-              <p className="text-sm" style={{ color: '#9A8A75' }}>
-                We'll extract your details automatically using AI.
+              <p className="text-sm" style={{ color: '#6b5e4d' }}>
+                Upload biodata as PDF, Word doc, or photo
               </p>
               {extractError && (
                 <div className="rounded-xl px-4 py-3 text-left" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
@@ -286,15 +287,23 @@ export default function OnboardingPage() {
               <input
                 ref={fileRef}
                 type="file"
-                accept="*/*"
+                accept="image/jpeg,image/png,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,*/*"
                 className="hidden"
                 onChange={e => {
                   setExtractError(null);
                   const file = e.target.files?.[0];
                   if (!file) return;
-                  const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-                  if (!allowed.includes(file.type)) {
-                    toast.error('Please upload a PDF or image file (JPG, PNG, WEBP)');
+                  const allowedTypes = [
+                    'application/pdf',
+                    'image/jpeg', 'image/png', 'image/webp',
+                    'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                  ];
+                  const allowedExt = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.webp'];
+                  const name = (file.name || '').toLowerCase();
+                  const extOk = allowedExt.some(ext => name.endsWith(ext));
+                  if (!allowedTypes.includes(file.type) && !extOk) {
+                    toast.error('Please upload a PDF, Word doc, or image (JPG, PNG, WEBP)');
                     if (fileRef.current) fileRef.current.value = '';
                     return;
                   }
@@ -311,14 +320,14 @@ export default function OnboardingPage() {
                     <span className="gold-spinner" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} />
                     Extracting…
                   </span>
-                ) : extractError ? 'Try Again' : 'Choose File (PDF or Image)'}
+                ) : extractError ? 'Try Again' : 'Choose File (PDF, Word, or Image)'}
               </button>
-              <p className="text-xs -mt-2" style={{ color: '#9A8A75' }}>Accepts PDF, JPG, PNG</p>
+              <p className="text-xs -mt-2" style={{ color: '#6b5e4d' }}>Accepts PDF, DOCX, JPG, PNG</p>
               {/* Divider */}
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-px" style={{ background: '#E8DFD3' }} />
-                <span className="text-xs font-medium" style={{ color: '#B8AFA6' }}>or</span>
-                <div className="flex-1 h-px" style={{ background: '#E8DFD3' }} />
+                <div className="flex-1 h-px" style={{ background: '#d6c9b0' }} />
+                <span className="text-xs font-medium" style={{ color: '#d6c9b0' }}>or</span>
+                <div className="flex-1 h-px" style={{ background: '#d6c9b0' }} />
               </div>
               {/* Option 2: Paste text */}
               {!showPasteText ? (
@@ -333,7 +342,7 @@ export default function OnboardingPage() {
                     placeholder="Paste the full biodata text here…"
                     rows={6}
                     className="w-full rounded-xl border p-3 text-sm"
-                    style={{ borderColor: '#C4A265', resize: 'vertical', background: 'white', color: '#3D2B1F' }}
+                    style={{ borderColor: '#c13e2a', resize: 'vertical', background: 'white', color: '#1a1410' }}
                     autoFocus
                   />
                   <div className="flex gap-2">
@@ -353,7 +362,7 @@ export default function OnboardingPage() {
                   </div>
                 </div>
               )}
-              <button type="button" className="text-sm" style={{ color: '#9A8A75' }}
+              <button type="button" className="text-sm" style={{ color: '#6b5e4d' }}
                 onClick={() => { setExtractError(null); setStep(1); }}>
                 Skip — Fill Manually
               </button>
@@ -527,7 +536,7 @@ export default function OnboardingPage() {
                     type="button"
                     onClick={() => setBirthManualMode(true)}
                     className="text-xs underline mt-1 block text-center w-full"
-                    style={{ color: '#9A8A75' }}
+                    style={{ color: '#6b5e4d' }}
                   >
                     I know my Nakshatra — enter manually
                   </button>
@@ -541,7 +550,7 @@ export default function OnboardingPage() {
                         type="button"
                         onClick={() => set('nakshatra', i)}
                         className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${form.nakshatra === i ? 'pill-active' : ''}`}
-                        style={form.nakshatra !== i ? { background: 'white', color: '#C4A265', borderColor: 'rgba(139,105,20,0.35)' } : {}}
+                        style={form.nakshatra !== i ? { background: 'white', color: '#c13e2a', borderColor: 'rgba(193,62,42,0.35)' } : {}}
                       >
                         {n}
                       </button>
@@ -551,7 +560,7 @@ export default function OnboardingPage() {
                     type="button"
                     onClick={() => setBirthManualMode(false)}
                     className="text-xs underline mt-3 block"
-                    style={{ color: '#9A8A75' }}
+                    style={{ color: '#6b5e4d' }}
                   >
                     ← Calculate from birth date instead
                   </button>
@@ -632,11 +641,11 @@ export default function OnboardingPage() {
           {/* Step 16: Non-negotiables */}
           {step === 16 && (
             <StepWrapper title="Your non-negotiables">
-              <p className="text-sm mt-1 mb-4" style={{ color: '#9A8A75' }}>Select all that apply</p>
+              <p className="text-sm mt-1 mb-4" style={{ color: '#6b5e4d' }}>Select all that apply</p>
               <div className="space-y-4">
                 {DEALBREAKER_CATEGORIES.map(cat => (
                   <div key={cat.label}>
-                    <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#C4A265' }}>{cat.label}</p>
+                    <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#c13e2a' }}>{cat.label}</p>
                     <div className="flex flex-wrap gap-2">
                       {cat.items.map(d => (
                         <button
@@ -645,8 +654,8 @@ export default function OnboardingPage() {
                           onClick={() => toggleDealbreaker(d)}
                           className="px-3 py-1.5 rounded-full border text-xs font-medium transition-all"
                           style={form.dealbreakers.includes(d)
-                            ? { background: '#8B1A2B', color: 'white', borderColor: '#8B1A2B' }
-                            : { background: 'white', color: '#6B5D52', borderColor: '#E8DFD3' }}
+                            ? { background: '#c13e2a', color: 'white', borderColor: '#c13e2a' }
+                            : { background: 'white', color: '#6b5e4d', borderColor: '#d6c9b0' }}
                         >
                           {d}
                         </button>
@@ -657,10 +666,10 @@ export default function OnboardingPage() {
                 {/* Custom non-negotiables */}
                 {form.dealbreakers.filter(d => !(DEALBREAKERS as readonly string[]).includes(d)).length > 0 && (
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#C4A265' }}>Custom</p>
+                    <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#c13e2a' }}>Custom</p>
                     <div className="flex flex-wrap gap-2">
                       {form.dealbreakers.filter(d => !(DEALBREAKERS as readonly string[]).includes(d)).map(d => (
-                        <span key={d} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium" style={{ background: '#8B1A2B', color: 'white', border: '1px solid #8B1A2B' }}>
+                        <span key={d} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium" style={{ background: '#c13e2a', color: 'white', border: '1px solid #c13e2a' }}>
                           {d}
                           <button type="button" onClick={() => toggleDealbreaker(d)} style={{ marginLeft: 2, fontWeight: 700, lineHeight: 1 }}>×</button>
                         </span>
@@ -673,7 +682,7 @@ export default function OnboardingPage() {
                     type="button"
                     onClick={() => setShowCustomDealbreakerInput(v => !v)}
                     className="px-3 py-1.5 rounded-full border text-xs font-medium transition-all"
-                    style={{ background: showCustomDealbreakerInput ? '#C4A265' : 'white', color: showCustomDealbreakerInput ? 'white' : '#C4A265', borderColor: '#C4A265' }}
+                    style={{ background: showCustomDealbreakerInput ? '#c13e2a' : 'white', color: showCustomDealbreakerInput ? 'white' : '#c13e2a', borderColor: '#c13e2a' }}
                   >
                     + Other
                   </button>
@@ -694,7 +703,7 @@ export default function OnboardingPage() {
                     }}
                     placeholder="Type your dealbreaker…"
                     className="flex-1"
-                    style={{ borderColor: '#C4A265' }}
+                    style={{ borderColor: '#c13e2a' }}
                     autoFocus
                   />
                   <button
@@ -748,7 +757,7 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   className="w-full text-center mt-3 text-xs underline"
-                  style={{ color: '#B8AFA3', background: 'none', border: 'none', cursor: 'pointer' }}
+                  style={{ color: '#d6c9b0', background: 'none', border: 'none', cursor: 'pointer' }}
                   onClick={() => setStep(s => s + 1)}
                 >
                   Skip
@@ -765,7 +774,7 @@ export default function OnboardingPage() {
 function StepWrapper({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 style={{ fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)', color: '#1C1612', fontSize: '1.6rem', lineHeight: 1.25 }} className="font-bold mb-2">
+      <h2 style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', color: '#1a1410', fontSize: '1.6rem', lineHeight: 1.25 }} className="font-bold mb-2">
         {title}
       </h2>
       {children}

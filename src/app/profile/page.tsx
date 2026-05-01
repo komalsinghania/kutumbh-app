@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -12,7 +12,7 @@ function PillSelect({ options, value, onSelect }: { options: string[]; value: st
       {options.map(opt => (
         <button key={opt} type="button" onClick={() => onSelect(opt)}
           className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${value === opt ? 'pill-active' : ''}`}
-          style={value !== opt ? { background: 'white', color: '#C4A265', borderColor: '#E8E0D2' } : {}}>
+          style={value !== opt ? { background: 'white', color: '#c13e2a', borderColor: '#d6c9b0' } : {}}>
           {opt}
         </button>
       ))}
@@ -23,7 +23,7 @@ function PillSelect({ options, value, onSelect }: { options: string[]; value: st
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#C4A265' }}>{label}</label>
+      <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#c13e2a' }}>{label}</label>
       {children}
     </div>
   );
@@ -107,12 +107,12 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen pb-24" style={{ background: '#F9F6F0', overflowY: 'auto' }}>
+    <div className="min-h-screen pb-24" style={{ background: '#f5ede0' }}>
       <div className="suite-header px-4 flex items-center gap-3 sticky top-0 z-10" style={{ height: 56 }}>
-        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center rounded-full" style={{ color: 'rgba(249,246,240,0.8)' }}>
+        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center rounded-full" style={{ color: '#ffffff' }}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
-        <h1 style={{ fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)', color: '#F9F6F0', fontSize: '1.125rem' }} className="font-semibold">
+        <h1 style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', color: '#ffffff', fontSize: '1.125rem' }} className="font-semibold">
           Edit Profile
         </h1>
       </div>
@@ -134,7 +134,7 @@ export default function ProfilePage() {
               {NAKSHATRAS.map((n, i) => (
                 <button key={n} type="button" onClick={() => set('nakshatra', i)}
                   className={`px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${form.nakshatra === i ? 'pill-active' : ''}`}
-                  style={form.nakshatra !== i ? { background: 'white', color: '#C4A265', borderColor: '#E8E0D2' } : {}}>
+                  style={form.nakshatra !== i ? { background: 'white', color: '#c13e2a', borderColor: '#d6c9b0' } : {}}>
                   {n}
                 </button>
               ))}
@@ -155,14 +155,14 @@ export default function ProfilePage() {
             <div className="space-y-4 mt-1">
               {DEALBREAKER_CATEGORIES.map(cat => (
                 <div key={cat.label}>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#C4A265' }}>{cat.label}</p>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#c13e2a' }}>{cat.label}</p>
                   <div className="flex flex-wrap gap-2">
                     {cat.items.map(d => (
                       <button key={d} type="button" onClick={() => toggleDealbreaker(d)}
                         className="px-3 py-1.5 rounded-full border text-xs font-medium transition-all"
                         style={form.dealbreakers.includes(d)
-                          ? { background: '#8B1A2B', color: 'white', borderColor: '#8B1A2B' }
-                          : { background: 'white', color: '#6B5D52', borderColor: '#E8DFD3' }}>
+                          ? { background: '#c13e2a', color: 'white', borderColor: '#c13e2a' }
+                          : { background: 'white', color: '#6b5e4d', borderColor: '#d6c9b0' }}>
                         {d}
                       </button>
                     ))}
@@ -171,10 +171,10 @@ export default function ProfilePage() {
               ))}
               {form.dealbreakers.filter(d => !(DEALBREAKERS as readonly string[]).includes(d)).length > 0 && (
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#C4A265' }}>Custom</p>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#c13e2a' }}>Custom</p>
                   <div className="flex flex-wrap gap-2">
                     {form.dealbreakers.filter(d => !(DEALBREAKERS as readonly string[]).includes(d)).map(d => (
-                      <span key={d} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium" style={{ background: '#8B1A2B', color: 'white', border: '1px solid #8B1A2B' }}>
+                      <span key={d} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium" style={{ background: '#c13e2a', color: 'white', border: '1px solid #c13e2a' }}>
                         {d}
                         <button type="button" onClick={() => toggleDealbreaker(d)} style={{ marginLeft: 2, fontWeight: 700, lineHeight: 1 }}>×</button>
                       </span>
@@ -185,7 +185,7 @@ export default function ProfilePage() {
               <div className="flex flex-wrap gap-2 pt-1">
                 <button type="button" onClick={() => setShowCustomInput(v => !v)}
                   className="px-3 py-1.5 rounded-full border text-xs font-medium transition-all"
-                  style={{ background: showCustomInput ? '#C4A265' : 'white', color: showCustomInput ? 'white' : '#C4A265', borderColor: '#C4A265' }}>
+                  style={{ background: showCustomInput ? '#c13e2a' : 'white', color: showCustomInput ? 'white' : '#c13e2a', borderColor: '#c13e2a' }}>
                   + Other
                 </button>
               </div>
@@ -198,7 +198,7 @@ export default function ProfilePage() {
                         setCustomText(''); setShowCustomInput(false);
                       }
                     }}
-                    placeholder="Type your non-negotiable…" className="flex-1" style={{ borderColor: '#C4A265' }} autoFocus />
+                    placeholder="Type your non-negotiable…" className="flex-1" style={{ borderColor: '#c13e2a' }} autoFocus />
                   <button type="button" className="btn-primary" style={{ padding: '0.6rem 1rem', borderRadius: '0.75rem' }}
                     disabled={!customText.trim()}
                     onClick={() => {
@@ -215,7 +215,7 @@ export default function ProfilePage() {
         </div>
 
         <div className="sticky bottom-6">
-          <button className="btn-primary w-full disabled:opacity-50" style={{ boxShadow: '0 4px 20px rgba(139,105,20,0.4)' }} onClick={handleSave} disabled={saving}>
+          <button className="btn-primary w-full disabled:opacity-50" style={{ boxShadow: '0 4px 20px rgba(193,62,42,0.4)' }} onClick={handleSave} disabled={saving}>
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
         </div>

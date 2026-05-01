@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 interface Props {
   value: number;
@@ -7,7 +7,7 @@ interface Props {
   color?: string;
 }
 
-export default function StarRating({ value, onChange, size = 'md', color = '#C4A265' }: Props) {
+export default function StarRating({ value, onChange, size = 'md', color = '#b8892b' }: Props) {
   const sz = size === 'sm' ? 'text-base' : size === 'lg' ? 'text-3xl' : 'text-xl';
   return (
     <div className="flex gap-0.5">
@@ -18,7 +18,7 @@ export default function StarRating({ value, onChange, size = 'md', color = '#C4A
           onClick={() => onChange?.(star === value ? 0 : star)}
           disabled={!onChange}
           className={`${sz} leading-none transition-transform ${onChange ? 'hover:scale-110 active:scale-95' : ''} disabled:cursor-default`}
-          style={{ color: star <= value ? color : '#D4C9BC' }}
+          style={{ color: star <= value ? color : '#d6c9b0' }}
         >
           ★
         </button>

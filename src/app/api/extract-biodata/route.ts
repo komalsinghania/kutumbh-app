@@ -1,5 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import mammoth from 'mammoth';
+
+const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const DOC_MIME = 'application/msword';
+
+function isWord(file: File) {
+  const name = (file.name || '').toLowerCase();
+  return (
+    file.type === DOCX_MIME ||
+    file.type === DOC_MIME ||
+    name.endsWith('.docx') ||
+    name.endsWith('.doc')
+  );
+}
 
 const EXTRACTION_PROMPT = `You are extracting information from an Indian matrimonial biodata document. Return ONLY a valid JSON object — no markdown, no explanation, no extra text. Use null for any field not found.
 
@@ -142,20 +156,47 @@ export async function POST(req: NextRequest) {
       console.log('[extract-biodata] File received:', file.name, '| type:', file.type, '| size:', file.size, 'bytes');
 
       const bytes = await file.arrayBuffer();
-      const base64 = Buffer.from(bytes).toString('base64');
-      const mimeType = file.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'application/pdf';
-      const isPdf = mimeType === 'application/pdf';
 
-      if (isPdf) {
+      if (isWord(file)) {
+        const buffer = Buffer.from(bytes);
+        let text: string;
+        try {
+          const result = await mammoth.extractRawText({ buffer });
+          text = (result.value || '').trim();
+        } catch (err: any) {
+          const name = (file.name || '').toLowerCase();
+          const isLegacyDoc = file.type === DOC_MIME || (name.endsWith('.doc') && !name.endsWith('.docx'));
+          const message = isLegacyDoc
+            ? 'Legacy .doc files are not supported. Please save the biodata as .docx, PDF, or image and try again.'
+            : `Could not read Word document: ${err?.message || 'unknown error'}`;
+          return NextResponse.json({ error: message }, { status: 422 });
+        }
+
+        if (!text) {
+          return NextResponse.json({ error: 'Word document appears to be empty.' }, { status: 422 });
+        }
+
+        console.log('[extract-biodata] Word text extracted | length:', text.length);
         messageContent = [
           { type: 'text', text: EXTRACTION_PROMPT },
-          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } } as any,
+          { type: 'text', text: `Biodata text to extract from:\n\n${text}` },
         ];
       } else {
-        messageContent = [
-          { type: 'text', text: EXTRACTION_PROMPT },
-          { type: 'image', source: { type: 'base64', media_type: mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp', data: base64 } },
-        ];
+        const base64 = Buffer.from(bytes).toString('base64');
+        const mimeType = file.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'application/pdf';
+        const isPdf = mimeType === 'application/pdf';
+
+        if (isPdf) {
+          messageContent = [
+            { type: 'text', text: EXTRACTION_PROMPT },
+            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } } as any,
+          ];
+        } else {
+          messageContent = [
+            { type: 'text', text: EXTRACTION_PROMPT },
+            { type: 'image', source: { type: 'base64', media_type: mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp', data: base64 } },
+          ];
+        }
       }
     }
 

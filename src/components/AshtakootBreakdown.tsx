@@ -1,15 +1,15 @@
-'use client';
+﻿'use client';
 import { KootScore, MatchStatus } from '@/lib/scoring';
 
 const STATUS_ICON: Record<MatchStatus, string> = { full: '✅', partial: '🟡', miss: '❌' };
 const STATUS_COLOR: Record<MatchStatus, string> = {
   full: 'text-green-700',
-  partial: 'text-yellow-700',
+  partial: 'text-[#c13e2a]',
   miss: 'text-red-600',
 };
 const BAR_COLOR: Record<MatchStatus, string> = {
   full: 'bg-green-500',
-  partial: 'bg-yellow-400',
+  partial: 'bg-[#c13e2a]',
   miss: 'bg-red-400',
 };
 
@@ -36,9 +36,9 @@ export default function AshtakootBreakdown({
                 </div>
                 <p className="text-xs text-gray-500 leading-snug mt-0.5">{k.detail}</p>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  You: <span className="text-[#3D2B1F] font-medium">{k.userVal}</span>
+                  You: <span className="text-[#1a1410] font-medium">{k.userVal}</span>
                   {' · '}
-                  Prospect: <span className="text-[#3D2B1F] font-medium">{k.prospectVal}</span>
+                  Prospect: <span className="text-[#1a1410] font-medium">{k.prospectVal}</span>
                 </p>
               </div>
             </div>
@@ -61,7 +61,7 @@ export default function AshtakootBreakdown({
       <div className="flex justify-between items-center pt-2 border-t border-gray-100">
         <span className="text-xs text-gray-500 font-medium">Total Guna Score</span>
         <div className="flex items-baseline gap-1">
-          <span className="text-sm font-bold text-[#B8860B]">{total}/36</span>
+          <span className="text-sm font-bold text-[#b8892b]">{total}/36</span>
           <span className="text-xs text-gray-400">
             ({total >= 28 ? 'Excellent' : total >= 21 ? 'Good' : total >= 18 ? 'Average' : 'Below average'})
           </span>

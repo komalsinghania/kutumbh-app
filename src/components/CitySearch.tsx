@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useRef, useEffect } from 'react';
 import { searchCities, CityData } from '@/lib/indian-cities';
 
@@ -59,9 +59,9 @@ export default function CitySearch({ value, onChange, placeholder = 'Search city
               key={`${city.name}-${city.state}`}
               type="button"
               onClick={() => select(city)}
-              className="w-full text-left px-4 py-2.5 hover:bg-[#FAF7F2] transition-colors border-b border-gray-50 last:border-0"
+              className="w-full text-left px-4 py-2.5 hover:bg-[#f5ede0] transition-colors border-b border-gray-50 last:border-0"
             >
-              <span className="text-sm font-medium text-[#3D2B1F]">{city.name}</span>
+              <span className="text-sm font-medium text-[#1a1410]">{city.name}</span>
               <span className="text-xs text-gray-400 ml-2">{city.state}</span>
             </button>
           ))}

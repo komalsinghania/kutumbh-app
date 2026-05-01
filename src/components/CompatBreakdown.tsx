@@ -1,15 +1,15 @@
-'use client';
+﻿'use client';
 import { CompatCriterion, DealbreakersCheckItem, MatchStatus } from '@/lib/scoring';
 
 const STATUS_ICON: Record<MatchStatus, string> = { full: '✅', partial: '🟡', miss: '❌' };
 const STATUS_COLOR: Record<MatchStatus, string> = {
   full: 'text-green-700',
-  partial: 'text-yellow-700',
+  partial: 'text-[#c13e2a]',
   miss: 'text-red-600',
 };
 const BAR_COLOR: Record<MatchStatus, string> = {
   full: 'bg-green-500',
-  partial: 'bg-yellow-400',
+  partial: 'bg-[#c13e2a]',
   miss: 'bg-red-400',
 };
 
@@ -35,9 +35,9 @@ export default function CompatBreakdown({
                 <span className={`text-xs font-semibold ${STATUS_COLOR[c.status]}`}>{c.label}</span>
                 <p className="text-xs text-gray-500 leading-snug mt-0.5">{c.detail}</p>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  You: <span className="text-[#3D2B1F] font-medium">{c.userVal}</span>
+                  You: <span className="text-[#1a1410] font-medium">{c.userVal}</span>
                   {' · '}
-                  Prospect: <span className="text-[#3D2B1F] font-medium">{c.prospectVal}</span>
+                  Prospect: <span className="text-[#1a1410] font-medium">{c.prospectVal}</span>
                 </p>
               </div>
             </div>
@@ -59,7 +59,7 @@ export default function CompatBreakdown({
 
       <div className="flex justify-between items-center pt-2 border-t border-gray-100">
         <span className="text-xs text-gray-500 font-medium">Total Compatibility</span>
-        <span className="text-sm font-bold text-[#A0522D]">{total}%</span>
+        <span className="text-sm font-bold text-[#c13e2a]">{total}%</span>
       </div>
 
       {dealbreakersCheck && dealbreakersCheck.length > 0 && (

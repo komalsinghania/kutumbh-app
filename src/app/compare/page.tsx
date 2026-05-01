@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -7,6 +7,7 @@ import { Prospect, STAGE_LABELS, NAKSHATRAS } from '@/types';
 import { calculateOverallScore } from '@/lib/scoring';
 import { calculateAshtakoot } from '@/lib/kundli';
 import StarRating from '@/components/StarRating';
+import { Logo } from '@/components/Logo';
 
 function daysSince(createdAt: number): number {
   return Math.floor((Date.now() - createdAt) / 86400000);
@@ -38,9 +39,9 @@ function CompareContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F9F6F0' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5ede0' }}>
         <div className="flex flex-col items-center gap-4">
-          <div className="logo text-4xl">कुटुम्भ</div>
+          <Logo className="text-4xl" />
           <div className="gold-spinner" />
         </div>
       </div>
@@ -49,9 +50,9 @@ function CompareContent() {
 
   if (prospects.length < 2) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F9F6F0' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5ede0' }}>
         <div className="text-center">
-          <p style={{ color: '#9A8A75' }}>Select 2–3 prospects to compare.</p>
+          <p style={{ color: '#6b5e4d' }}>Select 2–3 prospects to compare.</p>
           <button onClick={() => router.back()} className="btn-primary mt-4">Go Back</button>
         </div>
       </div>
@@ -116,8 +117,8 @@ function CompareContent() {
       label: 'Family Score',
       getValue: p => p.familyScore ? (
         <span className="flex items-center gap-1 justify-center">
-          <StarRating value={Math.round(p.familyScore)} size="sm" color="#C4A265" />
-          <span className="text-xs" style={{ color: '#9A8A75' }}>{p.familyScore}</span>
+          <StarRating value={Math.round(p.familyScore)} size="sm" color="#c13e2a" />
+          <span className="text-xs" style={{ color: '#6b5e4d' }}>{p.familyScore}</span>
         </span>
       ) : '—',
       isBest: p => !!p.familyScore && p.familyScore === bestFamily,
@@ -190,12 +191,12 @@ function CompareContent() {
   }
 
   return (
-    <div className="min-h-screen pb-10" style={{ background: '#F9F6F0', overflowY: 'auto' }}>
+    <div className="min-h-screen pb-20" style={{ background: '#f5ede0',  }}>
       <div className="suite-header px-4 flex items-center gap-3 sticky top-0 z-10" style={{ height: 56 }}>
-        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center rounded-full" style={{ color: 'rgba(249,246,240,0.8)' }}>
+        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center rounded-full" style={{ color: '#ffffff' }}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
-        <h1 style={{ fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)', color: '#F9F6F0', fontStyle: 'italic', fontSize: '1.125rem' }} className="font-bold">Help Me Decide</h1>
+        <h1 style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', color: '#ffffff', fontStyle: 'italic', fontSize: '1.125rem' }} className="font-bold">Help Me Decide</h1>
       </div>
 
       <div className="max-w-2xl mx-auto px-3 pt-5 space-y-5">
@@ -204,24 +205,24 @@ function CompareContent() {
           <div />
           {prospects.map(p => (
             <div key={p.id} className="text-center px-1">
-              <p style={{ fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)', color: '#1C1612' }} className="font-semibold text-sm leading-tight">{p.name}</p>
-              <p className="text-xs" style={{ color: '#9A8A75' }}>{p.age} • {p.city}</p>
+              <p style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', color: '#1a1410' }} className="font-semibold text-sm leading-tight">{p.name}</p>
+              <p className="text-xs" style={{ color: '#6b5e4d' }}>{p.age} • {p.city}</p>
             </div>
           ))}
         </div>
 
-        <div className="rounded-2xl overflow-hidden" style={{ background: 'white', border: '1px solid #E8DFD3', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'white', border: '1px solid #d6c9b0', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
           {rows.map((row, ri) => (
             <div key={row.label}
               className="grid items-center"
-              style={{ gridTemplateColumns: `130px repeat(${prospects.length}, 1fr)`, background: ri % 2 === 0 ? 'white' : '#F9F6F0' }}>
-              <div className="px-3 py-3 text-xs font-semibold" style={{ color: '#C4A265' }}>{row.label}</div>
+              style={{ gridTemplateColumns: `130px repeat(${prospects.length}, 1fr)`, background: ri % 2 === 0 ? 'white' : '#f5ede0' }}>
+              <div className="px-3 py-3 text-xs font-semibold" style={{ color: '#c13e2a' }}>{row.label}</div>
               {prospects.map(p => {
                 const val = row.getValue(p);
                 const best = row.isBest?.(p) ?? false;
                 return (
                   <div key={p.id} className="px-2 py-3 text-center text-sm font-medium rounded"
-                    style={{ background: best ? 'rgba(196,162,101,0.1)' : 'transparent', color: best ? '#C4A265' : '#1C1612' }}>
+                    style={{ background: best ? 'rgba(193,62,42,0.1)' : 'transparent', color: best ? '#c13e2a' : '#1a1410' }}>
                     {best && typeof val === 'string' && <span className="mr-1">★</span>}{val}
                   </div>
                 );
@@ -232,10 +233,10 @@ function CompareContent() {
 
         {/* Summary */}
         {summaryParts.length > 0 && (
-          <div className="card p-5" style={{ borderColor: '#C4A265', borderWidth: '1.5px' }}>
+          <div className="card p-5" style={{ borderColor: '#c13e2a', borderWidth: '1.5px' }}>
             <p className="section-label mb-2">Summary</p>
             {summaryParts.map((s, i) => (
-              <p key={i} className="text-sm leading-relaxed mb-1" style={{ color: '#1C1612' }}>• {s}</p>
+              <p key={i} className="text-sm leading-relaxed mb-1" style={{ color: '#1a1410' }}>• {s}</p>
             ))}
           </div>
         )}
@@ -247,9 +248,9 @@ function CompareContent() {
 export default function ComparePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F9F6F0' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5ede0' }}>
         <div className="flex flex-col items-center gap-4">
-          <div className="logo text-4xl">कुटुम्भ</div>
+          <Logo className="text-4xl" />
           <div className="gold-spinner" />
         </div>
       </div>

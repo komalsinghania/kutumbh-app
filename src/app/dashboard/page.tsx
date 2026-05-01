@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
@@ -14,6 +14,7 @@ import CompatBreakdown from '@/components/CompatBreakdown';
 import AshtakootBreakdown from '@/components/AshtakootBreakdown';
 import ActivityFeed from '@/components/ActivityFeed';
 import Link from 'next/link';
+import { Logo } from '@/components/Logo';
 
 type MainTab = 'board' | 'matches' | 'timeline' | 'profile';
 type MatchSubTab = 'compat' | 'kundli';
@@ -95,8 +96,8 @@ function CircleProgress({ value, size = 36 }: { value: number; size?: number }) 
   const offset = circ - (value / 100) * circ;
   return (
     <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#E8E0D2" strokeWidth={3} />
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#C4A265" strokeWidth={3}
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#d6c9b0" strokeWidth={3} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#c13e2a" strokeWidth={3}
         strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
         style={{ transition: 'stroke-dashoffset 0.8s ease-out' }} />
     </svg>
@@ -144,9 +145,9 @@ export default function DashboardPage() {
 
   if (loading || !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F9F6F0' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5ede0' }}>
         <div className="flex flex-col items-center gap-4">
-          <span className="logo text-4xl">Kutumbh</span>
+          <Logo className="text-4xl" />
           <div className="gold-spinner" style={{ width: 28, height: 28 }} />
         </div>
       </div>
@@ -185,22 +186,19 @@ export default function DashboardPage() {
   const firstName = profile.name.split(' ')[0];
 
   return (
-    <div className="flex flex-col" style={{ height: '100vh', background: '#F9F6F0', overflow: 'hidden' }}>
+    <div className="flex flex-col" style={{ height: '100vh', background: '#f5ede0', overflow: 'hidden' }}>
 
       {/* ── Header ────────────────────────────────────────────────────── */}
       <header className="suite-header h-14 flex items-center px-4 justify-between z-20" style={{ flexShrink: 0 }}>
-        <div className="flex items-baseline gap-1.5">
-          <span className="logo text-lg">Kutumbh</span>
-          <span className="text-[10px] font-medium" style={{ color: 'rgba(196,162,101,0.6)' }}>कुटुम्भ</span>
-        </div>
+        <Logo className="text-lg" dark />
         <button
           className="flex items-center gap-2"
           style={{ cursor: 'pointer' }}
           onClick={() => setMainTab('profile')}
         >
-          <span className="text-sm font-medium" style={{ color: 'rgba(249,246,240,0.65)' }}>{firstName}</span>
+          <span className="text-sm font-medium" style={{ color: '#ffffff' }}>{firstName}</span>
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-            style={{ background: 'rgba(196,162,101,0.2)', color: '#C4A265', border: '1px solid rgba(196,162,101,0.35)' }}>
+            style={{ background: '#ffffff', color: '#1a1410', border: '1px solid rgba(255,255,255,0.4)' }}>
             {initials(profile.name)}
           </div>
         </button>
@@ -217,13 +215,13 @@ export default function DashboardPage() {
               /* ── Empty state ─────────────────────────────────────────── */
               <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
                 <div className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
-                  style={{ border: '1.5px solid rgba(196,162,101,0.4)' }}>
-                  <span style={{ fontFamily: 'var(--font-playfair, Playfair Display, serif)', fontSize: '2.5rem', color: '#C4A265', fontStyle: 'italic' }}>K</span>
+                  style={{ background: '#c13e2a' }}>
+                  <span style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '2.5rem', color: '#f5ede0', fontStyle: 'italic', letterSpacing: '-0.02em' }}>Rm</span>
                 </div>
-                <h2 style={{ fontFamily: 'var(--font-playfair, Playfair Display, serif)', fontSize: '1.4rem', color: '#1C1612' }} className="font-semibold mb-2">
-                  Begin your journey
+                <h2 style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.4rem', color: '#1a1410' }} className="font-semibold mb-2">
+                  No prospects yet. Add your first.
                 </h2>
-                <p className="text-sm mb-6" style={{ color: '#9A8A75' }}>Add your first prospect to start tracking</p>
+                <p className="text-sm mb-6" style={{ color: '#6b5e4d' }}>Before every roka, there&apos;s a year of maybes.</p>
                 <Link href="/prospects/new" className="btn-primary px-8">+ Add Prospect</Link>
               </div>
             ) : (
@@ -244,32 +242,32 @@ export default function DashboardPage() {
                                 onClick={() => { if (hasProsps) setBoardStage(s); }}
                                 style={{
                                   width: dotSize, height: dotSize, borderRadius: '50%',
-                                  background: hasProsps ? 'linear-gradient(135deg, #C4A265, #A8833E)' : 'transparent',
-                                  border: `2px solid ${hasProsps ? '#C4A265' : '#D0C4B4'}`,
+                                  background: hasProsps ? 'linear-gradient(135deg, #c13e2a, #c13e2a)' : 'transparent',
+                                  border: `2px solid ${hasProsps ? '#c13e2a' : '#d6c9b0'}`,
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                                   cursor: hasProsps ? 'pointer' : 'default',
                                   flexShrink: 0,
                                   animation: hasProsps ? `fadeUpIn 0.4s ease-out ${i * 0.07}s both` : undefined,
-                                  outline: boardStage === s && hasProsps ? '2px solid rgba(196,162,101,0.5)' : undefined,
+                                  outline: boardStage === s && hasProsps ? '2px solid rgba(193,62,42,0.5)' : undefined,
                                   outlineOffset: 2,
                                 }}>
                                 <span style={{
-                                  fontFamily: 'var(--font-playfair, Playfair Display, serif)',
+                                  fontFamily: 'var(--font-fraunces, Fraunces, serif)',
                                   fontSize: dotSize > 30 ? '0.68rem' : '0.58rem',
                                   fontWeight: 700,
-                                  color: hasProsps ? '#1C1612' : '#B8AFA3',
+                                  color: hasProsps ? '#1a1410' : '#d6c9b0',
                                 }}>
                                   {count}
                                 </span>
                               </button>
-                              <span style={{ fontSize: '0.5rem', color: '#9A8A75', marginTop: 3, textAlign: 'center', whiteSpace: 'nowrap' }}>
+                              <span style={{ fontSize: '0.5rem', color: '#6b5e4d', marginTop: 3, textAlign: 'center', whiteSpace: 'nowrap' }}>
                                 {JOURNEY_LABELS[s] ?? s}
                               </span>
                             </div>
                             {i < JOURNEY_STAGES.length - 1 && (
                               <div style={{
                                 flex: 1, height: 1,
-                                background: `linear-gradient(90deg, ${hasProsps ? '#C4A265' : '#D0C4B4'}, #E8E0D2)`,
+                                background: `linear-gradient(90deg, ${hasProsps ? '#c13e2a' : '#d6c9b0'}, #d6c9b0)`,
                                 marginBottom: 14,
                                 transformOrigin: 'left',
                                 animation: `journeyLineDraw 0.8s ease-out ${i * 0.07 + 0.1}s both`,
@@ -284,52 +282,52 @@ export default function DashboardPage() {
                   {/* Metric cards */}
                   <div className="grid grid-cols-3 gap-2 mt-3">
                     <div style={{
-                      background: 'white', borderRadius: 10, border: '0.5px solid #E8DFD3',
-                      borderLeft: '3px solid #C4A265', padding: '11px 10px',
+                      background: 'white', borderRadius: 10, border: '0.5px solid #d6c9b0',
+                      borderLeft: '3px solid #c13e2a', padding: '11px 10px',
                       animation: 'fadeUpIn 0.4s ease-out 0.15s both',
                     }}>
-                      <div style={{ fontFamily: 'var(--font-playfair, Playfair Display, serif)', fontSize: '1.6rem', fontWeight: 700, color: '#1C1612', lineHeight: 1 }}>
+                      <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.6rem', fontWeight: 700, color: '#1a1410', lineHeight: 1 }}>
                         {prospects.length}
                       </div>
-                      <div style={{ fontSize: '0.58rem', color: '#9A8A75', marginTop: 3 }}>Total Prospects</div>
-                      <div style={{ fontSize: '0.52rem', color: '#B8AFA3', marginTop: 1 }}>across {activeJourneyStages.length} stages</div>
+                      <div style={{ fontSize: '0.58rem', color: '#6b5e4d', marginTop: 3 }}>Total Prospects</div>
+                      <div style={{ fontSize: '0.52rem', color: '#d6c9b0', marginTop: 1 }}>across {activeJourneyStages.length} stages</div>
                     </div>
 
                     <div style={{
-                      background: 'white', borderRadius: 10, border: '0.5px solid #E8DFD3',
-                      borderLeft: '3px solid #C4A265', padding: '11px 10px',
+                      background: 'white', borderRadius: 10, border: '0.5px solid #d6c9b0',
+                      borderLeft: '3px solid #c13e2a', padding: '11px 10px',
                       animation: 'fadeUpIn 0.4s ease-out 0.25s both',
                     }}>
                       {bestMatch && bestMatchScore !== null ? (
                         <>
-                          <div style={{ fontFamily: 'var(--font-playfair, Playfair Display, serif)', fontSize: '1.6rem', fontWeight: 700, color: '#C4A265', lineHeight: 1 }}>
+                          <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.6rem', fontWeight: 700, color: '#c13e2a', lineHeight: 1 }}>
                             {bestMatchScore}%
                           </div>
-                          <div style={{ fontSize: '0.58rem', color: '#9A8A75', marginTop: 3 }}>Best Match</div>
-                          <div style={{ fontSize: '0.52rem', color: '#B8AFA3', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <div style={{ fontSize: '0.58rem', color: '#6b5e4d', marginTop: 3 }}>Best Match</div>
+                          <div style={{ fontSize: '0.52rem', color: '#d6c9b0', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {bestMatch.name.split(' ')[0]}
                           </div>
                         </>
                       ) : (
                         <>
-                          <div style={{ fontFamily: 'var(--font-playfair, Playfair Display, serif)', fontSize: '1.6rem', fontWeight: 700, color: '#E8E0D2', lineHeight: 1 }}>—</div>
-                          <div style={{ fontSize: '0.58rem', color: '#9A8A75', marginTop: 3 }}>Best Match</div>
-                          <div style={{ fontSize: '0.52rem', color: '#B8AFA3', marginTop: 1 }}>No scores yet</div>
+                          <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.6rem', fontWeight: 700, color: '#d6c9b0', lineHeight: 1 }}>—</div>
+                          <div style={{ fontSize: '0.58rem', color: '#6b5e4d', marginTop: 3 }}>Best Match</div>
+                          <div style={{ fontSize: '0.52rem', color: '#d6c9b0', marginTop: 1 }}>No scores yet</div>
                         </>
                       )}
                     </div>
 
                     <div style={{
-                      background: 'white', borderRadius: 10, border: '0.5px solid #E8DFD3',
-                      borderLeft: '3px solid #C4A265', padding: '11px 10px',
+                      background: 'white', borderRadius: 10, border: '0.5px solid #d6c9b0',
+                      borderLeft: '3px solid #c13e2a', padding: '11px 10px',
                       animation: 'fadeUpIn 0.4s ease-out 0.35s both',
                     }}>
                       <div className="flex items-start gap-1">
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontFamily: 'var(--font-playfair, Playfair Display, serif)', fontSize: '1.6rem', fontWeight: 700, color: '#1C1612', lineHeight: 1 }}>
+                          <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.6rem', fontWeight: 700, color: '#1a1410', lineHeight: 1 }}>
                             {avgCompat !== null ? `${avgCompat}%` : '—'}
                           </div>
-                          <div style={{ fontSize: '0.58rem', color: '#9A8A75', marginTop: 3 }}>Avg Compat</div>
+                          <div style={{ fontSize: '0.58rem', color: '#6b5e4d', marginTop: 3 }}>Avg Compat</div>
                         </div>
                         {avgCompat !== null && <CircleProgress value={avgCompat} size={34} />}
                       </div>
@@ -341,9 +339,9 @@ export default function DashboardPage() {
                 <div className="px-4 pb-3">
                   <p className="section-label mb-2">Needs Attention</p>
                   {nudges.length === 0 ? (
-                    <div style={{ background: '#FFF8F0', borderRadius: 10, padding: '11px 14px', border: '0.5px solid #E8DFD3', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ background: '#faf4e8', borderRadius: 10, padding: '11px 14px', border: '0.5px solid #d6c9b0', display: 'flex', alignItems: 'center', gap: 10 }}>
                       <span style={{ fontSize: '1rem' }}>✅</span>
-                      <span style={{ fontSize: '0.78rem', color: '#9A8A75' }}>All caught up! No pending actions.</span>
+                      <span style={{ fontSize: '0.78rem', color: '#6b5e4d' }}>All caught up! No pending actions.</span>
                     </div>
                   ) : (
                     <>
@@ -352,25 +350,25 @@ export default function DashboardPage() {
                           onClick={() => router.push(`/prospects/${nudge.prospectId}`)}
                           className="w-full text-left mb-2"
                           style={{
-                            background: '#FFF8F0', borderRadius: 10, padding: '10px 14px',
-                            border: '0.5px solid #E8DFD3', borderLeft: '3px solid #C4A265',
+                            background: '#faf4e8', borderRadius: 10, padding: '10px 14px',
+                            border: '0.5px solid #d6c9b0', borderLeft: '3px solid #c13e2a',
                             display: 'flex', alignItems: 'center', gap: 10,
                             animation: `slideInRight 0.35s ease-out ${i * 0.08}s both`,
                           }}>
                           <span style={{ fontSize: '1rem', flexShrink: 0 }}>{nudge.icon}</span>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1C1612' }}>{nudge.prospectName}</div>
-                            <div style={{ fontSize: '0.68rem', color: '#9A8A75', marginTop: 1 }}>{nudge.text}</div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1a1410' }}>{nudge.prospectName}</div>
+                            <div style={{ fontSize: '0.68rem', color: '#6b5e4d', marginTop: 1 }}>{nudge.text}</div>
                           </div>
                           <span style={{
-                            fontSize: '0.62rem', color: '#C4A265', fontWeight: 600, flexShrink: 0,
-                            fontFamily: 'var(--font-playfair, Playfair Display, serif)', fontStyle: 'italic',
+                            fontSize: '0.62rem', color: '#c13e2a', fontWeight: 600, flexShrink: 0,
+                            fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontStyle: 'italic',
                           }}>{nudge.cta}</span>
                         </button>
                       ))}
                       {nudges.length > 3 && (
                         <button onClick={() => setShowAllNudges(v => !v)}
-                          style={{ fontSize: '0.7rem', color: '#C4A265', fontWeight: 600, padding: '4px 0' }}>
+                          style={{ fontSize: '0.7rem', color: '#c13e2a', fontWeight: 600, padding: '4px 0' }}>
                           {showAllNudges ? 'Show less ▲' : `See all ${nudges.length} →`}
                         </button>
                       )}
@@ -379,24 +377,24 @@ export default function DashboardPage() {
                 </div>
 
                 {/* ── Section 4: Stage Tabs ────────────────────────────── */}
-                <div className="flex overflow-x-auto scrollbar-none px-4 pt-1 pb-0 gap-1 sticky top-0 z-10 bg-[#F9F6F0]"
-                  style={{ borderBottom: '1px solid #E8E0D2' }}>
+                <div className="flex overflow-x-auto scrollbar-none px-4 pt-1 pb-0 gap-1 sticky top-0 z-10 bg-[#f5ede0]"
+                  style={{ borderBottom: '1px solid #d6c9b0' }}>
                   {activeStageTabs.map(s => (
                     <button key={s} onClick={() => setBoardStage(s)}
                       className="shrink-0 px-3.5 py-2.5 text-xs font-semibold whitespace-nowrap transition-colors"
                       style={{
-                        color: boardStage === s ? '#C4A265' : '#9A8A75',
-                        borderBottom: `2px solid ${boardStage === s ? '#C4A265' : 'transparent'}`,
+                        color: boardStage === s ? '#c13e2a' : '#6b5e4d',
+                        borderBottom: `2px solid ${boardStage === s ? '#c13e2a' : 'transparent'}`,
                         marginBottom: -1,
                       }}>
-                      {STAGE_TAB_LABELS[s]} <span style={{ color: boardStage === s ? '#C4A265' : '#B8AFA3', fontWeight: 400 }}>({stageCounts[s]})</span>
+                      {STAGE_TAB_LABELS[s]} <span style={{ color: boardStage === s ? '#c13e2a' : '#d6c9b0', fontWeight: 400 }}>({stageCounts[s]})</span>
                     </button>
                   ))}
                 </div>
 
                 <div className="px-4 pt-3 space-y-3">
                   {boardProspects.length === 0 && (
-                    <div className="text-center py-10" style={{ color: '#9A8A75' }}>No prospects in this stage.</div>
+                    <div className="text-center py-10" style={{ color: '#6b5e4d' }}>No prospects in this stage.</div>
                   )}
                   {boardProspects.map((p, i) => (
                     <BoardProspectCard key={p.id} prospect={p} index={i} onTap={() => router.push(`/prospects/${p.id}`)} />
@@ -410,15 +408,15 @@ export default function DashboardPage() {
         {/* ═══ MATCHES ═══ */}
         {mainTab === 'matches' && (
           <div>
-            <div className="flex items-center justify-between px-4 pt-3 pb-0 sticky top-0 z-10 bg-[#F9F6F0]"
-              style={{ borderBottom: '1px solid #E8E0D2' }}>
+            <div className="flex items-center justify-between px-4 pt-3 pb-0 sticky top-0 z-10 bg-[#f5ede0]"
+              style={{ borderBottom: '1px solid #d6c9b0' }}>
               <div className="flex gap-1">
                 {(['compat', 'kundli'] as MatchSubTab[]).map(sub => (
                   <button key={sub} onClick={() => setMatchSub(sub)}
                     className="px-4 py-2.5 text-xs font-semibold transition-colors"
                     style={{
-                      color: matchSub === sub ? '#C4A265' : '#9A8A75',
-                      borderBottom: `2px solid ${matchSub === sub ? '#C4A265' : 'transparent'}`,
+                      color: matchSub === sub ? '#c13e2a' : '#6b5e4d',
+                      borderBottom: `2px solid ${matchSub === sub ? '#c13e2a' : 'transparent'}`,
                       marginBottom: -1,
                     }}>
                     {sub === 'compat' ? 'By Compatibility' : 'By Kundli'}
@@ -427,47 +425,47 @@ export default function DashboardPage() {
               </div>
               {compareMode ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs" style={{ color: '#9A8A75' }}>{compareIds.length}/3</span>
+                  <span className="text-xs" style={{ color: '#6b5e4d' }}>{compareIds.length}/3</span>
                   {compareIds.length >= 2 && (
                     <button className="text-xs font-semibold px-3 py-1 rounded-full"
-                      style={{ background: '#C4A265', color: '#1C1612' }}
+                      style={{ background: '#c13e2a', color: '#1a1410' }}
                       onClick={() => router.push(`/compare?ids=${compareIds.join(',')}`)}>
                       Compare
                     </button>
                   )}
-                  <button className="text-xs" style={{ color: '#9A8A75' }}
+                  <button className="text-xs" style={{ color: '#6b5e4d' }}
                     onClick={() => { setCompareMode(false); setCompareIds([]); }}>Cancel</button>
                 </div>
               ) : (
-                <button className="text-xs font-semibold" style={{ color: '#C4A265' }} onClick={() => setCompareMode(true)}>Compare</button>
+                <button className="text-xs font-semibold" style={{ color: '#c13e2a' }} onClick={() => setCompareMode(true)}>Compare</button>
               )}
             </div>
 
             <div className="px-4 pt-3 space-y-2.5">
               {matchSub === 'compat' && (
                 byCompat.length === 0
-                  ? <p className="text-center py-10 text-sm" style={{ color: '#9A8A75' }}>Add birth details to see kundli scores.</p>
+                  ? <p className="text-center py-10 text-sm" style={{ color: '#6b5e4d' }}>Add birth details to see kundli scores.</p>
                   : byCompat.map(p => {
                     const overall = calculateOverallScore(p.gunaScore, p.compatScore);
                     const isSelected = compareIds.includes(p.id);
                     return (
                       <div key={p.id}>
-                        <div style={{ border: isSelected ? '2px solid #C4A265' : '0.5px solid #E8E0D2', borderRadius: 12, background: 'white', boxShadow: '0 1px 8px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+                        <div style={{ border: isSelected ? '2px solid #c13e2a' : '0.5px solid #d6c9b0', borderRadius: 12, background: 'white', boxShadow: '0 1px 8px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
                           <div className="p-4" onClick={() => compareMode ? toggleCompare(p.id) : router.push(`/prospects/${p.id}`)}>
                             <ProspectCardInner prospect={p} isSelected={isSelected} />
                           </div>
                           <div className="px-4 pb-3 flex items-center justify-between">
-                            <div className="text-xs" style={{ color: '#9A8A75' }}>
-                              {overall !== null ? <span className="font-semibold" style={{ color: '#C4A265' }}>{overall}% match</span> : 'No score'}
+                            <div className="text-xs" style={{ color: '#6b5e4d' }}>
+                              {overall !== null ? <span className="font-semibold" style={{ color: '#c13e2a' }}>{overall}% match</span> : 'No score'}
                               {p.compatScore !== null && ` · ${p.compatScore}% compat`}
                             </div>
-                            <button className="text-xs font-semibold" style={{ color: '#C4A265' }}
+                            <button className="text-xs font-semibold" style={{ color: '#c13e2a' }}
                               onClick={e => { e.stopPropagation(); toggleExpand(p.id); }}>
                               {expanded.has(p.id) ? 'Hide ▲' : 'Why? ▼'}
                             </button>
                           </div>
                           {expanded.has(p.id) && profile && (
-                            <div className="px-4 pb-4 pt-1" style={{ borderTop: '1px solid #F0EBE3' }}>
+                            <div className="px-4 pb-4 pt-1" style={{ borderTop: '1px solid #d6c9b0' }}>
                               <CompatBreakdown criteria={getCompatBreakdown(profile, p)} total={p.compatScore ?? calculateCompatScore(profile, p)} dealbreakersCheck={getDealbreakersCheck(profile, p)} />
                             </div>
                           )}
@@ -479,7 +477,7 @@ export default function DashboardPage() {
 
               {matchSub === 'kundli' && (
                 byKundli.length === 0
-                  ? <p className="text-center py-10 text-sm" style={{ color: '#9A8A75' }}>
+                  ? <p className="text-center py-10 text-sm" style={{ color: '#6b5e4d' }}>
                       Add birth details to see kundli scores.
                     </p>
                   : byKundli.map(p => {
@@ -487,13 +485,13 @@ export default function DashboardPage() {
                     const hasProfile = profile?.nakshatra !== undefined && profile.nakshatra >= 0;
                     return (
                       <div key={p.id}>
-                        <div style={{ border: isSelected ? '2px solid #C4A265' : '0.5px solid #E8E0D2', borderRadius: 12, background: 'white', boxShadow: '0 1px 8px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+                        <div style={{ border: isSelected ? '2px solid #c13e2a' : '0.5px solid #d6c9b0', borderRadius: 12, background: 'white', boxShadow: '0 1px 8px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
                           <div className="p-4" onClick={() => compareMode ? toggleCompare(p.id) : router.push(`/prospects/${p.id}`)}>
                             <ProspectCardInner prospect={p} isSelected={isSelected} />
                           </div>
                           <div className="px-4 pb-3 flex items-center justify-between">
-                            <div className="text-xs" style={{ color: '#9A8A75' }}>
-                              <span className="font-semibold" style={{ color: '#C4A265' }}>{p.gunaScore}/36 gunas</span>
+                            <div className="text-xs" style={{ color: '#6b5e4d' }}>
+                              <span className="font-semibold" style={{ color: '#b8892b' }}>{p.gunaScore}/36 gunas</span>
                               {hasProfile && p.nakshatra !== undefined && (() => {
                                 const r = calculateAshtakoot(profile.nakshatra, p.nakshatra!, profile.rashiIndex, p.rashiIndex);
                                 const doshas = [r.hasNadiDosha && 'Nadi', r.hasBhakutDosha && 'Bhakut', r.hasGanaDosha && 'Gana'].filter(Boolean);
@@ -503,14 +501,14 @@ export default function DashboardPage() {
                               })()}
                             </div>
                             {hasProfile && p.nakshatra !== undefined && (
-                              <button className="text-xs font-semibold" style={{ color: '#C4A265' }}
+                              <button className="text-xs font-semibold" style={{ color: '#c13e2a' }}
                                 onClick={e => { e.stopPropagation(); toggleExpand(p.id); }}>
                                 {expanded.has(p.id) ? 'Hide ▲' : 'Kundli ▼'}
                               </button>
                             )}
                           </div>
                           {expanded.has(p.id) && hasProfile && p.nakshatra !== undefined && (
-                            <div className="px-4 pb-4 pt-1" style={{ borderTop: '1px solid #F0EBE3' }}>
+                            <div className="px-4 pb-4 pt-1" style={{ borderTop: '1px solid #d6c9b0' }}>
                               <AshtakootBreakdown koots={getAshtakootBreakdown(profile.nakshatra, p.nakshatra)} total={p.gunaScore ?? 0} />
                             </div>
                           )}
@@ -531,8 +529,8 @@ export default function DashboardPage() {
                 <button key={f} onClick={() => setActivityFilter(f)}
                   className="shrink-0 px-3.5 py-1.5 rounded-full border text-xs font-medium transition-all"
                   style={activityFilter === f
-                    ? { background: '#C4A265', color: '#1C1612', border: 'none' }
-                    : { background: 'white', color: '#6A5D4E', borderColor: '#E8E0D2' }}>
+                    ? { background: '#c13e2a', color: '#1a1410', border: 'none' }
+                    : { background: 'white', color: '#6b5e4d', borderColor: '#d6c9b0' }}>
                   {label}
                 </button>
               ))}
@@ -547,12 +545,12 @@ export default function DashboardPage() {
             <div className="card p-5">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
-                  style={{ background: 'rgba(196,162,101,0.12)', color: '#C4A265', border: '2px solid rgba(196,162,101,0.3)' }}>
+                  style={{ background: 'rgba(193,62,42,0.12)', color: '#c13e2a', border: '2px solid rgba(193,62,42,0.3)' }}>
                   {initials(profile.name)}
                 </div>
                 <div>
-                  <h2 style={{ fontFamily: 'var(--font-playfair, Playfair Display, serif)', fontSize: '1.2rem', color: '#1C1612' }} className="font-semibold">{profile.name}</h2>
-                  <p className="text-xs mt-0.5" style={{ color: '#9A8A75' }}>{profile.age} · {profile.city} · {profile.profession}</p>
+                  <h2 style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.2rem', color: '#1a1410' }} className="font-semibold">{profile.name}</h2>
+                  <p className="text-xs mt-0.5" style={{ color: '#6b5e4d' }}>{profile.age} · {profile.city} · {profile.profession}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
@@ -562,9 +560,9 @@ export default function DashboardPage() {
                   ['Diet', profile.diet],
                   ['Manglik', profile.manglik],
                 ].filter(([, v]) => v).map(([l, v]) => (
-                  <div key={l} className="rounded-lg py-2 px-3" style={{ background: '#F9F6F0' }}>
-                    <p className="text-xs" style={{ color: '#9A8A75' }}>{l}</p>
-                    <p className="font-medium text-xs mt-0.5" style={{ color: '#1C1612' }}>{v}</p>
+                  <div key={l} className="rounded-lg py-2 px-3" style={{ background: '#f5ede0' }}>
+                    <p className="text-xs" style={{ color: '#6b5e4d' }}>{l}</p>
+                    <p className="font-medium text-xs mt-0.5" style={{ color: '#1a1410' }}>{v}</p>
                   </div>
                 ))}
               </div>
@@ -576,26 +574,26 @@ export default function DashboardPage() {
                 <div className="space-y-2 text-sm">
                   {profile.prefAgeMin && profile.prefAgeMax && (
                     <div className="flex justify-between">
-                      <span style={{ color: '#9A8A75' }}>Age range</span>
-                      <span style={{ color: '#1C1612' }} className="font-medium">{profile.prefAgeMin}–{profile.prefAgeMax} yrs</span>
+                      <span style={{ color: '#6b5e4d' }}>Age range</span>
+                      <span style={{ color: '#1a1410' }} className="font-medium">{profile.prefAgeMin}–{profile.prefAgeMax} yrs</span>
                     </div>
                   )}
                   {profile.prefCities?.length > 0 && (
                     <div className="flex justify-between">
-                      <span style={{ color: '#9A8A75' }}>Cities</span>
-                      <span style={{ color: '#1C1612' }} className="font-medium text-right">{profile.prefCities.join(', ')}</span>
+                      <span style={{ color: '#6b5e4d' }}>Cities</span>
+                      <span style={{ color: '#1a1410' }} className="font-medium text-right">{profile.prefCities.join(', ')}</span>
                     </div>
                   )}
                   {profile.prefIncome && (
                     <div className="flex justify-between">
-                      <span style={{ color: '#9A8A75' }}>Min income</span>
-                      <span style={{ color: '#1C1612' }} className="font-medium">{profile.prefIncome} LPA</span>
+                      <span style={{ color: '#6b5e4d' }}>Min income</span>
+                      <span style={{ color: '#1a1410' }} className="font-medium">{profile.prefIncome} LPA</span>
                     </div>
                   )}
                   {profile.prefFamily && (
                     <div className="flex justify-between">
-                      <span style={{ color: '#9A8A75' }}>Family type</span>
-                      <span style={{ color: '#1C1612' }} className="font-medium">{profile.prefFamily}</span>
+                      <span style={{ color: '#6b5e4d' }}>Family type</span>
+                      <span style={{ color: '#1a1410' }} className="font-medium">{profile.prefFamily}</span>
                     </div>
                   )}
                 </div>
@@ -611,16 +609,16 @@ export default function DashboardPage() {
                   { label: 'Interested', value: prospects.filter(p => p.stage === 'interested').length },
                 ].map(({ label, value }) => (
                   <div key={label}>
-                    <div style={{ fontFamily: 'var(--font-playfair, Playfair Display, serif)', fontSize: '1.75rem', color: '#C4A265' }} className="font-semibold leading-none">{value}</div>
-                    <div className="text-xs mt-1" style={{ color: '#9A8A75' }}>{label}</div>
+                    <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.75rem', color: '#c13e2a' }} className="font-semibold leading-none">{value}</div>
+                    <div className="text-xs mt-1" style={{ color: '#6b5e4d' }}>{label}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             <Link href="/profile" className="card p-4 flex items-center justify-between" style={{ textDecoration: 'none' }}>
-              <span className="font-medium text-sm" style={{ color: '#1C1612' }}>Edit Profile & Preferences</span>
-              <span style={{ color: '#C4A265' }}>›</span>
+              <span className="font-medium text-sm" style={{ color: '#1a1410' }}>Edit Profile & Preferences</span>
+              <span style={{ color: '#c13e2a' }}>›</span>
             </Link>
 
             <button onClick={() => signOut(auth).then(() => router.replace('/'))}
@@ -640,9 +638,9 @@ export default function DashboardPage() {
           style={{
             bottom: 'calc(64px + env(safe-area-inset-bottom) + 16px)',
             right: 20,
-            background: '#C4A265',
-            color: '#1C1612',
-            boxShadow: '0 4px 20px rgba(196,162,101,0.45)',
+            background: '#c13e2a',
+            color: '#fff',
+            boxShadow: '0 4px 20px rgba(193,62,42,0.45)',
           }}>
           +
         </Link>
@@ -652,7 +650,7 @@ export default function DashboardPage() {
       <nav className="fixed bottom-0 left-0 right-0 z-20 flex"
         style={{
           background: 'white',
-          borderTop: '0.5px solid #E8E0D2',
+          borderTop: '0.5px solid #d6c9b0',
           height: 'calc(56px + env(safe-area-inset-bottom))',
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}>
@@ -664,7 +662,7 @@ export default function DashboardPage() {
         ] as [MainTab, string, string][]).map(([tab, icon, label]) => (
           <button key={tab} onClick={() => setMainTab(tab)}
             className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors"
-            style={{ color: mainTab === tab ? '#C4A265' : '#9A8A75' }}>
+            style={{ color: mainTab === tab ? '#c13e2a' : '#6b5e4d' }}>
             <span className="text-xl leading-none">{icon}</span>
             <span className="text-[10px] font-semibold">{label}</span>
           </button>
@@ -686,7 +684,7 @@ function BoardProspectCard({ prospect: p, index, onTap }: { prospect: Prospect; 
   return (
     <button onClick={onTap} className="w-full text-left"
       style={{
-        background: 'white', borderRadius: 12, border: '0.5px solid #E8E0D2',
+        background: 'white', borderRadius: 12, border: '0.5px solid #d6c9b0',
         boxShadow: '0 1px 8px rgba(0,0,0,0.04)', padding: 14, display: 'block',
         animation: `fadeUpIn 0.35s ease-out ${index * 0.06}s both`,
       }}>
@@ -695,48 +693,48 @@ function BoardProspectCard({ prospect: p, index, onTap }: { prospect: Prospect; 
       <div className="flex items-center gap-3">
         {p.photos?.[0] ? (
           <img src={p.photos[0]} alt="" className="shrink-0 rounded-full object-cover"
-            style={{ width: 44, height: 44, border: '1.5px solid #E8E0D2' }} />
+            style={{ width: 44, height: 44, border: '1.5px solid #d6c9b0' }} />
         ) : (
           <div className="shrink-0 rounded-full flex items-center justify-center text-sm font-semibold"
-            style={{ width: 44, height: 44, background: 'rgba(196,162,101,0.1)', color: '#C4A265', border: '1.5px solid rgba(196,162,101,0.25)' }}>
+            style={{ width: 44, height: 44, background: 'rgba(193,62,42,0.1)', color: '#c13e2a', border: '1.5px solid rgba(193,62,42,0.25)' }}>
             {cardInitials}
           </div>
         )}
         <div className="flex-1 min-w-0">
           <h3 className="truncate font-semibold"
-            style={{ fontFamily: 'var(--font-playfair, Playfair Display, serif)', fontSize: '0.95rem', color: '#1C1612' }}>
+            style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '0.95rem', color: '#1a1410' }}>
             {p.name}
           </h3>
-          <p className="text-xs truncate mt-0.5" style={{ color: '#9A8A75' }}>
+          <p className="text-xs truncate mt-0.5" style={{ color: '#6b5e4d' }}>
             {[p.age && `${p.age}`, p.city, p.profession].filter(Boolean).join(' · ')}
           </p>
         </div>
         {overall !== null && (
           <div className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(196,162,101,0.1)', border: '1.5px solid rgba(196,162,101,0.3)' }}>
-            <span style={{ fontFamily: 'var(--font-playfair, Playfair Display, serif)', fontSize: '0.7rem', fontWeight: 700, color: '#C4A265' }}>{overall}%</span>
+            style={{ background: 'rgba(193,62,42,0.1)', border: '1.5px solid rgba(193,62,42,0.3)' }}>
+            <span style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '0.7rem', fontWeight: 700, color: '#c13e2a' }}>{overall}%</span>
           </div>
         )}
       </div>
 
       {/* Divider */}
-      <div style={{ height: '0.5px', background: '#F0EBE3', margin: '10px 0 8px' }} />
+      <div style={{ height: '0.5px', background: '#d6c9b0', margin: '10px 0 8px' }} />
 
       {/* Stage progress bar */}
-      <div style={{ height: 4, background: '#E8E0D2', borderRadius: 2, overflow: 'hidden' }}>
+      <div style={{ height: 4, background: '#d6c9b0', borderRadius: 2, overflow: 'hidden' }}>
         <div style={{
           height: '100%', width: `${progress}%`,
-          background: 'linear-gradient(90deg, #C4A265, #A8833E)',
+          background: 'linear-gradient(90deg, #c13e2a, #c13e2a)',
           borderRadius: 2, transformOrigin: 'left',
           animation: 'barFillIn 0.5s ease-out both',
         }} />
       </div>
-      <div style={{ fontSize: '0.56rem', color: '#B8AFA3', marginTop: 3 }}>
+      <div style={{ fontSize: '0.56rem', color: '#d6c9b0', marginTop: 3 }}>
         Stage {stageIdx + 1} of {STAGE_ORDER.length}
       </div>
 
       {/* Divider */}
-      <div style={{ height: '0.5px', background: '#F0EBE3', margin: '8px 0' }} />
+      <div style={{ height: '0.5px', background: '#d6c9b0', margin: '8px 0' }} />
 
       {/* Flags + metadata */}
       <div className="flex items-center gap-2.5 flex-wrap">
@@ -753,18 +751,18 @@ function BoardProspectCard({ prospect: p, index, onTap }: { prospect: Prospect; 
           </span>
         )}
         {p.gunaScore !== null && p.gunaScore !== undefined && (
-          <span className="text-xs" style={{ color: '#C4A265' }}>⭐ {p.gunaScore}/36</span>
+          <span className="text-xs" style={{ color: '#b8892b' }}>⭐ {p.gunaScore}/36</span>
         )}
         {p.source && (
-          <span style={{ fontSize: '0.6rem', background: '#F4F0EA', color: '#6A5D4E', borderRadius: 99, padding: '2px 7px' }}>
+          <span style={{ fontSize: '0.6rem', background: '#faf4e8', color: '#6b5e4d', borderRadius: 99, padding: '2px 7px' }}>
             {p.source}
           </span>
         )}
         {(p.conversationCount ?? 0) > 0 && (
-          <span className="text-xs" style={{ color: '#9A8A75' }}>💬 {p.conversationCount}</span>
+          <span className="text-xs" style={{ color: '#6b5e4d' }}>💬 {p.conversationCount}</span>
         )}
         {p.lastActivityAt && (
-          <span className="text-xs ml-auto" style={{ color: '#B8AFA3' }}>{timeAgo(p.lastActivityAt)}</span>
+          <span className="text-xs ml-auto" style={{ color: '#d6c9b0' }}>{timeAgo(p.lastActivityAt)}</span>
         )}
       </div>
 
@@ -773,10 +771,10 @@ function BoardProspectCard({ prospect: p, index, onTap }: { prospect: Prospect; 
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
           <span style={{
             fontSize: '0.62rem',
-            fontFamily: 'var(--font-playfair, Playfair Display, serif)',
+            fontFamily: 'var(--font-fraunces, Fraunces, serif)',
             fontStyle: 'italic',
-            color: '#C4A265',
-            border: '1px solid rgba(196,162,101,0.5)',
+            color: '#c13e2a',
+            border: '1px solid rgba(193,62,42,0.5)',
             borderRadius: 6,
             padding: '3px 10px',
           }}>
@@ -797,29 +795,29 @@ function ProspectCardInner({ prospect: p, isSelected }: { prospect: Prospect; is
     <div className="flex items-center gap-3">
       {p.photos?.[0] ? (
         <img src={p.photos[0]} alt="" className="shrink-0 rounded-full object-cover"
-          style={{ width: 48, height: 48, border: '1.5px solid #E8E0D2' }} />
+          style={{ width: 48, height: 48, border: '1.5px solid #d6c9b0' }} />
       ) : (
         <div className="shrink-0 rounded-full flex items-center justify-center text-sm font-semibold"
-          style={{ width: 48, height: 48, background: 'rgba(196,162,101,0.1)', color: '#C4A265', border: '1.5px solid rgba(196,162,101,0.25)' }}>
+          style={{ width: 48, height: 48, background: 'rgba(193,62,42,0.1)', color: '#c13e2a', border: '1.5px solid rgba(193,62,42,0.25)' }}>
           {cardInitials}
         </div>
       )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <h3 className="truncate font-semibold"
-            style={{ fontFamily: 'var(--font-playfair, Playfair Display, serif)', fontSize: '1rem', color: '#1C1612' }}>
+            style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1rem', color: '#1a1410' }}>
             {p.name}
           </h3>
-          {isSelected && <span className="text-xs font-bold shrink-0" style={{ color: '#C4A265' }}>✓</span>}
+          {isSelected && <span className="text-xs font-bold shrink-0" style={{ color: '#c13e2a' }}>✓</span>}
         </div>
-        <p className="text-xs truncate mt-0.5" style={{ color: '#9A8A75' }}>
+        <p className="text-xs truncate mt-0.5" style={{ color: '#6b5e4d' }}>
           {[p.age && `${p.age}`, p.city, p.profession].filter(Boolean).join(' · ')}
         </p>
       </div>
       {overall !== null && (
         <div className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
-          style={{ background: 'rgba(196,162,101,0.1)', border: '1.5px solid rgba(196,162,101,0.3)' }}>
-          <span style={{ fontFamily: 'var(--font-playfair, Playfair Display, serif)', fontSize: '0.75rem', fontWeight: 700, color: '#C4A265' }}>{overall}%</span>
+          style={{ background: 'rgba(193,62,42,0.1)', border: '1.5px solid rgba(193,62,42,0.3)' }}>
+          <span style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '0.75rem', fontWeight: 700, color: '#c13e2a' }}>{overall}%</span>
         </div>
       )}
     </div>

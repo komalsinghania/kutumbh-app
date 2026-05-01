@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { calculateAshtakoot, KootDetail, NAKSHATRA_NAMES, RASHI_SHORT } from '@/lib/kundli';
 import { UserProfile } from '@/types';
 
@@ -16,12 +16,12 @@ interface Props {
 
 const STATUS_COLOR: Record<string, string> = {
   full: 'text-green-700',
-  partial: 'text-yellow-700',
+  partial: 'text-[#c13e2a]',
   miss: 'text-red-600',
 };
 const BAR_COLOR: Record<string, string> = {
   full: 'bg-green-500',
-  partial: 'bg-yellow-400',
+  partial: 'bg-[#c13e2a]',
   miss: 'bg-red-400',
 };
 const STATUS_ICON: Record<string, string> = {
@@ -44,7 +44,7 @@ export default function KundliReport({
   const result = calculateAshtakoot(userNakshatra, prospectNakshatra, userRashi, prospectRashi);
   const { koots, total, interpretation, hasNadiDosha, hasBhakutDosha, hasGanaDosha } = result;
 
-  const scoreColor = total >= 32 ? 'text-green-700' : total >= 24 ? 'text-[#B8860B]' : total >= 18 ? 'text-orange-600' : 'text-red-600';
+  const scoreColor = total >= 32 ? 'text-green-700' : total >= 24 ? 'text-[#b8892b]' : total >= 18 ? 'text-[#c13e2a]' : 'text-red-600';
   const doshas = [
     hasNadiDosha && { name: 'Nadi Dosha', severity: 'high', desc: 'Same Nadi — can affect health and progeny. Consult a pandit for remedies.' },
     hasBhakutDosha && { name: 'Bhakut Dosha', severity: 'medium', desc: 'Unfavorable Rashi distance — can cause separation or financial issues.' },
@@ -61,7 +61,7 @@ export default function KundliReport({
             <p className="text-sm text-gray-500 mt-0.5">{userProfile.name} × {prospectName}</p>
           </div>
           <div className="text-right">
-            <div className={`text-3xl font-bold ${scoreColor}`} style={{ fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)' }}>
+            <div className={`text-3xl font-bold ${scoreColor}`} style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)' }}>
               {total}/36
             </div>
             <div className="text-xs text-gray-500 mt-0.5">{interpretation}</div>
@@ -71,7 +71,7 @@ export default function KundliReport({
         {/* Score bar */}
         <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all ${total >= 32 ? 'bg-green-500' : total >= 24 ? 'bg-yellow-400' : total >= 18 ? 'bg-orange-400' : 'bg-red-400'}`}
+            className={`h-full rounded-full transition-all ${total >= 32 ? 'bg-green-500' : total >= 24 ? 'bg-[#b8892b]' : total >= 18 ? 'bg-[#c13e2a]' : 'bg-red-400'}`}
             style={{ width: `${(total / 36) * 100}%` }}
           />
         </div>
@@ -89,12 +89,12 @@ export default function KundliReport({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-xs text-gray-400 mb-1">{userProfile.name} (You)</p>
-            <p className="text-sm text-[#3D2B1F] font-medium">{NAKSHATRA_NAMES[userNakshatra]}</p>
+            <p className="text-sm text-[#1a1410] font-medium">{NAKSHATRA_NAMES[userNakshatra]}</p>
             {userRashi !== undefined && <p className="text-xs text-gray-500">{RASHI_SHORT[userRashi]}</p>}
           </div>
           <div>
             <p className="text-xs text-gray-400 mb-1">{prospectName}</p>
-            <p className="text-sm text-[#3D2B1F] font-medium">{NAKSHATRA_NAMES[prospectNakshatra]}</p>
+            <p className="text-sm text-[#1a1410] font-medium">{NAKSHATRA_NAMES[prospectNakshatra]}</p>
             {prospectRashi !== undefined && <p className="text-xs text-gray-500">{RASHI_SHORT[prospectRashi]}</p>}
             {prospectDob && <p className="text-xs text-gray-400">{prospectDob}</p>}
             {prospectBirthTime && <p className="text-xs text-gray-400">{prospectBirthTime}</p>}
@@ -107,10 +107,10 @@ export default function KundliReport({
       {doshas.length > 0 && (
         <div className="space-y-2">
           {doshas.map(d => (
-            <div key={d.name} className={`rounded-xl p-4 border ${d.severity === 'high' ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'}`}>
+            <div key={d.name} className={`rounded-xl p-4 border ${d.severity === 'high' ? 'bg-red-50 border-red-200' : 'bg-[#faf4e8] border-[#d6c9b0]'}`}>
               <div className="flex items-center gap-2 mb-1">
                 <span>{d.severity === 'high' ? '⚠️' : '⚡'}</span>
-                <span className={`text-sm font-semibold ${d.severity === 'high' ? 'text-red-700' : 'text-orange-700'}`}>{d.name}</span>
+                <span className={`text-sm font-semibold ${d.severity === 'high' ? 'text-red-700' : 'text-[#c13e2a]'}`}>{d.name}</span>
               </div>
               <p className="text-xs text-gray-600">{d.desc}</p>
             </div>
@@ -137,9 +137,9 @@ export default function KundliReport({
                     </div>
                     <p className="text-xs text-gray-500 leading-snug mt-0.5">{k.detail}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      You: <span className="text-[#3D2B1F] font-medium">{k.userVal}</span>
+                      You: <span className="text-[#1a1410] font-medium">{k.userVal}</span>
                       {' · '}
-                      {prospectName}: <span className="text-[#3D2B1F] font-medium">{k.prospectVal}</span>
+                      {prospectName}: <span className="text-[#1a1410] font-medium">{k.prospectVal}</span>
                     </p>
                   </div>
                 </div>

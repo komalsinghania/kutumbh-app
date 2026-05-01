@@ -1,0 +1,2061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RokaMaybe — Brand Guidelines</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,300;1,9..144,400;1,9..144,500;1,9..144,700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1410;
+    --ink-soft: #2d241c;
+    --paper: #f5ede0;
+    --paper-bright: #faf4e8;
+    --cream: #ebe0cc;
+    --sindoor: #c13e2a;
+    --sindoor-dark: #8f2a1b;
+    --sindoor-deep: #6b1e12;
+    --gold: #b8892b;
+    --gold-light: #d4a94a;
+    --gold-soft: #e8c870;
+    --muted: #6b5e4d;
+    --line: #d6c9b0;
+    --success: #2d6b4f;
+    --danger: #8b1a2b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .doc {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* ── Cover ── */
+  .cover {
+    min-height: 90vh;
+    padding: 80px 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: 20%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(193, 62, 42, 0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .cover-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .cover-mid {
+    margin-top: auto;
+    margin-bottom: 60px;
+    position: relative;
+    z-index: 1;
+  }
+  .cover-mid h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(72px, 13vw, 180px);
+    font-weight: 400;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+  }
+  .cover-mid h1 em {
+    font-style: italic;
+    color: var(--sindoor);
+  }
+  .cover-sub {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 28px;
+    color: var(--muted);
+    margin-top: 32px;
+    max-width: 580px;
+    line-height: 1.4;
+  }
+  .cover-bottom {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 40px;
+    padding-top: 40px;
+    border-top: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .cover-bottom strong {
+    display: block;
+    color: var(--ink);
+    font-weight: 500;
+    margin-top: 6px;
+  }
+
+  /* ── Section shared ── */
+  section {
+    padding: 100px 60px;
+    border-bottom: 1px solid var(--line);
+  }
+  .sec-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--sindoor);
+    margin-bottom: 16px;
+    display: block;
+  }
+  .sec-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 56px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  .sec-title em {
+    font-style: italic;
+    color: var(--sindoor);
+  }
+  .sec-intro {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    color: var(--muted);
+    max-width: 640px;
+    line-height: 1.6;
+    margin-bottom: 60px;
+  }
+
+  .sub-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* ═════════ 01. PRIMARY LOGO ═════════ */
+  .logo-primary-canvas {
+    background: var(--paper-bright);
+    border: 1px solid var(--line);
+    padding: 120px 60px;
+    text-align: center;
+    border-radius: 4px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .logo-primary-canvas::after {
+    content: '';
+    position: absolute;
+    inset: 30px;
+    border: 1px dashed rgba(107, 94, 77, 0.15);
+    pointer-events: none;
+    border-radius: 2px;
+  }
+  .wordmark-xl {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(60px, 10vw, 140px);
+    font-weight: 500;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    font-variation-settings: "opsz" 144;
+  }
+  .wordmark-xl .roka { color: var(--ink); }
+  .wordmark-xl .maybe {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--sindoor);
+  }
+
+  .logo-desc-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+    margin-top: 60px;
+  }
+  .logo-desc-item h4 {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 20px;
+    color: var(--sindoor);
+    margin-bottom: 10px;
+    font-weight: 400;
+  }
+  .logo-desc-item p {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* ═════════ 02. LOGO VARIATIONS ═════════ */
+  .variations-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  .var-card {
+    background: var(--paper-bright);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 60px 40px;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+  .var-card.dark { background: var(--ink); border-color: var(--ink); }
+  .var-card.cream { background: var(--cream); border-color: var(--cream); }
+  .var-card.sindoor { background: var(--sindoor); border-color: var(--sindoor); }
+  .var-tag {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .var-card.dark .var-tag { color: var(--gold); }
+  .var-card.sindoor .var-tag { color: var(--paper); opacity: 0.7; }
+
+  .var-card-name {
+    position: absolute;
+    bottom: 14px;
+    left: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .var-card.dark .var-card-name { color: var(--paper); opacity: 0.5; }
+  .var-card.sindoor .var-card-name { color: var(--paper); opacity: 0.7; }
+
+  /* Horizontal primary */
+  .wm-horizontal {
+    font-family: 'Fraunces', serif;
+    font-size: 54px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.035em;
+  }
+  .wm-horizontal .roka { color: var(--ink); }
+  .wm-horizontal .maybe { font-style: italic; font-weight: 400; color: var(--sindoor); }
+  .var-card.dark .wm-horizontal .roka { color: var(--paper); }
+  .var-card.dark .wm-horizontal .maybe { color: var(--gold); }
+  .var-card.sindoor .wm-horizontal .roka { color: var(--paper); }
+  .var-card.sindoor .wm-horizontal .maybe { color: var(--gold-soft); }
+
+  /* Stacked */
+  .wm-stacked {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    line-height: 0.82;
+    text-align: center;
+    letter-spacing: -0.04em;
+  }
+  .wm-stacked .roka { font-size: 64px; display: block; color: var(--ink); }
+  .wm-stacked .maybe {
+    font-size: 64px;
+    display: block;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--sindoor);
+  }
+  .var-card.dark .wm-stacked .roka { color: var(--paper); }
+  .var-card.dark .wm-stacked .maybe { color: var(--gold); }
+
+  /* Monogram */
+  .wm-mono {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 120px;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+  }
+  .wm-mono em { font-style: italic; font-weight: 400; color: var(--gold); }
+  .var-card.dark .wm-mono { color: var(--paper); }
+  .var-card.dark .wm-mono em { color: var(--gold); }
+
+  /* Favicon row */
+  .favicon-row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-end;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .favicon-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .favicon-size {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+  .fav {
+    background: var(--sindoor);
+    border-radius: 22%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    color: var(--paper);
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+  .fav em { font-style: italic; font-weight: 400; color: var(--gold-soft); }
+  .fav-16 { width: 16px; height: 16px; font-size: 8px; border-radius: 20%; }
+  .fav-32 { width: 32px; height: 32px; font-size: 16px; }
+  .fav-64 { width: 64px; height: 64px; font-size: 32px; }
+  .fav-128 { width: 128px; height: 128px; font-size: 64px; border-radius: 24px; }
+
+  /* ═════════ 03. APP ICON ═════════ */
+  .appicon-hero {
+    background: var(--ink);
+    border-radius: 4px;
+    padding: 100px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .appicon-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(193, 62, 42, 0.15) 0%, transparent 60%);
+  }
+  .appicon-master {
+    width: 280px;
+    height: 280px;
+    background: var(--sindoor);
+    border-radius: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(193, 62, 42, 0.4);
+    z-index: 1;
+  }
+  .appicon-master-text {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 150px;
+    color: var(--paper);
+    line-height: 1;
+    letter-spacing: -0.06em;
+  }
+  .appicon-master-text em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--gold-soft);
+  }
+
+  .appicon-sizes {
+    background: var(--paper-bright);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 60px 40px;
+  }
+  .size-grid {
+    display: flex;
+    gap: 36px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .size-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .size-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+  .app-icon-std {
+    background: var(--sindoor);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    color: var(--paper);
+    line-height: 1;
+    letter-spacing: -0.05em;
+  }
+  .app-icon-std em { font-style: italic; font-weight: 400; color: var(--gold-soft); }
+  .ai-180 { width: 180px; height: 180px; border-radius: 40px; font-size: 96px; }
+  .ai-120 { width: 120px; height: 120px; border-radius: 27px; font-size: 64px; }
+  .ai-80 { width: 80px; height: 80px; border-radius: 18px; font-size: 42px; }
+  .ai-60 { width: 60px; height: 60px; border-radius: 14px; font-size: 32px; }
+  .ai-40 { width: 40px; height: 40px; border-radius: 9px; font-size: 22px; }
+
+  .size-spec-table {
+    margin-top: 40px;
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .size-spec-table th {
+    text-align: left;
+    padding: 14px 12px;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .size-spec-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-soft);
+  }
+  .size-spec-table tr:hover td { background: var(--cream); }
+  .size-spec-table td:first-child { font-weight: 500; color: var(--sindoor); }
+
+  /* iOS mockup */
+  .ios-preview {
+    margin-top: 40px;
+    background: linear-gradient(135deg, #2c2c2e 0%, #1c1c1e 100%);
+    border-radius: 40px;
+    padding: 50px 40px 40px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .ios-grid-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  .ios-ic-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .ios-ic {
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
+  }
+  .ios-lbl {
+    font-family: -apple-system, 'SF Pro Display', sans-serif;
+    font-size: 10px;
+    color: white;
+    font-weight: 500;
+  }
+  .ios-rm-final {
+    background: var(--sindoor);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 32px;
+    color: var(--paper);
+    line-height: 1;
+    letter-spacing: -0.05em;
+  }
+  .ios-rm-final em { font-style: italic; font-weight: 400; color: var(--gold-soft); }
+  .ios-1 { background: #007AFF; }
+  .ios-2 { background: #34C759; }
+  .ios-3 { background: linear-gradient(135deg, #ff6b9d, #8b5cf6); }
+  .ios-4 { background: #FF2D55; }
+  .ios-5 { background: #FF9500; }
+  .ios-6 { background: #5AC8FA; }
+  .ios-7 { background: #000; }
+
+  /* ═════════ 04. COLOR ═════════ */
+  .palette-main {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  .swatch {
+    aspect-ratio: 1 / 1.3;
+    border-radius: 4px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .sw-name {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  .sw-code {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    line-height: 1.8;
+    opacity: 0.85;
+  }
+  .sw-role {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 6px;
+  }
+  .sw-ink { background: var(--ink); color: var(--paper); }
+  .sw-sindoor { background: var(--sindoor); color: var(--paper); }
+  .sw-gold { background: var(--gold); color: var(--ink); }
+  .sw-paper { background: var(--paper); color: var(--ink); border: 1px solid var(--line); }
+
+  .palette-secondary {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 40px;
+  }
+  .swatch-sm {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+  .sw-sindoor-dark { background: var(--sindoor-dark); color: var(--paper); }
+  .sw-sindoor-deep { background: var(--sindoor-deep); color: var(--paper); }
+  .sw-gold-light { background: var(--gold-light); color: var(--ink); }
+  .sw-gold-soft { background: var(--gold-soft); color: var(--ink); }
+  .sw-cream { background: var(--cream); color: var(--ink); border: 1px solid var(--line); }
+  .sw-ink-soft { background: var(--ink-soft); color: var(--paper); }
+  .sw-paper-bright { background: var(--paper-bright); color: var(--ink); border: 1px solid var(--line); }
+  .sw-success { background: var(--success); color: var(--paper); }
+  .sw-danger { background: var(--danger); color: var(--paper); }
+  .sw-muted { background: var(--muted); color: var(--paper); }
+
+  .swatch-sm-name {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 15px;
+    margin-bottom: 2px;
+    font-weight: 400;
+  }
+
+  .palette-rules {
+    background: var(--cream);
+    border-radius: 4px;
+    padding: 40px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px;
+  }
+  .rule-block h5 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    color: var(--sindoor);
+  }
+  .rule-block p {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1.6;
+  }
+  .rule-block ul {
+    list-style: none;
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    line-height: 1.9;
+  }
+  .rule-block li::before {
+    content: '— ';
+    color: var(--sindoor);
+  }
+
+  /* ═════════ 05. TYPOGRAPHY ═════════ */
+  .type-block {
+    background: var(--paper-bright);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 48px;
+    margin-bottom: 16px;
+  }
+  .type-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .type-name {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 36px;
+    color: var(--sindoor);
+    font-weight: 400;
+  }
+  .type-family {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+  .type-role {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--sindoor);
+    margin-bottom: 8px;
+  }
+  .type-sample-display {
+    font-family: 'Fraunces', serif;
+    font-size: 64px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .type-sample-italic {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 44px;
+    color: var(--sindoor);
+    line-height: 1.15;
+  }
+  .type-sample-body {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    color: var(--ink-soft);
+    line-height: 1.65;
+    max-width: 640px;
+  }
+  .type-sample-mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+    text-transform: uppercase;
+  }
+  .type-weights {
+    display: flex;
+    gap: 24px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+  }
+  .type-weights span { color: var(--muted); }
+  .type-weights span strong { color: var(--ink); font-weight: inherit; }
+  .w300 { font-weight: 300; }
+  .w400 { font-weight: 400; }
+  .w500 { font-weight: 500; }
+  .w700 { font-weight: 700; }
+  .w900 { font-weight: 900; }
+
+  /* ═════════ 06. CLEAR SPACE + MIN SIZE ═════════ */
+  .clearspace-demo {
+    background: var(--paper-bright);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 80px 60px;
+    text-align: center;
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .clearspace-visual {
+    position: relative;
+    display: inline-block;
+    padding: 30px;
+  }
+  .clearspace-visual::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px dashed var(--sindoor);
+    opacity: 0.4;
+  }
+  .clearspace-visual::after {
+    content: 'x';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--sindoor);
+    letter-spacing: 0.1em;
+  }
+  .cs-inner {
+    font-family: 'Fraunces', serif;
+    font-size: 56px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.035em;
+  }
+  .cs-inner .roka { color: var(--ink); }
+  .cs-inner .maybe { font-style: italic; font-weight: 400; color: var(--sindoor); }
+
+  .minsize-row {
+    display: flex;
+    gap: 48px;
+    align-items: flex-end;
+    justify-content: center;
+    background: var(--paper-bright);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 60px 40px;
+    flex-wrap: wrap;
+  }
+  .minsize-item { text-align: center; }
+  .minsize-item .wm {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin-bottom: 12px;
+  }
+  .minsize-item .wm .roka { color: var(--ink); }
+  .minsize-item .wm .maybe { font-style: italic; font-weight: 400; color: var(--sindoor); }
+  .ms-120 { font-size: 48px; }
+  .ms-80 { font-size: 32px; }
+  .ms-40 { font-size: 16px; }
+  .ms-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+  }
+
+  /* ═════════ 07. DO'S AND DON'TS ═════════ */
+  .dos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .do-card {
+    background: var(--paper-bright);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 40px 20px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+  }
+  .do-card .demo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+  }
+  .do-tag {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 2px;
+  }
+  .tag-do { background: var(--success); color: var(--paper); }
+  .tag-dont { background: var(--danger); color: var(--paper); }
+  .do-caption {
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.4;
+    text-align: center;
+    margin-top: 12px;
+  }
+
+  .do-wm { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 500; letter-spacing: -0.035em; line-height: 1; }
+  .do-wm .roka { color: var(--ink); }
+  .do-wm .maybe { font-style: italic; font-weight: 400; color: var(--sindoor); }
+
+  .dont-wm-stretched { transform: scaleX(1.5); }
+  .dont-wm-rotated { transform: rotate(-8deg); }
+  .dont-wm-shadow { text-shadow: 4px 4px 0 var(--gold); }
+  .dont-wm-allcaps .roka,
+  .dont-wm-allcaps .maybe { text-transform: uppercase; font-style: normal !important; font-family: 'Fraunces', serif; }
+  .dont-wm-colored .roka { color: purple; }
+  .dont-wm-colored .maybe { color: green; }
+
+  /* ═════════ 08. TAGLINE LOCKUPS ═════════ */
+  .lockup-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  .lockup-card {
+    background: var(--paper-bright);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 60px 40px;
+    text-align: center;
+    position: relative;
+  }
+  .lockup-card.dark { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .lockup-tag {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .lockup-card.dark .lockup-tag { color: var(--gold); }
+
+  .lu-wm {
+    font-family: 'Fraunces', serif;
+    font-size: 52px;
+    font-weight: 500;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  .lu-wm .roka { color: var(--ink); }
+  .lu-wm .maybe { font-style: italic; font-weight: 400; color: var(--sindoor); }
+  .lockup-card.dark .lu-wm .roka { color: var(--paper); }
+  .lockup-card.dark .lu-wm .maybe { color: var(--gold); }
+
+  .lu-tagline {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--muted);
+    margin-top: 16px;
+  }
+  .lu-tagline-mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--sindoor);
+    margin-top: 20px;
+  }
+  .lockup-card.dark .lu-tagline { color: rgba(245, 237, 224, 0.6); }
+  .lockup-card.dark .lu-tagline-mono { color: var(--gold-light); }
+
+  .lu-stacked-line {
+    width: 60px;
+    height: 1px;
+    background: var(--sindoor);
+    margin: 20px auto;
+  }
+  .lockup-card.dark .lu-stacked-line { background: var(--gold); }
+
+  /* ═════════ 09. SOCIAL MEDIA ═════════ */
+  .social-ig-profile {
+    background: var(--paper-bright);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 40px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .ig-pic {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: var(--sindoor);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 60px;
+    color: var(--paper);
+    line-height: 1;
+    letter-spacing: -0.05em;
+    box-shadow: 0 4px 24px rgba(193, 62, 42, 0.25);
+  }
+  .ig-pic em { font-style: italic; font-weight: 400; color: var(--gold-soft); }
+  .ig-info .handle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .ig-info .display {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  .ig-info .bio {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    max-width: 480px;
+  }
+  .ig-info .bio em { color: var(--sindoor); font-style: italic; }
+  .ig-info .link {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--sindoor);
+    margin-top: 10px;
+  }
+
+  .post-templates {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .post {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .post-a {
+    background: var(--paper-bright);
+    border: 1px solid var(--line);
+  }
+  .post-b { background: var(--sindoor); color: var(--paper); }
+  .post-c { background: var(--ink); color: var(--paper); }
+
+  .post-topmark {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+  .post-main {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 24px;
+    line-height: 1.2;
+  }
+  .post-main strong {
+    font-style: normal;
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+  }
+  .post-a .post-main strong { color: var(--sindoor); }
+  .post-b .post-main strong { color: var(--gold-soft); }
+  .post-c .post-main strong { color: var(--gold); }
+  .post-wm-mini {
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .post-wm-mini em { font-style: italic; font-weight: 400; color: var(--gold); }
+  .post-b .post-wm-mini em { color: var(--gold-soft); }
+  .post-c .post-wm-mini em { color: var(--gold); }
+
+  /* ═════════ 10. STATIONERY ═════════ */
+  .biz-card-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  .biz-card {
+    aspect-ratio: 1.75;
+    border-radius: 4px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 6px 24px rgba(26, 20, 16, 0.12);
+    position: relative;
+  }
+  .biz-front { background: var(--paper-bright); border: 1px solid var(--line); }
+  .biz-back { background: var(--sindoor); color: var(--paper); }
+  .biz-front .biz-wm {
+    font-family: 'Fraunces', serif;
+    font-size: 40px;
+    font-weight: 500;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  .biz-front .biz-wm .roka { color: var(--ink); }
+  .biz-front .biz-wm .maybe { font-style: italic; font-weight: 400; color: var(--sindoor); }
+  .biz-back .biz-wm {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 44px;
+    line-height: 1.1;
+    color: var(--gold-soft);
+  }
+  .biz-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    line-height: 1.7;
+  }
+  .biz-front .biz-meta { color: var(--muted); }
+  .biz-front .biz-meta strong {
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 4px;
+    letter-spacing: 0;
+  }
+  .biz-back .biz-meta { color: var(--paper); opacity: 0.75; text-align: right; }
+
+  /* ═════════ 11. OG IMAGE ═════════ */
+  .og-image {
+    background: var(--ink);
+    aspect-ratio: 1.91 / 1;
+    border-radius: 8px;
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .og-image::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(193, 62, 42, 0.4) 0%, transparent 60%);
+  }
+  .og-top {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    position: relative;
+    z-index: 1;
+  }
+  .og-main {
+    font-family: 'Instrument Serif', serif;
+    font-size: 56px;
+    line-height: 1.1;
+    color: var(--paper);
+    position: relative;
+    z-index: 1;
+    max-width: 560px;
+  }
+  .og-main em { font-style: italic; color: var(--gold-soft); }
+  .og-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    position: relative;
+    z-index: 1;
+  }
+  .og-wm {
+    font-family: 'Fraunces', serif;
+    font-size: 36px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--paper);
+  }
+  .og-wm em { font-style: italic; font-weight: 400; color: var(--gold); }
+  .og-url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: rgba(245, 237, 224, 0.5);
+  }
+
+  /* ═════════ 12. EMAIL SIG ═════════ */
+  .email-sig {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 32px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .email-sig .name {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .email-sig .role {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .email-sig .sep {
+    width: 40px;
+    height: 1px;
+    background: var(--sindoor);
+    margin-bottom: 14px;
+  }
+  .email-sig .sig-wm {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+  .email-sig .sig-wm .roka { color: var(--ink); }
+  .email-sig .sig-wm .maybe { font-style: italic; font-weight: 400; color: var(--sindoor); }
+  .email-sig .sig-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    line-height: 1.8;
+  }
+  .email-sig .sig-meta a { color: var(--sindoor); text-decoration: none; }
+
+  /* ═════════ 13. VOICE ═════════ */
+  .voice-block {
+    background: var(--cream);
+    border-radius: 4px;
+    padding: 48px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px;
+  }
+  .voice-col h5 {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 26px;
+    color: var(--sindoor);
+    margin-bottom: 20px;
+    font-weight: 400;
+  }
+  .voice-col ul {
+    list-style: none;
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--ink-soft);
+  }
+  .voice-col li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(107, 94, 77, 0.15);
+  }
+  .voice-col li:last-child { border: 0; }
+  .voice-col li::before {
+    content: '— ';
+    color: var(--sindoor);
+    margin-right: 4px;
+  }
+
+  .voice-examples {
+    margin-top: 32px;
+    background: var(--paper-bright);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 40px;
+  }
+  .voice-ex {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: baseline;
+  }
+  .voice-ex:last-child { border: 0; padding-bottom: 0; }
+  .voice-ex .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .voice-ex .we-say { color: var(--success); }
+  .voice-ex .we-dont { color: var(--danger); }
+  .voice-ex .txt {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 20px;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+  .voice-ex .txt.strike { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--danger); }
+
+  /* ═════════ 14. ASSET CHECKLIST ═════════ */
+  .checklist {
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 4px;
+    padding: 60px 48px;
+  }
+  .checklist h3 {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-size: 36px;
+    color: var(--gold-soft);
+    margin-bottom: 8px;
+    font-weight: 400;
+  }
+  .checklist > p {
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    color: rgba(245, 237, 224, 0.7);
+    margin-bottom: 36px;
+    max-width: 580px;
+    line-height: 1.6;
+  }
+  .cl-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+  }
+  .cl-col h6 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(184, 137, 43, 0.3);
+  }
+  .cl-col ul {
+    list-style: none;
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    line-height: 2;
+  }
+  .cl-col li::before {
+    content: '☐ ';
+    color: var(--gold);
+    margin-right: 8px;
+  }
+
+  /* ── Footer ── */
+  footer {
+    padding: 60px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    line-height: 1.8;
+    background: var(--cream);
+  }
+  footer em {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    color: var(--sindoor);
+    font-size: 18px;
+    letter-spacing: normal;
+    text-transform: none;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 900px) {
+    section { padding: 60px 24px; }
+    .cover { padding: 40px 24px; }
+    .sec-title { font-size: 36px; }
+    .cover-bottom { grid-template-columns: 1fr 1fr; gap: 24px; }
+    .logo-desc-grid { grid-template-columns: 1fr; }
+    .variations-grid { grid-template-columns: 1fr; }
+    .palette-main { grid-template-columns: 1fr 1fr; }
+    .palette-secondary { grid-template-columns: repeat(3, 1fr); }
+    .palette-rules { grid-template-columns: 1fr; }
+    .dos-grid { grid-template-columns: 1fr; }
+    .lockup-grid { grid-template-columns: 1fr; }
+    .post-templates { grid-template-columns: 1fr; }
+    .biz-card-row { grid-template-columns: 1fr; }
+    .social-ig-profile { grid-template-columns: 1fr; text-align: center; }
+    .ig-pic { margin: 0 auto; }
+    .voice-block { grid-template-columns: 1fr; }
+    .voice-ex { grid-template-columns: 1fr; }
+    .cl-grid { grid-template-columns: 1fr; }
+    .og-main { font-size: 32px; }
+    .appicon-master { width: 200px; height: 200px; border-radius: 44px; }
+    .appicon-master-text { font-size: 108px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ COVER ═══════════════════════ -->
+<div class="cover">
+  <div class="cover-top">
+    <div>RokaMaybe &middot; Brand Guidelines</div>
+    <div>V1.0 &middot; April 2026</div>
+  </div>
+  <div class="cover-mid">
+    <h1>The<br><em>Brand Book</em></h1>
+    <p class="cover-sub">Everything required to launch RokaMaybe as a brand. Logos, icons, color, typography, voice, usage. The single source of truth.</p>
+  </div>
+  <div class="cover-bottom">
+    <div>Name<br><strong>RokaMaybe</strong></div>
+    <div>Category<br><strong>Matrimonial CRM</strong></div>
+    <div>Direction<br><strong>Witty / Self-aware</strong></div>
+    <div>Status<br><strong>Pre-launch</strong></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ 01. PRIMARY LOGO ═══════════════════════ -->
+<section>
+  <span class="sec-num">01 &mdash; Primary Mark</span>
+  <h2 class="sec-title">The <em>logotype</em>.</h2>
+  <p class="sec-intro">The hero lockup. Fraunces Medium for "Roka" — upright, committed. Fraunces Italic for "Maybe" — leaning, uncertain, sindoor-red. The typography is the entire brand idea.</p>
+
+  <div class="logo-primary-canvas">
+    <div class="wordmark-xl"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+  </div>
+
+  <div class="logo-desc-grid">
+    <div class="logo-desc-item">
+      <h4>Wordmark construction</h4>
+      <p>Single word, camelCase. No space. The capital M at the pivot point is where the tension lives — upright becomes italic, black becomes red.</p>
+    </div>
+    <div class="logo-desc-item">
+      <h4>Font specifics</h4>
+      <p>Fraunces at optical size 144, weight 500 for "Roka". Fraunces italic at weight 400 for "Maybe". Letter-spacing -0.035em. Never alter.</p>
+    </div>
+    <div class="logo-desc-item">
+      <h4>Color rule</h4>
+      <p>"Roka" always in Ink (#1A1410) or Paper (#F5EDE0). "Maybe" always in Sindoor (#C13E2A) or Gold (#B8892B) on dark backgrounds. Never both.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 02. VARIATIONS ═══════════════════════ -->
+<section>
+  <span class="sec-num">02 &mdash; Variations</span>
+  <h2 class="sec-title">Logo <em>variations</em>.</h2>
+  <p class="sec-intro">The wordmark flexes across surfaces. Horizontal for wide banners and headers. Stacked for square formats. Monogram for avatars and favicons. Always same DNA, never altered proportions.</p>
+
+  <div class="variations-grid">
+    <div class="var-card">
+      <div class="var-tag">A</div>
+      <div class="wm-horizontal"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+      <div class="var-card-name">Horizontal / Light</div>
+    </div>
+    <div class="var-card dark">
+      <div class="var-tag">B</div>
+      <div class="wm-horizontal"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+      <div class="var-card-name">Horizontal / Dark</div>
+    </div>
+    <div class="var-card cream">
+      <div class="var-tag">C</div>
+      <div class="wm-stacked"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+      <div class="var-card-name">Stacked / Cream</div>
+    </div>
+    <div class="var-card sindoor">
+      <div class="var-tag">D</div>
+      <div class="wm-horizontal"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+      <div class="var-card-name">Horizontal / Sindoor</div>
+    </div>
+    <div class="var-card">
+      <div class="var-tag">E</div>
+      <div class="wm-mono">R<em>m</em></div>
+      <div class="var-card-name">Monogram / Light</div>
+    </div>
+    <div class="var-card dark">
+      <div class="var-tag">F</div>
+      <div class="wm-mono">R<em>m</em></div>
+      <div class="var-card-name">Monogram / Dark</div>
+    </div>
+  </div>
+
+  <div style="margin-top: 40px;">
+    <div class="sub-label">Favicon &amp; scaled monogram</div>
+    <div class="var-card" style="padding: 80px 20px;">
+      <div class="favicon-row">
+        <div class="favicon-item">
+          <div class="fav fav-16">R<em>m</em></div>
+          <div class="favicon-size">16px</div>
+        </div>
+        <div class="favicon-item">
+          <div class="fav fav-32">R<em>m</em></div>
+          <div class="favicon-size">32px</div>
+        </div>
+        <div class="favicon-item">
+          <div class="fav fav-64">R<em>m</em></div>
+          <div class="favicon-size">64px</div>
+        </div>
+        <div class="favicon-item">
+          <div class="fav fav-128">R<em>m</em></div>
+          <div class="favicon-size">128px</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 03. APP ICON ═══════════════════════ -->
+<section>
+  <span class="sec-num">03 &mdash; App Icon</span>
+  <h2 class="sec-title">The <em>app icon</em>.</h2>
+  <p class="sec-intro">Locked direction: "Rm" monogram. Upright R in Paper. Italic m in Gold — because the maybe is the precious part. Sindoor background. No decorative dot. The typography carries the entire story at every size from 16px to 1024px.</p>
+
+  <div class="appicon-hero">
+    <div class="appicon-master">
+      <div class="appicon-master-text">R<em>m</em></div>
+    </div>
+  </div>
+
+  <div class="appicon-sizes">
+    <div class="sub-label">Scaled across all required sizes</div>
+    <div class="size-grid">
+      <div class="size-item"><div class="app-icon-std ai-180">R<em>m</em></div><div class="size-label">180px<br>iOS</div></div>
+      <div class="size-item"><div class="app-icon-std ai-120">R<em>m</em></div><div class="size-label">120px<br>iOS @2x</div></div>
+      <div class="size-item"><div class="app-icon-std ai-80">R<em>m</em></div><div class="size-label">80px<br>Android</div></div>
+      <div class="size-item"><div class="app-icon-std ai-60">R<em>m</em></div><div class="size-label">60px<br>Home</div></div>
+      <div class="size-item"><div class="app-icon-std ai-40">R<em>m</em></div><div class="size-label">40px<br>Notification</div></div>
+    </div>
+
+    <table class="size-spec-table">
+      <thead>
+        <tr><th>Size</th><th>Platform</th><th>Usage</th><th>Format</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1024×1024</td><td>iOS</td><td>App Store upload</td><td>PNG, no alpha</td></tr>
+        <tr><td>512×512</td><td>Google Play</td><td>Play Store upload</td><td>PNG, 32-bit</td></tr>
+        <tr><td>180×180</td><td>iOS</td><td>iPhone home screen @3x</td><td>PNG</td></tr>
+        <tr><td>167×167</td><td>iPadOS</td><td>iPad Pro home screen</td><td>PNG</td></tr>
+        <tr><td>152×152</td><td>iPadOS</td><td>iPad home screen</td><td>PNG</td></tr>
+        <tr><td>120×120</td><td>iOS</td><td>iPhone home screen @2x</td><td>PNG</td></tr>
+        <tr><td>192×192</td><td>Android</td><td>xxxhdpi launcher</td><td>PNG / adaptive</td></tr>
+        <tr><td>144×144</td><td>Android</td><td>xxhdpi launcher</td><td>PNG / adaptive</td></tr>
+        <tr><td>96×96</td><td>Android</td><td>xhdpi launcher</td><td>PNG / adaptive</td></tr>
+        <tr><td>72×72</td><td>Android</td><td>hdpi launcher</td><td>PNG / adaptive</td></tr>
+        <tr><td>48×48</td><td>Android</td><td>mdpi launcher</td><td>PNG / adaptive</td></tr>
+        <tr><td>64×64</td><td>Web</td><td>Bookmark / tab pinned</td><td>PNG / ICO</td></tr>
+        <tr><td>32×32</td><td>Web</td><td>Browser favicon</td><td>PNG / ICO</td></tr>
+        <tr><td>16×16</td><td>Web</td><td>Browser tab</td><td>PNG / ICO</td></tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top: 40px;" class="sub-label">Home screen test</div>
+    <div class="ios-preview">
+      <div class="ios-grid-row">
+        <div class="ios-ic-wrap"><div class="ios-ic ios-1"></div><div class="ios-lbl">Messages</div></div>
+        <div class="ios-ic-wrap"><div class="ios-ic ios-2"></div><div class="ios-lbl">WhatsApp</div></div>
+        <div class="ios-ic-wrap"><div class="ios-ic ios-3"></div><div class="ios-lbl">Instagram</div></div>
+        <div class="ios-ic-wrap"><div class="ios-ic ios-rm-final">R<em>m</em></div><div class="ios-lbl">RokaMaybe</div></div>
+      </div>
+      <div class="ios-grid-row">
+        <div class="ios-ic-wrap"><div class="ios-ic ios-4"></div><div class="ios-lbl">Photos</div></div>
+        <div class="ios-ic-wrap"><div class="ios-ic ios-5"></div><div class="ios-lbl">Swiggy</div></div>
+        <div class="ios-ic-wrap"><div class="ios-ic ios-6"></div><div class="ios-lbl">Weather</div></div>
+        <div class="ios-ic-wrap"><div class="ios-ic ios-7"></div><div class="ios-lbl">Uber</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 04. COLOR ═══════════════════════ -->
+<section>
+  <span class="sec-num">04 &mdash; Color System</span>
+  <h2 class="sec-title">The <em>palette</em>.</h2>
+  <p class="sec-intro">Four primary colors. Paper for everything quiet. Ink for truth. Sindoor for the one note that matters. Gold in small doses for when the maybe becomes a yes. No gradients except editorial backgrounds. No pastels.</p>
+
+  <div class="sub-label">Primary — use these 90% of the time</div>
+  <div class="palette-main">
+    <div class="swatch sw-paper">
+      <div>
+        <div class="sw-role">Background</div>
+        <div class="sw-name">Paper</div>
+      </div>
+      <div class="sw-code">
+        HEX &nbsp;#F5EDE0<br>
+        RGB &nbsp;245 237 224<br>
+        CMYK 0 3 9 4<br>
+        PANTONE 9184 C
+      </div>
+    </div>
+    <div class="swatch sw-ink">
+      <div>
+        <div class="sw-role">Text / Verdict</div>
+        <div class="sw-name">Ink</div>
+      </div>
+      <div class="sw-code">
+        HEX &nbsp;#1A1410<br>
+        RGB &nbsp;26 20 16<br>
+        CMYK 0 23 38 90<br>
+        PANTONE Black 6
+      </div>
+    </div>
+    <div class="swatch sw-sindoor">
+      <div>
+        <div class="sw-role">Accent / Maybe</div>
+        <div class="sw-name">Sindoor</div>
+      </div>
+      <div class="sw-code">
+        HEX &nbsp;#C13E2A<br>
+        RGB &nbsp;193 62 42<br>
+        CMYK 0 68 78 24<br>
+        PANTONE 7599 C
+      </div>
+    </div>
+    <div class="swatch sw-gold">
+      <div>
+        <div class="sw-role">Precious / Maybe Dark</div>
+        <div class="sw-name">Gold</div>
+      </div>
+      <div class="sw-code">
+        HEX &nbsp;#B8892B<br>
+        RGB &nbsp;184 137 43<br>
+        CMYK 0 26 77 28<br>
+        PANTONE 7556 C
+      </div>
+    </div>
+  </div>
+
+  <div class="sub-label">Extended — tints, shades &amp; functional colors</div>
+  <div class="palette-secondary">
+    <div class="swatch-sm sw-paper-bright"><div><div class="swatch-sm-name">Paper Bright</div>#FAF4E8</div></div>
+    <div class="swatch-sm sw-cream"><div><div class="swatch-sm-name">Cream</div>#EBE0CC</div></div>
+    <div class="swatch-sm sw-ink-soft"><div><div class="swatch-sm-name">Ink Soft</div>#2D241C</div></div>
+    <div class="swatch-sm sw-muted"><div><div class="swatch-sm-name">Muted</div>#6B5E4D</div></div>
+    <div class="swatch-sm sw-sindoor-dark"><div><div class="swatch-sm-name">Sindoor Dark</div>#8F2A1B</div></div>
+    <div class="swatch-sm sw-sindoor-deep"><div><div class="swatch-sm-name">Sindoor Deep</div>#6B1E12</div></div>
+    <div class="swatch-sm sw-gold-light"><div><div class="swatch-sm-name">Gold Light</div>#D4A94A</div></div>
+    <div class="swatch-sm sw-gold-soft"><div><div class="swatch-sm-name">Gold Soft</div>#E8C870</div></div>
+    <div class="swatch-sm sw-success"><div><div class="swatch-sm-name">Success</div>#2D6B4F</div></div>
+    <div class="swatch-sm sw-danger"><div><div class="swatch-sm-name">Danger</div>#8B1A2B</div></div>
+  </div>
+
+  <div class="palette-rules">
+    <div class="rule-block">
+      <h5>Do</h5>
+      <ul>
+        <li>Lead with Paper backgrounds</li>
+        <li>Use Sindoor for one thing per view</li>
+        <li>Reserve Gold for the "maybe" → "yes" moment</li>
+        <li>Keep Ink for body copy and verdicts</li>
+      </ul>
+    </div>
+    <div class="rule-block">
+      <h5>Don't</h5>
+      <ul>
+        <li>Use Sindoor and Gold as equal accents</li>
+        <li>Introduce gradients between Sindoor and Gold</li>
+        <li>Pair with pink — we are not a wedding card</li>
+        <li>Use more than 3 colors in any single view</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 05. TYPOGRAPHY ═══════════════════════ -->
+<section>
+  <span class="sec-num">05 &mdash; Typography</span>
+  <h2 class="sec-title">The <em>type system</em>.</h2>
+  <p class="sec-intro">Three typefaces. Fraunces does the heavy lifting — variable weight, variable optical size, distinct personality. Instrument Serif Italic carries the "maybe" — quiet, lyrical, reserved for quotes and section accents. JetBrains Mono for anything procedural — timestamps, UI labels, metadata.</p>
+
+  <div class="type-block">
+    <div class="type-meta">
+      <div class="type-name">Fraunces</div>
+      <div class="type-family">Variable Serif &middot; Google Fonts &middot; SIL OFL</div>
+    </div>
+    <div class="type-role">Display &amp; Body — the workhorse</div>
+    <div class="type-sample-display">The decision. The discussion.<br>The year of maybes.</div>
+    <p class="type-sample-body">For body copy, use Fraunces at 400 weight, 16-18px, line-height 1.5-1.65. It reads beautifully at every size. The variable optical-size axis auto-adjusts contrast for display use (larger) vs reading use (smaller). Trust the font.</p>
+    <div class="type-weights">
+      <span><strong class="w300">Light 300</strong> &middot; body</span>
+      <span><strong class="w400">Regular 400</strong> &middot; body</span>
+      <span><strong class="w500">Medium 500</strong> &middot; wordmark, headings</span>
+      <span><strong class="w700">Bold 700</strong> &middot; emphasis</span>
+      <span><strong class="w900">Black 900</strong> &middot; rare, display only</span>
+    </div>
+  </div>
+
+  <div class="type-block">
+    <div class="type-meta">
+      <div class="type-name">Instrument Serif</div>
+      <div class="type-family">Serif Italic &middot; Google Fonts &middot; SIL OFL</div>
+    </div>
+    <div class="type-role">Accent — the voice of the maybe</div>
+    <div class="type-sample-italic">Before every roka, there's a year of maybes.</div>
+    <p class="type-sample-body" style="margin-top: 16px; font-size: 14px;">Use only in italic. Only for pull quotes, taglines, section accents, or the founder's voice. Never for body copy. Never at a weight above 400. This is RokaMaybe's whisper.</p>
+  </div>
+
+  <div class="type-block">
+    <div class="type-meta">
+      <div class="type-name">JetBrains Mono</div>
+      <div class="type-family">Monospace &middot; Google Fonts &middot; Apache 2.0</div>
+    </div>
+    <div class="type-role">Utility — metadata, timestamps, UI labels</div>
+    <div class="type-sample-mono">STAGE 04 &middot; FAMILY TALKED &middot; APR 22 2026</div>
+    <p class="type-sample-body" style="margin-top: 24px; font-size: 14px;">Always uppercase, always letter-spaced at 0.1-0.2em. Use at 10-14px. Never for sentences — only for tags, labels, status indicators, and timestamps. This is the "operating system" feel.</p>
+  </div>
+
+  <div class="type-block" style="background: var(--ink); border-color: var(--ink); color: var(--paper);">
+    <div class="type-role" style="color: var(--gold);">Type hierarchy — reference</div>
+    <table style="width: 100%; font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-top: 20px;">
+      <tr><td style="padding: 10px 0; color: var(--gold-light); width: 160px;">Display / H1</td><td style="color: var(--paper);">Fraunces 500, 56-140px, tracking -0.03em</td></tr>
+      <tr><td style="padding: 10px 0; color: var(--gold-light);">Heading / H2</td><td style="color: var(--paper);">Instrument Serif Italic, 36-56px</td></tr>
+      <tr><td style="padding: 10px 0; color: var(--gold-light);">Subheading / H3</td><td style="color: var(--paper);">Fraunces 500, 24-32px</td></tr>
+      <tr><td style="padding: 10px 0; color: var(--gold-light);">Body Large</td><td style="color: var(--paper);">Fraunces 400, 18-20px, line 1.6</td></tr>
+      <tr><td style="padding: 10px 0; color: var(--gold-light);">Body</td><td style="color: var(--paper);">Fraunces 400, 16px, line 1.5</td></tr>
+      <tr><td style="padding: 10px 0; color: var(--gold-light);">Caption</td><td style="color: var(--paper);">Fraunces 400, 13-14px, color: Muted</td></tr>
+      <tr><td style="padding: 10px 0; color: var(--gold-light);">Label / UI</td><td style="color: var(--paper);">JetBrains Mono 500, 10-12px, tracking 0.15em, UPPERCASE</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 06. CLEAR SPACE ═══════════════════════ -->
+<section>
+  <span class="sec-num">06 &mdash; Clear Space &amp; Min Size</span>
+  <h2 class="sec-title">Breathing <em>room</em>.</h2>
+  <p class="sec-intro">The logo needs air around it. Minimum clear space on all sides equals the height of the capital "R". Below the minimum size, use the monogram instead.</p>
+
+  <div class="clearspace-demo">
+    <div class="clearspace-visual">
+      <div class="cs-inner"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+    </div>
+    <p style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 24px;">Clear space = x (height of capital R)</p>
+  </div>
+
+  <div class="sub-label">Minimum sizes by context</div>
+  <div class="minsize-row">
+    <div class="minsize-item">
+      <div class="wm ms-120"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+      <div class="ms-lbl">Print: 24mm wide min</div>
+    </div>
+    <div class="minsize-item">
+      <div class="wm ms-80"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+      <div class="ms-lbl">Digital: 80px wide min</div>
+    </div>
+    <div class="minsize-item">
+      <div class="wm ms-40"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+      <div class="ms-lbl">Emergency: 40px — monogram preferred</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 07. DO'S AND DON'TS ═══════════════════════ -->
+<section>
+  <span class="sec-num">07 &mdash; Usage Rules</span>
+  <h2 class="sec-title">How <em>not</em> to use the logo.</h2>
+  <p class="sec-intro">Six rules. Breaking any of them breaks the brand. These aren't suggestions.</p>
+
+  <div class="dos-grid">
+    <div class="do-card">
+      <div class="do-tag tag-do">Do</div>
+      <div class="demo"><div class="do-wm"><span class="roka">Roka</span><span class="maybe">Maybe</span></div></div>
+      <div class="do-caption">Use on Paper, Ink, or Sindoor backgrounds only.</div>
+    </div>
+    <div class="do-card">
+      <div class="do-tag tag-dont">Don't</div>
+      <div class="demo"><div class="do-wm dont-wm-stretched"><span class="roka">Roka</span><span class="maybe">Maybe</span></div></div>
+      <div class="do-caption">Never stretch, compress, or distort proportions.</div>
+    </div>
+    <div class="do-card">
+      <div class="do-tag tag-dont">Don't</div>
+      <div class="demo"><div class="do-wm dont-wm-rotated"><span class="roka">Roka</span><span class="maybe">Maybe</span></div></div>
+      <div class="do-caption">Never rotate. The logo lives on the horizontal line.</div>
+    </div>
+    <div class="do-card">
+      <div class="do-tag tag-dont">Don't</div>
+      <div class="demo"><div class="do-wm dont-wm-shadow"><span class="roka">Roka</span><span class="maybe">Maybe</span></div></div>
+      <div class="do-caption">No drop shadows, no outlines, no glows.</div>
+    </div>
+    <div class="do-card">
+      <div class="do-tag tag-dont">Don't</div>
+      <div class="demo"><div class="do-wm dont-wm-allcaps"><span class="roka">ROKA</span><span class="maybe">MAYBE</span></div></div>
+      <div class="do-caption">Never all-caps. The case is part of the identity.</div>
+    </div>
+    <div class="do-card">
+      <div class="do-tag tag-dont">Don't</div>
+      <div class="demo"><div class="do-wm dont-wm-colored"><span class="roka">Roka</span><span class="maybe">Maybe</span></div></div>
+      <div class="do-caption">Never use colors outside the brand palette.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 08. TAGLINE LOCKUPS ═══════════════════════ -->
+<section>
+  <span class="sec-num">08 &mdash; Tagline Lockups</span>
+  <h2 class="sec-title">Logo + <em>tagline</em>.</h2>
+  <p class="sec-intro">Four approved tagline combinations. Each serves a different surface. Never invent your own lockup — pick one from this set.</p>
+
+  <div class="lockup-grid">
+    <div class="lockup-card">
+      <div class="lockup-tag">A / Founder</div>
+      <div class="lu-wm"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+      <div class="lu-tagline">Before every roka, there's a year of maybes.</div>
+    </div>
+    <div class="lockup-card dark">
+      <div class="lockup-tag">B / Landing Hero</div>
+      <div class="lu-wm"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+      <div class="lu-tagline">For the maybes. Before the roka.</div>
+    </div>
+    <div class="lockup-card">
+      <div class="lockup-tag">C / App Store</div>
+      <div class="lu-wm"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+      <div class="lu-stacked-line"></div>
+      <div class="lu-tagline-mono">The app for the maybe years</div>
+    </div>
+    <div class="lockup-card dark">
+      <div class="lockup-tag">D / Functional</div>
+      <div class="lu-wm"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+      <div class="lu-stacked-line"></div>
+      <div class="lu-tagline-mono">Sort the maybes &middot; Find the yes</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 09. SOCIAL MEDIA ═══════════════════════ -->
+<section>
+  <span class="sec-num">09 &mdash; Social Media</span>
+  <h2 class="sec-title">The <em>social kit</em>.</h2>
+  <p class="sec-intro">Instagram profile, post templates, and story treatments. The monogram is the profile pic across every platform. Consistency is non-negotiable.</p>
+
+  <div class="sub-label">Instagram profile preview</div>
+  <div class="social-ig-profile">
+    <div class="ig-pic">R<em>m</em></div>
+    <div class="ig-info">
+      <div class="handle">@rokamaybe</div>
+      <div class="display">RokaMaybe</div>
+      <div class="bio">The app for the year of <em>maybes</em>. Sort the rishtas. Track the calls. Make the roka happen &mdash; or don't.</div>
+      <div class="link">🔗 rokamaybe.app</div>
+    </div>
+  </div>
+
+  <div style="margin-top: 40px;" class="sub-label">Post templates (1:1 square, 1080×1080)</div>
+  <div class="post-templates">
+    <div class="post post-a">
+      <div class="post-topmark">RED FLAG / 023</div>
+      <div class="post-main">"He said he'll <strong>think and let me know.</strong>"</div>
+      <div class="post-wm-mini">Roka<em>Maybe</em></div>
+    </div>
+    <div class="post post-b">
+      <div class="post-topmark">MAYBE / 041</div>
+      <div class="post-main">You've been on <strong>three calls.</strong> And you still don't know.</div>
+      <div class="post-wm-mini">Roka<em>Maybe</em></div>
+    </div>
+    <div class="post post-c">
+      <div class="post-topmark">GREEN FLAG / 008</div>
+      <div class="post-main">Her parents <strong>did not bring up dowry</strong> in the first call.</div>
+      <div class="post-wm-mini">Roka<em>Maybe</em></div>
+    </div>
+  </div>
+
+  <div style="margin-top: 32px; background: var(--cream); border-radius: 4px; padding: 32px; font-family: 'Fraunces', serif; font-size: 14px; line-height: 1.7; color: var(--ink-soft);">
+    <strong style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.2em; color: var(--sindoor); text-transform: uppercase; margin-bottom: 12px;">Asset sizes to produce</strong>
+    Instagram profile picture: 320×320px · Instagram post: 1080×1080px · Instagram story: 1080×1920px · Instagram reel cover: 1080×1920px · Facebook profile: 180×180px · Facebook cover: 820×312px · Twitter/X header: 1500×500px · LinkedIn banner: 1584×396px · YouTube channel art: 2560×1440px · WhatsApp profile: 500×500px
+  </div>
+</section>
+
+<!-- ═══════════════════════ 10. STATIONERY ═══════════════════════ -->
+<section>
+  <span class="sec-num">10 &mdash; Stationery</span>
+  <h2 class="sec-title">Print &amp; <em>stationery</em>.</h2>
+  <p class="sec-intro">Business cards, letterheads, envelope treatments. Keep it restrained. The tagline carries more weight on paper than the logo does.</p>
+
+  <div class="sub-label">Business card (85 × 55mm / standard)</div>
+  <div class="biz-card-row">
+    <div class="biz-card biz-front">
+      <div class="biz-wm"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+      <div class="biz-meta">
+        <strong>Komal Singhania</strong>
+        Founder<br><br>
+        komal@rokamaybe.app<br>
+        +91 XXXXX XXXXX<br>
+        rokamaybe.app
+      </div>
+    </div>
+    <div class="biz-card biz-back">
+      <div class="biz-wm">Before every roka, there's a year of maybes.</div>
+      <div class="biz-meta">@rokamaybe &middot; rokamaybe.app</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 11. OG IMAGE ═══════════════════════ -->
+<section>
+  <span class="sec-num">11 &mdash; OG / Share Image</span>
+  <h2 class="sec-title">Social <em>preview</em>.</h2>
+  <p class="sec-intro">When RokaMaybe is shared on WhatsApp, Twitter, LinkedIn — this is the image that shows up. 1200×630px. High stakes. First impression.</p>
+
+  <div class="og-image">
+    <div class="og-top">Roka<em style="font-style: italic; color: var(--gold);">Maybe</em> &middot; rokamaybe.app</div>
+    <div class="og-main">Before every roka,<br>there's a year of <em>maybes</em>.</div>
+    <div class="og-bottom">
+      <div class="og-wm">Roka<em>Maybe</em></div>
+      <div class="og-url">THE APP FOR THE MAYBE YEARS</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 12. EMAIL SIG ═══════════════════════ -->
+<section>
+  <span class="sec-num">12 &mdash; Email Signature</span>
+  <h2 class="sec-title">Email <em>signature</em>.</h2>
+  <p class="sec-intro">One format. Use everywhere. Paste this into Gmail / Outlook settings.</p>
+
+  <div class="email-sig">
+    <div class="name">Komal Singhania</div>
+    <div class="role">Founder, RokaMaybe</div>
+    <div class="sep"></div>
+    <div class="sig-wm"><span class="roka">Roka</span><span class="maybe">Maybe</span></div>
+    <div class="sig-meta">
+      komal@rokamaybe.app &middot; +91 XXXXX XXXXX<br>
+      <a href="#">rokamaybe.app</a> &middot; <a href="#">@rokamaybe</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 13. VOICE ═══════════════════════ -->
+<section>
+  <span class="sec-num">13 &mdash; Voice &amp; Tone</span>
+  <h2 class="sec-title">How RokaMaybe <em>talks</em>.</h2>
+  <p class="sec-intro">The voice is observed, not performed. Written by someone who's been through the chaos, not by someone selling you the solution. Self-aware. Specific. Allergic to matrimonial-website vocabulary.</p>
+
+  <div class="voice-block">
+    <div class="voice-col">
+      <h5>We are</h5>
+      <ul>
+        <li>Witty — but the joke is never at the user's expense</li>
+        <li>Specific — "his mother brought up a horoscope," not "compatibility concern"</li>
+        <li>Honest — we admit this process is hard and sometimes absurd</li>
+        <li>Pro-agency — the user is the decision-maker, not the algorithm</li>
+        <li>Culturally native — we use "rishta," "biodata," "roka" without italics</li>
+      </ul>
+    </div>
+    <div class="voice-col">
+      <h5>We are not</h5>
+      <ul>
+        <li>Saccharine ("find your soulmate")</li>
+        <li>Algorithmic ("our AI predicts 87% compatibility")</li>
+        <li>Preachy ("arranged marriage, redefined")</li>
+        <li>Western-sanitized ("life partner," "significant other")</li>
+        <li>Parent-scolding ("break free from family pressure")</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="voice-examples">
+    <div class="voice-ex">
+      <div>
+        <div class="label we-say">We say</div>
+        <div class="txt">"Stage 4. Family Talked."</div>
+      </div>
+      <div>
+        <div class="label we-dont">Never</div>
+        <div class="txt strike">"Phase IV: Family Consultation Completed"</div>
+      </div>
+    </div>
+    <div class="voice-ex">
+      <div>
+        <div class="label we-say">We say</div>
+        <div class="txt">"Log the call."</div>
+      </div>
+      <div>
+        <div class="label we-dont">Never</div>
+        <div class="txt strike">"Document your interaction."</div>
+      </div>
+    </div>
+    <div class="voice-ex">
+      <div>
+        <div class="label we-say">We say</div>
+        <div class="txt">"He asked me to delete my LinkedIn."</div>
+      </div>
+      <div>
+        <div class="label we-dont">Never</div>
+        <div class="txt strike">"Concern raised regarding digital presence."</div>
+      </div>
+    </div>
+    <div class="voice-ex">
+      <div>
+        <div class="label we-say">We say</div>
+        <div class="txt">"Three calls. Still a maybe."</div>
+      </div>
+      <div>
+        <div class="label we-dont">Never</div>
+        <div class="txt strike">"You are on the journey to finding your perfect match."</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 14. ASSET CHECKLIST ═══════════════════════ -->
+<section>
+  <span class="sec-num">14 &mdash; Launch Checklist</span>
+  <h2 class="sec-title">Every <em>asset</em> needed.</h2>
+  <p class="sec-intro">Before public launch, produce and store these files in a single shared Drive. Use this checklist as your source of truth.</p>
+
+  <div class="checklist">
+    <h3>Launch-day asset inventory.</h3>
+    <p>Export all logos as SVG (scalable) and PNG (at each size shown). Keep everything in one "RokaMaybe / Brand" Drive folder, versioned.</p>
+
+    <div class="cl-grid">
+      <div class="cl-col">
+        <h6>Logos</h6>
+        <ul>
+          <li>Primary wordmark (SVG, PNG 2000px)</li>
+          <li>Horizontal lockup (SVG, PNG)</li>
+          <li>Stacked lockup (SVG, PNG)</li>
+          <li>Monogram "Rm" (SVG, PNG)</li>
+          <li>Dark variants of all above</li>
+          <li>Sindoor-bg variants of all above</li>
+        </ul>
+      </div>
+      <div class="cl-col">
+        <h6>App Icons</h6>
+        <ul>
+          <li>1024×1024 iOS App Store</li>
+          <li>512×512 Google Play</li>
+          <li>iOS set: 180, 167, 152, 120, 80, 60, 40px</li>
+          <li>Android set: 192, 144, 96, 72, 48px</li>
+          <li>Favicons: 16, 32, 64, 128, 256px</li>
+          <li>apple-touch-icon.png (180×180)</li>
+        </ul>
+      </div>
+      <div class="cl-col">
+        <h6>Social Media</h6>
+        <ul>
+          <li>Instagram profile 320×320</li>
+          <li>Instagram feed template 1080×1080</li>
+          <li>Instagram story template 1080×1920</li>
+          <li>Twitter / X header 1500×500</li>
+          <li>LinkedIn banner 1584×396</li>
+          <li>Facebook cover 820×312</li>
+          <li>YouTube art 2560×1440</li>
+          <li>WhatsApp profile 500×500</li>
+        </ul>
+      </div>
+      <div class="cl-col">
+        <h6>Web &amp; OG</h6>
+        <ul>
+          <li>OG image 1200×630 (WhatsApp, Twitter preview)</li>
+          <li>Twitter Card image 1200×675</li>
+          <li>LinkedIn share 1200×627</li>
+          <li>Site hero banner 1920×1080</li>
+          <li>Email signature PNG 400×120</li>
+          <li>Loading / splash screen 2048×2048</li>
+        </ul>
+      </div>
+      <div class="cl-col">
+        <h6>Print</h6>
+        <ul>
+          <li>Business card front (CMYK, 300dpi, bleed)</li>
+          <li>Business card back</li>
+          <li>Letterhead A4</li>
+          <li>Envelope DL</li>
+          <li>Sticker / merch sheet</li>
+        </ul>
+      </div>
+      <div class="cl-col">
+        <h6>App Store Assets</h6>
+        <ul>
+          <li>iOS screenshots (6.7", 6.5", 5.5" sizes)</li>
+          <li>iPad screenshots (12.9", 11")</li>
+          <li>Android feature graphic 1024×500</li>
+          <li>Android phone screenshots</li>
+          <li>App preview video (15-30s)</li>
+          <li>Short description (80 chars)</li>
+          <li>Full description (4000 chars)</li>
+          <li>Keywords list</li>
+        </ul>
+      </div>
+      <div class="cl-col">
+        <h6>Legal &amp; Policy</h6>
+        <ul>
+          <li>Privacy Policy (DPDPA 2023 compliant)</li>
+          <li>Terms of Service</li>
+          <li>Cookie Policy</li>
+          <li>Data deletion policy</li>
+          <li>Contact / grievance officer info</li>
+          <li>Kundli / astrology disclaimer</li>
+        </ul>
+      </div>
+      <div class="cl-col">
+        <h6>Brand Operations</h6>
+        <ul>
+          <li>Domain: rokamaybe.app (registered)</li>
+          <li>Instagram: @rokamaybe</li>
+          <li>LinkedIn company page</li>
+          <li>Twitter / X: @rokamaybe</li>
+          <li>WhatsApp Business account</li>
+          <li>Trademark filing (Class 9 + 42)</li>
+          <li>Google Workspace email (komal@rokamaybe.app)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <em>End of V1.</em>
+  Brand guidelines &middot; RokaMaybe &middot; April 2026<br>
+  Next phase: Landing page copy, App store listing, Founder story long-form, Launch reels
+</footer>
+
+</body>
+</html>

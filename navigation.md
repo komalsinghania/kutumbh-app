@@ -1,4 +1,4 @@
-Completely redesign the Kutumbh app navigation, layout, and visual design. This is a MAJOR overhaul. The current UI has clutter — duplicate filters, confusing navigation, too many buttons doing similar things. Replace it with a clean, intuitive architecture inspired by Taj Hotels luxury aesthetic (Concept 2 — The Suite style).
+Completely redesign the RokaMaybe app navigation, layout, and visual design. This is a MAJOR overhaul. The current UI has clutter — duplicate filters, confusing navigation, too many buttons doing similar things. Replace it with a clean, intuitive architecture inspired by Taj Hotels luxury aesthetic (Concept 2 — The Suite style).
 
 ===========================================
 DESIGN THEME: THE SUITE (Concept 2)
@@ -20,14 +20,14 @@ COLOR PALETTE:
 TYPOGRAPHY:
 - Logo and headings: 'Playfair Display', Georgia, serif
 - Body text: System font stack (-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif)
-- Hindi कुटुम्भ: Shown small beside the English name, same serif font
+- Hindi RokaMaybe: Shown small beside the English name, same serif font
 - NO Cormorant Garamond, NO Nunito Sans — replace everywhere
 
 Import: @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap');
 
 LOGO in header (left-aligned, not centered):
-- "Kutumbh" in Playfair Display 20px
-- "कुटुम्भ" in 10px beside it, gold color, slightly faded
+- "RokaMaybe" in Playfair Display 20px
+- "RokaMaybe" in 10px beside it, gold color, slightly faded
 - User name on the right side
 
 ===========================================
@@ -160,7 +160,7 @@ HEADER — ALL PAGES
 Sticky header on all pages:
 - Height: 56px
 - Background: linear-gradient(170deg, #241C14, #1C1612)
-- Left: "Kutumbh कुटुम्भ" logo (Playfair Display)
+- Left: "RokaMaybe RokaMaybe" logo (Playfair Display)
 - Right: User initials circle or profile photo
 - Subtle gold bottom border (1px, 0.15 opacity)
 

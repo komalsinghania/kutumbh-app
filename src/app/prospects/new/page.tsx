@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -12,6 +12,7 @@ import { calculateKundli } from '@/lib/kundli';
 import CitySearch from '@/components/CitySearch';
 import { getCityByName } from '@/lib/indian-cities';
 import toast from 'react-hot-toast';
+import { Logo } from '@/components/Logo';
 
 const SOURCES: ProspectSource[] = [
   'Matrimonial Website', 'Relative', 'Family Friend', 'Pandit ji', 'Community Event', 'Other',
@@ -20,7 +21,7 @@ const SOURCES: ProspectSource[] = [
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#C4A265' }}>{label}</label>
+      <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#c13e2a' }}>{label}</label>
       {children}
     </div>
   );
@@ -32,7 +33,7 @@ function PillSelect({ options, value, onSelect }: { options: string[]; value: st
       {options.map(opt => (
         <button key={opt} type="button" onClick={() => onSelect(opt)}
           className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${value === opt ? 'pill-active' : ''}`}
-          style={value !== opt ? { background: 'white', color: '#6A5D4E', borderColor: '#E8E0D2' } : {}}>
+          style={value !== opt ? { background: 'white', color: '#6b5e4d', borderColor: '#d6c9b0' } : {}}>
           {opt}
         </button>
       ))}
@@ -289,13 +290,13 @@ export default function NewProspectPage() {
 
   if (showUpload) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-5" style={{ background: '#F9F6F0' }}>
+      <div className="min-h-screen flex flex-col items-center justify-center px-5" style={{ background: '#f5ede0' }}>
         <div className="w-full max-w-sm text-center space-y-5">
-          <div className="logo text-4xl">कुटुम्भ</div>
-          <h2 style={{ fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)', color: '#1C1612' }} className="text-2xl font-semibold">
+          <Logo className="text-4xl" />
+          <h2 style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', color: '#1a1410' }} className="text-2xl font-semibold">
             Add New Prospect
           </h2>
-          <p className="text-sm" style={{ color: '#9A8A75' }}>Upload their biodata and we'll extract details using AI.</p>
+          <p className="text-sm" style={{ color: '#6b5e4d' }}>Upload biodata as PDF, Word doc, or photo</p>
           {extractError && (
             <div className="rounded-xl px-4 py-3 text-left" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
               <p className="text-xs font-bold mb-1" style={{ color: '#991B1B' }}>Extraction failed</p>
@@ -306,15 +307,23 @@ export default function NewProspectPage() {
           <input
             ref={fileRef}
             type="file"
-            accept="*/*"
+            accept="image/jpeg,image/png,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,*/*"
             className="hidden"
             onChange={e => {
               setExtractError(null);
               const file = e.target.files?.[0];
               if (!file) return;
-              const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-              if (!allowed.includes(file.type)) {
-                toast.error('Please upload a PDF or image file (JPG, PNG, WEBP)');
+              const allowedTypes = [
+                'application/pdf',
+                'image/jpeg', 'image/png', 'image/webp',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+              ];
+              const allowedExt = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.webp'];
+              const name = (file.name || '').toLowerCase();
+              const extOk = allowedExt.some(ext => name.endsWith(ext));
+              if (!allowedTypes.includes(file.type) && !extOk) {
+                toast.error('Please upload a PDF, Word doc, or image (JPG, PNG, WEBP)');
                 if (fileRef.current) fileRef.current.value = '';
                 return;
               }
@@ -327,14 +336,14 @@ export default function NewProspectPage() {
                 <span className="gold-spinner" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} />
                 Extracting…
               </span>
-            ) : extractError ? 'Try Again' : 'Choose File (PDF or Image)'}
+            ) : extractError ? 'Try Again' : 'Choose File (PDF, Word, or Image)'}
           </button>
-          <p className="text-xs -mt-2" style={{ color: '#9A8A75' }}>Accepts PDF, JPG, PNG</p>
+          <p className="text-xs -mt-2" style={{ color: '#6b5e4d' }}>Accepts PDF, DOCX, JPG, PNG</p>
           {/* Divider */}
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: '#E8DFD3' }} />
-            <span className="text-xs font-medium" style={{ color: '#B8AFA6' }}>or</span>
-            <div className="flex-1 h-px" style={{ background: '#E8DFD3' }} />
+            <div className="flex-1 h-px" style={{ background: '#d6c9b0' }} />
+            <span className="text-xs font-medium" style={{ color: '#d6c9b0' }}>or</span>
+            <div className="flex-1 h-px" style={{ background: '#d6c9b0' }} />
           </div>
           {/* Option 2: Paste text */}
           {!showPasteText ? (
@@ -349,7 +358,7 @@ export default function NewProspectPage() {
                 placeholder="Paste the full biodata text here…"
                 rows={6}
                 className="w-full rounded-xl border p-3 text-sm"
-                style={{ borderColor: '#C4A265', resize: 'vertical', background: 'white', color: '#3D2B1F' }}
+                style={{ borderColor: '#c13e2a', resize: 'vertical', background: 'white', color: '#1a1410' }}
                 autoFocus
               />
               <div className="flex gap-2">
@@ -369,11 +378,11 @@ export default function NewProspectPage() {
               </div>
             </div>
           )}
-          <button type="button" className="text-sm" style={{ color: '#9A8A75' }}
+          <button type="button" className="text-sm" style={{ color: '#6b5e4d' }}
             onClick={() => { setExtractError(null); setShowUpload(false); }}>
             Skip — Fill Manually
           </button>
-          <button className="text-sm underline" style={{ color: '#9A8A75' }} onClick={() => router.back()}>
+          <button className="text-sm underline" style={{ color: '#6b5e4d' }} onClick={() => router.back()}>
             Cancel
           </button>
         </div>
@@ -382,12 +391,12 @@ export default function NewProspectPage() {
   }
 
   return (
-    <div className="min-h-screen pb-24" style={{ background: '#F9F6F0', overflowY: 'auto' }}>
+    <div className="min-h-screen pb-24" style={{ background: '#f5ede0' }}>
       <div className="suite-header px-4 flex items-center gap-3 sticky top-0 z-10" style={{ height: 56 }}>
-        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center rounded-full" style={{ color: 'rgba(249,246,240,0.8)' }}>
+        <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center rounded-full" style={{ color: '#ffffff' }}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
-        <h1 style={{ fontFamily: 'var(--font-playfair, Playfair Display, Georgia, serif)', color: '#F9F6F0', fontSize: '1.125rem' }} className="font-semibold">
+        <h1 style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', color: '#ffffff', fontSize: '1.125rem' }} className="font-semibold">
           Add Prospect
         </h1>
       </div>
@@ -507,7 +516,7 @@ export default function NewProspectPage() {
                 type="button"
                 onClick={() => setKundliManualMode(m => !m)}
                 className="text-xs underline"
-                style={{ color: '#9A8A75' }}
+                style={{ color: '#6b5e4d' }}
               >
                 {kundliManualMode ? 'Hide manual picker' : 'Enter Nakshatra manually'}
               </button>
@@ -516,7 +525,7 @@ export default function NewProspectPage() {
                   {NAKSHATRAS.map((n, i) => (
                     <button key={n} type="button" onClick={() => set('nakshatra', i)}
                       className={`px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${form.nakshatra === i ? 'pill-active' : ''}`}
-                      style={form.nakshatra !== i ? { background: 'white', color: '#C4A265', borderColor: 'rgba(139,105,20,0.35)' } : {}}>
+                      style={form.nakshatra !== i ? { background: 'white', color: '#c13e2a', borderColor: 'rgba(193,62,42,0.35)' } : {}}>
                       {n}
                     </button>
                   ))}
@@ -532,12 +541,12 @@ export default function NewProspectPage() {
           <div className="flex gap-3 flex-wrap">
             {photos.map((src, i) => (
               <div key={i} className="relative">
-                <img src={src} alt="" className="w-20 h-20 rounded-xl object-cover" style={{ border: '1px solid #E8DFD3' }} />
+                <img src={src} alt="" className="w-20 h-20 rounded-xl object-cover" style={{ border: '1px solid #d6c9b0' }} />
                 <button
                   type="button"
                   onClick={() => setPhotos(p => p.filter((_, j) => j !== i))}
                   className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-white text-xs flex items-center justify-center leading-none"
-                  style={{ background: '#8B1A2B' }}
+                  style={{ background: '#c13e2a' }}
                 >
                   ×
                 </button>
@@ -549,7 +558,7 @@ export default function NewProspectPage() {
                 onClick={() => photoRef.current?.click()}
                 disabled={compressing}
                 className="w-20 h-20 rounded-xl flex flex-col items-center justify-center transition-colors disabled:opacity-50"
-                style={{ border: '2px dashed #C4A265', color: '#C4A265', background: 'rgba(201,168,76,0.04)' }}
+                style={{ border: '2px dashed #c13e2a', color: '#c13e2a', background: 'rgba(193,62,42,0.04)' }}
               >
                 {compressing
                   ? <span className="gold-spinner" />
@@ -566,7 +575,7 @@ export default function NewProspectPage() {
             className="hidden"
             onChange={e => handlePhotoSelect(e.target.files)}
           />
-          <p className="text-xs" style={{ color: '#9A8A75' }}>Images are compressed and stored securely. Max 3 photos.</p>
+          <p className="text-xs" style={{ color: '#6b5e4d' }}>Images are compressed and stored securely. Max 3 photos.</p>
         </div>
 
         <div className="card p-5 space-y-4">
@@ -602,7 +611,7 @@ export default function NewProspectPage() {
         <div className="sticky bottom-6">
           <button
             className="btn-primary w-full disabled:opacity-50"
-            style={{ boxShadow: '0 4px 20px rgba(139,105,20,0.4)' }}
+            style={{ boxShadow: '0 4px 20px rgba(193,62,42,0.4)' }}
             onClick={handleSave}
             disabled={saving}
           >
