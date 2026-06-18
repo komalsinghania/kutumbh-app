@@ -6,8 +6,9 @@ import { addProspect } from '@/lib/firestore';
 import { calculateGunaScore, calculateCompatScore } from '@/lib/scoring';
 import { compressImage } from '@/lib/compress-image';
 import {
-  NAKSHATRAS, ProspectSource, ProspectStage, ExtractedBiodata,
+  NAKSHATRAS, ProspectSource, ProspectStage, ExtractedBiodata, HOBBIES,
 } from '@/types';
+import { normalizeHobbies } from '@/lib/hobbies';
 import { calculateKundli } from '@/lib/kundli';
 import CitySearch from '@/components/CitySearch';
 import { getCityByName } from '@/lib/indian-cities';
@@ -41,6 +42,52 @@ function PillSelect({ options, value, onSelect }: { options: string[]; value: st
   );
 }
 
+function HobbyPicker({ options, selected, onToggle }: {
+  options: readonly string[]; selected: string[]; onToggle: (v: string) => void;
+}) {
+  const [showInput, setShowInput] = useState(false);
+  const [text, setText] = useState('');
+  const custom = selected.filter(h => !(options as readonly string[]).includes(h));
+  const add = () => {
+    const v = text.trim();
+    if (!v) return;
+    if (!selected.includes(v)) onToggle(v);
+    setText(''); setShowInput(false);
+  };
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map(opt => (
+        <button key={opt} type="button" onClick={() => onToggle(opt)}
+          className="px-3 py-1.5 rounded-full border text-xs font-medium transition-all"
+          style={selected.includes(opt)
+            ? { background: '#c13e2a', color: 'white', borderColor: '#c13e2a' }
+            : { background: 'white', color: '#6b5e4d', borderColor: '#d6c9b0' }}>
+          {opt}
+        </button>
+      ))}
+      {custom.map(c => (
+        <span key={c} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium"
+          style={{ background: '#c13e2a', color: 'white', border: '1px solid #c13e2a' }}>
+          {c}
+          <button type="button" onClick={() => onToggle(c)} style={{ marginLeft: 2, fontWeight: 700, lineHeight: 1 }}>×</button>
+        </span>
+      ))}
+      {showInput ? (
+        <input type="text" value={text} onChange={e => setText(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+          onBlur={add} placeholder="Add hobby…" autoFocus
+          className="px-3 py-1.5 rounded-full text-xs" style={{ width: 130, borderColor: '#c13e2a' }} />
+      ) : (
+        <button type="button" onClick={() => setShowInput(true)}
+          className="px-3 py-1.5 rounded-full border text-xs font-medium"
+          style={{ background: 'white', color: '#c13e2a', borderColor: '#c13e2a' }}>
+          + Other
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function NewProspectPage() {
   const { user, profile } = useAuth();
   const router = useRouter();
@@ -58,6 +105,7 @@ export default function NewProspectPage() {
     income: '', familyType: '', diet: '', manglik: '', gotra: '', rashi: '',
     nakshatra: -1, rashiIndex: -1, dobDate: '', dobTime: '', dobPlace: '', fatherOcc: '',
     motherOcc: '', siblings: '', property: '', phone: '',
+    hobbies: [] as string[],
     source: '' as ProspectSource | '',
     stage: 'new' as ProspectStage,
     firstImpression: '',
@@ -68,6 +116,11 @@ export default function NewProspectPage() {
   const [pasteText, setPasteText] = useState('');
 
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
+
+  const toggleHobby = (h: string) => setForm(f => ({
+    ...f,
+    hobbies: f.hobbies.includes(h) ? f.hobbies.filter(x => x !== h) : [...f.hobbies, h],
+  }));
 
   const ageFromDob = (dob: string): number | null => {
     if (!dob) return null;
@@ -126,6 +179,7 @@ export default function NewProspectPage() {
     const newDobTime = d.dobTime || '';
     const newDobPlace = d.dobPlace || '';
     const computedAge = !d.age && newDobDate ? ageFromDob(newDobDate) : null;
+    const extractedHobbies = normalizeHobbies(d.hobbies);
     setForm(f => ({
       ...f,
       name: d.name || f.name,
@@ -149,6 +203,9 @@ export default function NewProspectPage() {
       siblings: d.siblings || f.siblings,
       property: d.property || f.property,
       phone: d.phone || f.phone,
+      hobbies: extractedHobbies.length > 0
+        ? Array.from(new Set([...f.hobbies, ...extractedHobbies]))
+        : f.hobbies,
     }));
     const extracted: string[] = [];
     if (d.name) extracted.push('Name');
@@ -165,6 +222,7 @@ export default function NewProspectPage() {
     if (d.profession) extracted.push('Profession');
     if (d.income) extracted.push('Income');
     if (d.phone) extracted.push('Phone');
+    if (extractedHobbies.length > 0) extracted.push('Hobbies');
     toast.success(`Extracted: ${extracted.join(', ')}`, { duration: 5000 });
     setShowUpload(false);
     if (newDobDate && newDobTime && newDobPlace && nakshatraIdx < 0) {
@@ -269,6 +327,7 @@ export default function NewProspectPage() {
         siblings: form.siblings,
         property: form.property,
         phone: form.phone,
+        hobbies: form.hobbies.length > 0 ? form.hobbies : undefined,
         source: form.source as ProspectSource,
         stage: form.stage,
         gunaScore,
@@ -457,6 +516,11 @@ export default function NewProspectPage() {
           <Field label="Phone">
             <input type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="Contact number" />
           </Field>
+        </div>
+
+        <div className="card p-5 space-y-4">
+          <h3 className="section-label">Hobbies & Interests</h3>
+          <HobbyPicker options={HOBBIES} selected={form.hobbies} onToggle={toggleHobby} />
         </div>
 
         <div className="card p-5 space-y-4">

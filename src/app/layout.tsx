@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { Fraunces, Instrument_Serif, DM_Sans } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
@@ -34,12 +34,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${instrumentSerif.variable} ${dmSans.variable}`}>
-      <body className="min-h-screen">
+    <html lang="en" className={`${fraunces.variable} ${instrumentSerif.variable} ${dmSans.variable}`} suppressHydrationWarning>
+      <body className="min-h-screen" suppressHydrationWarning>
         <AuthProvider>
           {children}
           <Toaster
-            position="top-center"
+            position="top-right"
             toastOptions={{
               duration: 4000,
               style: {

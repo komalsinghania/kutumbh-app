@@ -124,6 +124,13 @@ export const DEALBREAKER_CATEGORIES = [
 
 export const DEALBREAKERS = DEALBREAKER_CATEGORIES.flatMap(c => c.items);
 
+export const HOBBIES = [
+  'Reading', 'Travelling', 'Cooking', 'Music', 'Movies', 'Fitness / Gym',
+  'Yoga', 'Meditation', 'Dancing', 'Photography', 'Cricket', 'Sports',
+  'Trekking', 'Gardening', 'Painting', 'Writing', 'Singing', 'Gaming',
+  'Cooking Shows', 'Volunteering', 'Investing', 'Fashion',
+] as const;
+
 export interface UserProfile {
   uid: string;
   name: string;
@@ -148,6 +155,7 @@ export interface UserProfile {
   prefIncome: IncomePref;
   prefFamily: FamilyType;
   dealbreakers: string[];
+  hobbies?: string[];
   createdAt: number;
   updatedAt: number;
 }
@@ -176,6 +184,7 @@ export interface Prospect {
   siblings?: string;
   property?: string;
   phone?: string;
+  hobbies?: string[];
   source: ProspectSource;
   stage: ProspectStage;
   gunaScore: number | null;
@@ -225,6 +234,7 @@ export interface ExtractedBiodata {
   siblings?: string;
   property?: string;
   phone?: string;
+  hobbies?: string[];
 }
 
 // ── Feature: Conversations ────────────────────────────────────────────────────
