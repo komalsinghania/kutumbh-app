@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { saveUserProfile } from '@/lib/firestore';
+import { saveUserProfile, recalcAllProspectScores } from '@/lib/firestore';
 import { NAKSHATRAS, DEALBREAKERS, DEALBREAKER_CATEGORIES, HOBBIES, Gender, Diet, Manglik, Education, Income, IncomePref, FamilyType } from '@/types';
 import toast from 'react-hot-toast';
 
@@ -149,8 +149,10 @@ export default function ProfilePage() {
         dealbreakers: form.dealbreakers,
         hobbies: form.hobbies.length > 0 ? form.hobbies : undefined,
       });
+      // Preferences feed every prospect's compatibility/kundli score — recompute them all.
+      const updated = await recalcAllProspectScores(user.uid);
       await refreshProfile();
-      toast.success('Profile updated!');
+      toast.success(updated > 0 ? `Profile updated · ${updated} match score${updated !== 1 ? 's' : ''} refreshed` : 'Profile updated!');
       router.back();
     } catch {
       toast.error('Failed to save.');
