@@ -1,6 +1,7 @@
 import {
   doc, getDoc, setDoc, updateDoc, collection, addDoc,
   deleteDoc, onSnapshot, query, orderBy, limit, increment,
+  getDocs, writeBatch,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import {
@@ -8,6 +9,7 @@ import {
   ConversationLog, Flag, FamilyScorecard, FamilyScorecardKey,
   MeetingData, ActivityEntry, ActivityType,
 } from '@/types';
+import { calculateGunaScore, calculateCompatScore } from './scoring';
 
 // Firestore rejects undefined values — strip them before any write
 function stripUndefined<T extends object>(obj: T): T {
@@ -39,6 +41,44 @@ export async function saveUserProfile(uid: string, data: Partial<UserProfile>): 
     console.error('[firestore] saveUserProfile failed | code:', err.code, '| message:', err.message);
     throw err;
   }
+}
+
+// Recompute gunaScore + compatScore for EVERY prospect against the current
+// profile. Call after preference/profile changes so stored scores stay correct.
+// Reads the persisted profile internally so callers can't pass a stale copy.
+export async function recalcAllProspectScores(uid: string): Promise<number> {
+  const profile = await getUserProfile(uid);
+  if (!profile) return 0;
+
+  const snap = await getDocs(collection(db, 'users', uid, 'prospects'));
+  if (snap.empty) return 0;
+
+  const now = Date.now();
+  let batch = writeBatch(db);
+  let pending = 0;
+  let total = 0;
+
+  for (const d of snap.docs) {
+    const p = { id: d.id, ...d.data() } as Prospect;
+    const gunaScore =
+      profile.nakshatra >= 0 && p.nakshatra !== undefined && p.nakshatra >= 0
+        ? calculateGunaScore(profile.nakshatra, p.nakshatra)
+        : null;
+    const compatScore = calculateCompatScore(profile, p);
+    batch.update(d.ref, { gunaScore, compatScore, updatedAt: now });
+    pending++;
+    total++;
+    // Firestore batches cap at 500 writes — commit in chunks to be safe.
+    if (pending === 450) {
+      await batch.commit();
+      batch = writeBatch(db);
+      pending = 0;
+    }
+  }
+
+  if (pending > 0) await batch.commit();
+  console.log('[firestore] recalcAllProspectScores | updated', total, 'prospects');
+  return total;
 }
 
 export function subscribeToProspects(
@@ -182,6 +222,22 @@ export async function addConversation(
   });
   await addActivityEntry(uid, prospectId, prospectName, 'conversation',
     `${data.callType}: ${data.duration}${data.topics.length ? ', topics: ' + data.topics.slice(0, 2).join(', ') : ''} ${data.mood}`);
+}
+
+export async function updateConversation(
+  uid: string,
+  prospectId: string,
+  convId: string,
+  data: Partial<Omit<ConversationLog, 'id'>>,
+): Promise<void> {
+  await updateDoc(
+    doc(db, 'users', uid, 'prospects', prospectId, 'conversations', convId),
+    stripUndefined(data as object),
+  );
+  await updateDoc(doc(db, 'users', uid, 'prospects', prospectId), {
+    lastActivityAt: Date.now(),
+    updatedAt: Date.now(),
+  });
 }
 
 export async function deleteConversation(
