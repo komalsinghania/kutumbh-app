@@ -19,6 +19,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  
 
   // Handle redirect result on mount (fires after signInWithRedirect returns from Google)
   useEffect(() => {
