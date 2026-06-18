@@ -40,7 +40,8 @@ JSON schema:
   "motherOcc": string,
   "siblings": string,
   "property": string,
-  "phone": string
+  "phone": string,
+  "hobbies": string[]
 }
 
 ═══ KUNDLI FIELDS — read this section carefully ═══
@@ -99,6 +100,12 @@ Normalise to one of: "Yes", "No", "Partial".
 "Partial Manglik" / "Anshik Manglik" → "Partial"
 
 ═══ OTHER FIELDS ═══
+hobbies: Array of short strings. Labels: "Hobbies", "Interests", "Likes", "Hobbies & Interests", "शौक", "रुचि".
+  Split a sentence into individual items and Title-Case each.
+  Examples:
+    "Reading, travelling and listening to music" → ["Reading", "Travelling", "Listening to music"]
+    "Hobbies: Cricket, Gym, Movies" → ["Cricket", "Gym", "Movies"]
+  Return null (not []) if no hobbies are mentioned.
 familyType: "Joint" or "Nuclear"
 diet: "Pure Veg", "Jain", "Eggetarian", or "Non-Veg"
 income: output as a range string like "10-20" or "35-50" (in LPA). If exact figure given, convert to nearest range.

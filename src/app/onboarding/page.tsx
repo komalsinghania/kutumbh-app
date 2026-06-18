@@ -4,11 +4,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { saveUserProfile } from '@/lib/firestore';
 import {
-  NAKSHATRAS, DEALBREAKERS, DEALBREAKER_CATEGORIES,
+  NAKSHATRAS, DEALBREAKERS, DEALBREAKER_CATEGORIES, HOBBIES,
   Gender, Diet, Manglik, Education, Income, IncomePref, FamilyType,
   ExtractedBiodata,
 } from '@/types';
 import { calculateKundli } from '@/lib/kundli';
+import { normalizeHobbies } from '@/lib/hobbies';
 import CitySearch from '@/components/CitySearch';
 import { getCityByName } from '@/lib/indian-cities';
 import toast from 'react-hot-toast';
@@ -34,6 +35,52 @@ function PillGroup({ options, value, onSelect }: {
   );
 }
 
+function HobbyPicker({ options, selected, onToggle }: {
+  options: readonly string[]; selected: string[]; onToggle: (v: string) => void;
+}) {
+  const [showInput, setShowInput] = useState(false);
+  const [text, setText] = useState('');
+  const custom = selected.filter(h => !(options as readonly string[]).includes(h));
+  const add = () => {
+    const v = text.trim();
+    if (!v) return;
+    if (!selected.includes(v)) onToggle(v);
+    setText(''); setShowInput(false);
+  };
+  return (
+    <div className="flex flex-wrap gap-2 mt-2">
+      {options.map(opt => (
+        <button key={opt} type="button" onClick={() => onToggle(opt)}
+          className="px-3 py-1.5 rounded-full border text-xs font-medium transition-all"
+          style={selected.includes(opt)
+            ? { background: '#c13e2a', color: 'white', borderColor: '#c13e2a' }
+            : { background: 'white', color: '#6b5e4d', borderColor: '#d6c9b0' }}>
+          {opt}
+        </button>
+      ))}
+      {custom.map(c => (
+        <span key={c} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium"
+          style={{ background: '#c13e2a', color: 'white', border: '1px solid #c13e2a' }}>
+          {c}
+          <button type="button" onClick={() => onToggle(c)} style={{ marginLeft: 2, fontWeight: 700, lineHeight: 1 }}>×</button>
+        </span>
+      ))}
+      {showInput ? (
+        <input type="text" value={text} onChange={e => setText(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+          onBlur={add} placeholder="Add hobby…" autoFocus
+          className="px-3 py-1.5 rounded-full text-xs" style={{ width: 130, borderColor: '#c13e2a' }} />
+      ) : (
+        <button type="button" onClick={() => setShowInput(true)}
+          className="px-3 py-1.5 rounded-full border text-xs font-medium"
+          style={{ background: 'white', color: '#c13e2a', borderColor: '#c13e2a' }}>
+          + Other
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function OnboardingPage() {
   const { user, refreshProfile } = useAuth();
   const router = useRouter();
@@ -49,6 +96,7 @@ export default function OnboardingPage() {
     nakshatra: -1, rashiIndex: -1, dobDate: '', dobTime: '', dobPlace: '',
     prefAgeMin: '', prefAgeMax: '', prefCities: '',
     prefIncome: '' as IncomePref, prefFamily: '' as FamilyType, dealbreakers: [] as string[],
+    hobbies: [] as string[],
   });
   const [birthManualMode, setBirthManualMode] = useState(false);
   const [birthCalcDone, setBirthCalcDone] = useState(false);
@@ -64,6 +112,11 @@ export default function OnboardingPage() {
     dealbreakers: f.dealbreakers.includes(d)
       ? f.dealbreakers.filter(x => x !== d)
       : [...f.dealbreakers, d],
+  }));
+
+  const toggleHobby = (h: string) => setForm(f => ({
+    ...f,
+    hobbies: f.hobbies.includes(h) ? f.hobbies.filter(x => x !== h) : [...f.hobbies, h],
   }));
 
   const ageFromDob = (dob: string): number | null => {
@@ -117,6 +170,7 @@ export default function OnboardingPage() {
       case 14: return !!form.prefIncome;
       case 15: return !!form.prefFamily;
       case 16: return true;
+      case 17: return true;
       default: return false;
     }
   };
@@ -135,6 +189,7 @@ export default function OnboardingPage() {
     const newDobTime = d.dobTime || '';
     const newDobPlace = d.dobPlace || '';
     const computedAge = !d.age && newDobDate ? ageFromDob(newDobDate) : null;
+    const extractedHobbies = normalizeHobbies(d.hobbies);
     setForm(f => ({
       ...f,
       name: d.name || f.name,
@@ -150,6 +205,9 @@ export default function OnboardingPage() {
       dobDate: newDobDate || f.dobDate,
       dobTime: newDobTime || f.dobTime,
       dobPlace: newDobPlace || f.dobPlace,
+      hobbies: extractedHobbies.length > 0
+        ? Array.from(new Set([...f.hobbies, ...extractedHobbies]))
+        : f.hobbies,
     }));
     const extracted: string[] = [];
     if (d.name) extracted.push('Name');
@@ -163,6 +221,7 @@ export default function OnboardingPage() {
     if (d.diet) extracted.push('Diet');
     if (d.education) extracted.push('Education');
     if (d.income) extracted.push('Income');
+    if (extractedHobbies.length > 0) extracted.push('Hobbies');
     toast.success(`Extracted: ${extracted.join(', ')}`, { duration: 5000 });
     if (newDobDate && newDobTime && newDobPlace && nakshatraIdx < 0) {
       setTimeout(() => calcKundliFromValues(newDobDate, newDobTime, newDobPlace), 300);
@@ -236,6 +295,7 @@ export default function OnboardingPage() {
         prefIncome: form.prefIncome,
         prefFamily: form.prefFamily,
         dealbreakers: form.dealbreakers,
+        hobbies: form.hobbies.length > 0 ? form.hobbies : undefined,
       });
       await refreshProfile();
       router.replace('/dashboard');
@@ -246,7 +306,7 @@ export default function OnboardingPage() {
     }
   };
 
-  const progress = step === 0 ? 0 : Math.round((step / 16) * 100);
+  const progress = step === 0 ? 0 : Math.round((step / 17) * 100);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#f5ede0',  }}>
@@ -260,13 +320,13 @@ export default function OnboardingPage() {
       )}
       {step > 0 && (
         <div className="text-right px-5 pt-2 text-xs font-semibold" style={{ color: '#c13e2a' }}>
-          {step} / 16
+          {step} / 17
         </div>
       )}
 
       <div className="flex-1 flex flex-col items-center justify-center px-5 py-8">
         <div className="w-full max-w-sm">
-          <Logo className="text-4xl text-center mb-6" />
+          <div className="text-center mb-6"><Logo className="text-4xl" /></div>
 
           {/* Step 0: Upload biodata */}
           {step === 0 && (
@@ -725,6 +785,14 @@ export default function OnboardingPage() {
             </StepWrapper>
           )}
 
+          {/* Step 17: Hobbies & Interests */}
+          {step === 17 && (
+            <StepWrapper title="Your hobbies & interests">
+              <p className="text-sm mt-1 mb-4" style={{ color: '#6b5e4d' }}>Pick a few — or add your own</p>
+              <HobbyPicker options={HOBBIES} selected={form.hobbies} onToggle={toggleHobby} />
+            </StepWrapper>
+          )}
+
           {/* Navigation */}
           {step > 0 && (
             <>
@@ -735,7 +803,7 @@ export default function OnboardingPage() {
                 >
                   Back
                 </button>
-                {step < 16 ? (
+                {step < 17 ? (
                   <button
                     className="btn-primary flex-1 disabled:opacity-40"
                     disabled={!canContinue()}
@@ -753,7 +821,7 @@ export default function OnboardingPage() {
                   </button>
                 )}
               </div>
-              {step < 16 && (
+              {step < 17 && (
                 <button
                   type="button"
                   className="w-full text-center mt-3 text-xs underline"
@@ -773,7 +841,7 @@ export default function OnboardingPage() {
 
 function StepWrapper({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div>
+    <div className="text-center">
       <h2 style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', color: '#1a1410', fontSize: '1.6rem', lineHeight: 1.25 }} className="font-bold mb-2">
         {title}
       </h2>
