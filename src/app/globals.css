@@ -1,27 +1,29 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 @theme {
-  --color-bg:      #f5ede0;
-  --color-card:    #FFFFFF;
-  --color-gold:    #b8892b;
-  --color-ink:     #1a1410;
-  --color-warm:    #6b5e4d;
-  --color-muted:   #6b5e4d;
-  --color-border:  #d6c9b0;
+  --color-bg: #f5ede0;
+  --color-card: #FFFFFF;
+  --color-gold: #b8892b;
+  --color-ink: #1a1410;
+  --color-warm: #6b5e4d;
+  --color-muted: #6b5e4d;
+  --color-border: #d6c9b0;
   --color-success: #2D6B4F;
-  --color-danger:  #8B2A2A;
-  --color-warn:    #c13e2a;
-  --color-coral:   #c13e2a;
+  --color-danger: #8B2A2A;
+  --color-warn: #c13e2a;
+  --color-coral: #c13e2a;
 }
 
 /* ── Base ──────────────────────────────────────────────────────────────────── */
 
-html, body {
+html,
+body {
   overflow-x: hidden;
 }
 
 html {
-  overflow-y: scroll;         /* always show scroll track, prevents layout shift */
+  overflow-y: scroll;
+  /* always show scroll track, prevents layout shift */
 }
 
 body {
@@ -32,7 +34,9 @@ body {
   min-height: 100vh;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-family: var(--font-fraunces, 'Fraunces', Georgia, serif);
 }
 
@@ -81,8 +85,13 @@ h1, h2, h3 {
   gap: 0.5rem;
 }
 
-.btn-primary:hover   { filter: brightness(1.08); }
-.btn-primary:active  { transform: scale(0.98); }
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
 
 .btn-secondary {
   background: transparent;
@@ -100,8 +109,13 @@ h1, h2, h3 {
   justify-content: center;
 }
 
-.btn-secondary:hover  { background: #ebe0cc; }
-.btn-secondary:active { transform: scale(0.98); }
+.btn-secondary:hover {
+  background: #ebe0cc;
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
+}
 
 .btn-danger {
   background: #8B2A2A;
@@ -197,8 +211,13 @@ textarea::placeholder {
 /* ── Skeleton ──────────────────────────────────────────────────────────────── */
 
 @keyframes shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position:  400px 0; }
+  0% {
+    background-position: -400px 0;
+  }
+
+  100% {
+    background-position: 400px 0;
+  }
 }
 
 .skeleton {
@@ -210,7 +229,11 @@ textarea::placeholder {
 
 /* ── Gold spinner ──────────────────────────────────────────────────────────── */
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .gold-spinner {
   width: 20px;
@@ -225,8 +248,15 @@ textarea::placeholder {
 /* ── Page enter ────────────────────────────────────────────────────────────── */
 
 @keyframes fadeSlideUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .page-enter {
@@ -236,32 +266,82 @@ textarea::placeholder {
 /* ── Board animations ──────────────────────────────────────────────────────── */
 
 @keyframes journeyLineDraw {
-  from { transform: scaleX(0); }
+  from {
+    transform: scaleX(0);
+  }
 }
 
 @keyframes fadeUpIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideInRight {
-  from { opacity: 0; transform: translateX(16px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes barFillIn {
-  from { transform: scaleX(0); }
+  from {
+    transform: scaleX(0);
+  }
 }
 
 @keyframes stagePulse {
-  0%   { transform: scale(1);   opacity: 0.7; }
-  70%  { transform: scale(2.2); opacity: 0;   }
-  100% { transform: scale(2.2); opacity: 0;   }
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+
+  70% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
 }
 
 .stage-pulse-ring {
   animation: stagePulse 1.8s ease-out infinite;
 }
+
+/* ── Hero score chips entrance ─────────────────────────────────────────────── */
+
+@keyframes heroFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-score-chip {
+  animation: heroFadeUp 0.45s ease-out both;
+}
+
+.hero-score-chip:nth-child(1) { animation-delay: 0.05s; }
+.hero-score-chip:nth-child(2) { animation-delay: 0.12s; }
+.hero-score-chip:nth-child(3) { animation-delay: 0.19s; }
 
 /* ── Scrollbar ─────────────────────────────────────────────────────────────── */
 
@@ -269,7 +349,10 @@ textarea::placeholder {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
-.scrollbar-none::-webkit-scrollbar { display: none; }
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
 
 /* ── Bottom tab safe padding ───────────────────────────────────────────────── */
 
@@ -287,10 +370,39 @@ textarea::placeholder {
 .stage-dot-current {
   background: white;
   border: 2.5px solid #c13e2a;
-  box-shadow: 0 0 0 3px rgba(193,62,42,0.2);
+  box-shadow: 0 0 0 3px rgba(193, 62, 42, 0.2);
 }
 
 .stage-dot-future {
   background: white;
   border: 1.5px solid #d6c9b0;
+}
+
+/* ── Overview 2-column grid ────────────────────────────────────────────────── */
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .overview-grid {
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+  }
+}
+
+/* Astrological + Family side-by-side on wide right column */
+.astro-family-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 1100px) {
+  .astro-family-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }

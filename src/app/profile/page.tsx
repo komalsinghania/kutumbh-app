@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { saveUserProfile } from '@/lib/firestore';
-import { NAKSHATRAS, DEALBREAKERS, DEALBREAKER_CATEGORIES, Gender, Diet, Manglik, Education, Income, IncomePref, FamilyType } from '@/types';
+import { NAKSHATRAS, DEALBREAKERS, DEALBREAKER_CATEGORIES, HOBBIES, Gender, Diet, Manglik, Education, Income, IncomePref, FamilyType } from '@/types';
 import toast from 'react-hot-toast';
 
 function PillSelect({ options, value, onSelect }: { options: string[]; value: string; onSelect: (v: string) => void }) {
@@ -29,6 +29,52 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function HobbyPicker({ options, selected, onToggle }: {
+  options: readonly string[]; selected: string[]; onToggle: (v: string) => void;
+}) {
+  const [showInput, setShowInput] = useState(false);
+  const [text, setText] = useState('');
+  const custom = selected.filter(h => !(options as readonly string[]).includes(h));
+  const add = () => {
+    const v = text.trim();
+    if (!v) return;
+    if (!selected.includes(v)) onToggle(v);
+    setText(''); setShowInput(false);
+  };
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map(opt => (
+        <button key={opt} type="button" onClick={() => onToggle(opt)}
+          className="px-3 py-1.5 rounded-full border text-xs font-medium transition-all"
+          style={selected.includes(opt)
+            ? { background: '#c13e2a', color: 'white', borderColor: '#c13e2a' }
+            : { background: 'white', color: '#6b5e4d', borderColor: '#d6c9b0' }}>
+          {opt}
+        </button>
+      ))}
+      {custom.map(c => (
+        <span key={c} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium"
+          style={{ background: '#c13e2a', color: 'white', border: '1px solid #c13e2a' }}>
+          {c}
+          <button type="button" onClick={() => onToggle(c)} style={{ marginLeft: 2, fontWeight: 700, lineHeight: 1 }}>×</button>
+        </span>
+      ))}
+      {showInput ? (
+        <input type="text" value={text} onChange={e => setText(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+          onBlur={add} placeholder="Add hobby…" autoFocus
+          className="px-3 py-1.5 rounded-full text-xs" style={{ width: 130, borderColor: '#c13e2a' }} />
+      ) : (
+        <button type="button" onClick={() => setShowInput(true)}
+          className="px-3 py-1.5 rounded-full border text-xs font-medium"
+          style={{ background: 'white', color: '#c13e2a', borderColor: '#c13e2a' }}>
+          + Other
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function ProfilePage() {
   const { user, profile, refreshProfile } = useAuth();
   const router = useRouter();
@@ -41,6 +87,7 @@ export default function ProfilePage() {
     profession: '', income: '' as Income, diet: '' as Diet, manglik: '' as Manglik,
     nakshatra: -1, prefAgeMin: '', prefAgeMax: '', prefCities: '',
     prefIncome: '' as IncomePref, prefFamily: '' as FamilyType, dealbreakers: [] as string[],
+    hobbies: [] as string[],
   });
 
   useEffect(() => {
@@ -62,6 +109,7 @@ export default function ProfilePage() {
         prefIncome: profile.prefIncome || '' as IncomePref,
         prefFamily: profile.prefFamily || '' as FamilyType,
         dealbreakers: profile.dealbreakers || [],
+        hobbies: profile.hobbies || [],
       });
     }
   }, [profile]);
@@ -72,6 +120,10 @@ export default function ProfilePage() {
     dealbreakers: f.dealbreakers.includes(d)
       ? f.dealbreakers.filter(x => x !== d)
       : [...f.dealbreakers, d],
+  }));
+  const toggleHobby = (h: string) => setForm(f => ({
+    ...f,
+    hobbies: f.hobbies.includes(h) ? f.hobbies.filter(x => x !== h) : [...f.hobbies, h],
   }));
 
   const handleSave = async () => {
@@ -95,6 +147,7 @@ export default function ProfilePage() {
         prefIncome: form.prefIncome,
         prefFamily: form.prefFamily,
         dealbreakers: form.dealbreakers,
+        hobbies: form.hobbies.length > 0 ? form.hobbies : undefined,
       });
       await refreshProfile();
       toast.success('Profile updated!');
@@ -139,6 +192,9 @@ export default function ProfilePage() {
                 </button>
               ))}
             </div>
+          </Field>
+          <Field label="Hobbies & Interests">
+            <HobbyPicker options={HOBBIES} selected={form.hobbies} onToggle={toggleHobby} />
           </Field>
         </div>
 
