@@ -4,15 +4,14 @@ import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/lib/auth-context';
-import { subscribeToProspects, subscribeToActivityLog } from '@/lib/firestore';
-import { Prospect, ProspectStage, ActivityEntry } from '@/types';
+import { subscribeToProspects } from '@/lib/firestore';
+import { Prospect, ProspectStage } from '@/types';
 import {
   calculateOverallScore, getCompatBreakdown, getAshtakootBreakdown, calculateCompatScore, getDealbreakersCheck,
 } from '@/lib/scoring';
 import { calculateAshtakoot } from '@/lib/kundli';
 import CompatBreakdown from '@/components/CompatBreakdown';
 import AshtakootBreakdown from '@/components/AshtakootBreakdown';
-import ActivityFeed from '@/components/ActivityFeed';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 
@@ -23,9 +22,8 @@ function scoreColor(v: number): string {
   return '#c13e2a';
 }
 
-type MainTab = 'board' | 'matches' | 'decision' | 'timeline' | 'profile';
+type MainTab = 'board' | 'matches' | 'decision' | 'compare' | 'profile';
 type MatchSubTab = 'compat' | 'kundli';
-type ActivityFilterType = 'all' | 'conversation' | 'flag_green' | 'flag_red' | 'stage_change';
 type Nudge = { icon: string; text: string; prospectName: string; prospectId: string; cta: string; };
 
 function timeAgo(ts?: number): string {
@@ -116,15 +114,12 @@ export default function DashboardPage() {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
   const [prospects, setProspects] = useState<Prospect[]>([]);
-  const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [mainTab, setMainTab] = useState<MainTab>('board');
   const [boardStage, setBoardStage] = useState<ProspectStage>('new');
   const [decisionFilter, setDecisionFilter] = useState<'all' | 'interested' | 'on_hold' | 'rejected'>('all');
   const [matchSub, setMatchSub] = useState<MatchSubTab>('compat');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [activityFilter, setActivityFilter] = useState<ActivityFilterType>('all');
   const [compareIds, setCompareIds] = useState<string[]>([]);
-  const [compareMode, setCompareMode] = useState(false);
   const [showAllNudges, setShowAllNudges] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -148,8 +143,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!user) return;
     const u1 = subscribeToProspects(user.uid, setProspects);
-    const u2 = subscribeToActivityLog(user.uid, setActivity);
-    return () => { u1(); u2(); };
+    return () => { u1(); };
   }, [user]);
 
   useEffect(() => {
@@ -207,7 +201,7 @@ export default function DashboardPage() {
     ['board',    'M3 3h7v7H3V3zm0 11h7v7H3v-7zm11-11h7v7h-7V3zm0 11h7v7h-7v-7z', 'Board',     null],
     ['matches',  'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z', 'Matches',   null],
     ['decision', 'M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z', 'Decisions', totalDecisions > 0 ? totalDecisions : null],
-    ['timeline', 'M13 3a9 9 0 0 1 0 18H11a9 9 0 0 1 0-18h2zm0 2h-2a7 7 0 0 0 0 14h2a7 7 0 0 0 0-14zm1 3v5l4 2.5-.75 1.23L13 14V8h1z', 'Timeline',  null],
+    ['compare',  'M3 5h8v14H3V5zm10 0h8v14h-8V5z', 'Compare', compareIds.length > 0 ? compareIds.length : null],
   ];
 
   return (
@@ -256,7 +250,7 @@ export default function DashboardPage() {
             {NAV_ITEMS.map(([tab, iconPath, label, badge]) => {
               const isActive = mainTab === tab;
               return (
-                <button key={tab} onClick={() => setMainTab(tab)} className="w-full"
+                <button key={tab} onClick={() => { if (tab === 'compare' && mainTab !== 'compare') setCompareIds([]); setMainTab(tab); }} className="w-full"
                   style={{
                     display: 'flex', alignItems: 'center', gap: 11,
                     padding: '11px 14px', borderRadius: 10, marginBottom: 3,
@@ -370,13 +364,13 @@ export default function DashboardPage() {
                 {mainTab === 'board' ? `Welcome back, ${firstName} ✦` :
                  mainTab === 'matches' ? 'Match Rankings' :
                  mainTab === 'decision' ? 'Final Decisions' :
-                 mainTab === 'timeline' ? 'Activity Timeline' : 'My Profile'}
+                 mainTab === 'compare' ? 'Compare Prospects' : 'My Profile'}
               </h1>
               <p style={{ fontSize: '0.68rem', color: '#9b8e7e', marginTop: 3, fontWeight: 400 }}>
                 {mainTab === 'board' ? `${prospects.length} prospect${prospects.length !== 1 ? 's' : ''} across your pipeline` :
                  mainTab === 'matches' ? 'Sorted by overall compatibility and kundli scores' :
                  mainTab === 'decision' ? `${totalDecisions} total decisions recorded` :
-                 mainTab === 'timeline' ? 'All your recent activity in one place' :
+                 mainTab === 'compare' ? 'Pick 2 or 3 prospects to compare side by side' :
                  `${profile.profession} · ${profile.city}`}
               </p>
             </div>
@@ -393,33 +387,26 @@ export default function DashboardPage() {
                   New Prospect
                 </Link>
               )}
-              {mainTab === 'matches' && (
-                compareMode ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: '0.78rem', color: '#6b5e4d', fontWeight: 500 }}>{compareIds.length}/3 selected</span>
-                    {compareIds.length >= 2 && (
-                      <button style={{
-                        background: 'linear-gradient(135deg, #d44d36, #b83521)',
-                        color: '#fff', borderRadius: 8, padding: '8px 18px',
-                        fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', border: 'none',
-                        boxShadow: '0 4px 12px rgba(193,62,42,0.3)',
-                      }} onClick={() => router.push(`/compare?ids=${compareIds.join(',')}`)}>
-                        Compare Now
-                      </button>
-                    )}
+              {mainTab === 'compare' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: '0.78rem', color: '#6b5e4d', fontWeight: 500 }}>{compareIds.length}/3 selected</span>
+                  {compareIds.length >= 2 && (
+                    <button style={{
+                      background: 'linear-gradient(135deg, #d44d36, #b83521)',
+                      color: '#fff', borderRadius: 8, padding: '8px 18px',
+                      fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', border: 'none',
+                      boxShadow: '0 4px 12px rgba(193,62,42,0.3)',
+                    }} onClick={() => router.push(`/compare?ids=${compareIds.join(',')}`)}>
+                      Compare Now
+                    </button>
+                  )}
+                  {compareIds.length > 0 && (
                     <button style={{
                       fontSize: '0.78rem', color: '#6b5e4d', cursor: 'pointer',
                       padding: '8px 14px', borderRadius: 8, border: '1px solid #d6c9b0', background: 'white',
-                    }} onClick={() => { setCompareMode(false); setCompareIds([]); }}>Cancel</button>
-                  </div>
-                ) : (
-                  <button style={{
-                    fontSize: '0.8rem', color: '#c13e2a', fontWeight: 700, cursor: 'pointer',
-                    padding: '8px 16px', borderRadius: 8,
-                    border: '1.5px solid rgba(193,62,42,0.35)',
-                    background: 'rgba(193,62,42,0.05)',
-                  }} onClick={() => setCompareMode(true)}>Compare →</button>
-                )
+                    }} onClick={() => setCompareIds([])}>Clear</button>
+                  )}
+                </div>
               )}
             </div>
           </header>
@@ -731,7 +718,7 @@ export default function DashboardPage() {
         {/* ═══════════════════════════════════════════════════════
              MATCHES TAB
         ═══════════════════════════════════════════════════════ */}
-        {mainTab === 'matches' && (
+        {(mainTab === 'matches' || mainTab === 'compare') && (
           <div>
             <div style={{
               padding: `18px ${isMobile ? 16 : 28}px 0`,
@@ -757,6 +744,38 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {mainTab === 'compare' && (
+              <div style={{ padding: `0 ${isMobile ? 16 : 28}px`, marginBottom: 4 }}>
+                <div style={{
+                  background: 'rgba(193,62,42,0.06)', border: '1px solid rgba(193,62,42,0.25)',
+                  borderRadius: 12, padding: '10px 14px', fontSize: '0.78rem', color: '#6b5e4d',
+                }}>
+                  Tap up to <strong style={{ color: '#c13e2a' }}>3 prospects</strong> to select them, then hit <strong style={{ color: '#c13e2a' }}>Compare Now</strong>.
+                </div>
+                {/* Mobile action row (desktop has these in the header) */}
+                {isMobile && compareIds.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                    <span style={{ fontSize: '0.78rem', color: '#6b5e4d', fontWeight: 500 }}>{compareIds.length}/3 selected</span>
+                    <div style={{ flex: 1 }} />
+                    {compareIds.length >= 2 && (
+                      <button style={{
+                        background: 'linear-gradient(135deg, #d44d36, #b83521)',
+                        color: '#fff', borderRadius: 8, padding: '8px 18px',
+                        fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', border: 'none',
+                        boxShadow: '0 4px 12px rgba(193,62,42,0.3)',
+                      }} onClick={() => router.push(`/compare?ids=${compareIds.join(',')}`)}>
+                        Compare Now
+                      </button>
+                    )}
+                    <button style={{
+                      fontSize: '0.78rem', color: '#6b5e4d', cursor: 'pointer',
+                      padding: '8px 14px', borderRadius: 8, border: '1px solid #d6c9b0', background: 'white',
+                    }} onClick={() => setCompareIds([])}>Clear</button>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div style={{ padding: `12px ${isMobile ? 16 : 28}px 0`, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {matchSub === 'compat' && (
                 byCompat.length === 0
@@ -775,7 +794,7 @@ export default function DashboardPage() {
                         transition: 'all 0.2s ease',
                       }}>
                         <div style={{ padding: '14px 16px', cursor: 'pointer' }}
-                          onClick={() => compareMode ? toggleCompare(p.id) : router.push(`/prospects/${p.id}`)}>
+                          onClick={() => mainTab === 'compare' ? toggleCompare(p.id) : router.push(`/prospects/${p.id}`)}>
                           {idx < 3 && overall !== null && (
                             <div style={{
                               display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -840,7 +859,7 @@ export default function DashboardPage() {
                         animation: `fadeUpIn 0.35s ease-out ${idx * 0.05}s both`,
                       }}>
                         <div style={{ padding: '14px 16px', cursor: 'pointer' }}
-                          onClick={() => compareMode ? toggleCompare(p.id) : router.push(`/prospects/${p.id}`)}>
+                          onClick={() => mainTab === 'compare' ? toggleCompare(p.id) : router.push(`/prospects/${p.id}`)}>
                           <ProspectCardInner prospect={p} isSelected={isSelected} />
                         </div>
                         <div style={{ padding: '10px 16px 14px', borderTop: '1px solid #f0ebe2', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1007,37 +1026,6 @@ export default function DashboardPage() {
         })()}
 
         {/* ═══════════════════════════════════════════════════════
-             TIMELINE TAB
-        ═══════════════════════════════════════════════════════ */}
-        {mainTab === 'timeline' && (
-          <div style={{ padding: `22px ${isMobile ? 16 : 28}px` }}>
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 20 }} className="scrollbar-none">
-              {([
-                ['all', 'All Activity'],
-                ['conversation', '💬 Calls'],
-                ['flag_green', '💚 Green Flags'],
-                ['flag_red', '🚩 Red Flags'],
-                ['stage_change', '➡️ Stages'],
-              ] as [ActivityFilterType, string][]).map(([f, label]) => (
-                <button key={f} onClick={() => setActivityFilter(f)}
-                  style={{
-                    flexShrink: 0, padding: '7px 14px', borderRadius: 20, fontSize: '0.76rem',
-                    fontWeight: activityFilter === f ? 700 : 500, cursor: 'pointer',
-                    transition: 'all 0.18s ease', whiteSpace: 'nowrap',
-                    background: activityFilter === f ? 'linear-gradient(135deg, #d44d36, #b83521)' : 'white',
-                    color: activityFilter === f ? 'white' : '#6b5e4d',
-                    border: activityFilter === f ? 'none' : '1px solid #d6c9b0',
-                    boxShadow: activityFilter === f ? '0 4px 12px rgba(193,62,42,0.3)' : 'none',
-                  }}>
-                  {label}
-                </button>
-              ))}
-            </div>
-            <ActivityFeed entries={activity} filterType={activityFilter} />
-          </div>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════
              PROFILE TAB
         ═══════════════════════════════════════════════════════ */}
         {mainTab === 'profile' && (
@@ -1179,12 +1167,12 @@ export default function DashboardPage() {
               ['board',    'M3 3h7v7H3V3zm0 11h7v7H3v-7zm11-11h7v7h-7V3zm0 11h7v7h-7v-7z', 'Board'],
               ['matches',  'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z', 'Matches'],
               ['decision', 'M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z', 'Decisions'],
-              ['timeline', 'M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z', 'Timeline'],
+              ['compare',  'M3 5h8v14H3V5zm10 0h8v14h-8V5z', 'Compare'],
               ['profile',  'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z', 'Profile'],
             ] as [MainTab, string, string][]).map(([tab, iconPath, label]) => {
               const isActive = mainTab === tab;
               return (
-                <button key={tab} onClick={() => setMainTab(tab)}
+                <button key={tab} onClick={() => { if (tab === 'compare' && mainTab !== 'compare') setCompareIds([]); setMainTab(tab); }}
                   style={{
                     flex: 1, display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center',
