@@ -8,6 +8,7 @@ import {
 interface Props {
   conversations: ConversationLog[];
   onAdd: (data: Omit<ConversationLog, 'id'>) => Promise<void>;
+  onUpdate?: (id: string, data: Partial<Omit<ConversationLog, 'id'>>) => Promise<void>;
   onDelete: (id: string) => void;
   presetType?: string;
 }
@@ -48,6 +49,8 @@ const TOPIC_CATEGORIES: { label: string; color: string; topics: string[] }[] = [
   { label: 'Lifestyle', color: '#7a5c00', topics: ['Hobbies & Interests', 'Food & Lifestyle', 'Travel Preferences', 'Social Habits'] },
   { label: 'Health & Past', color: '#6b5e4d', topics: ['Health & Medical', 'Past Relationships'] },
 ];
+
+const CATEGORY_TOPIC_SET = new Set(TOPIC_CATEGORIES.flatMap(c => c.topics));
 
 /* ── Inline SVG icons ── */
 function PhoneIcon() {
@@ -96,9 +99,10 @@ const DURATION_SHORT: Record<string, string> = {
   '1 hour+': '1 hr+',
 };
 
-export default function ConversationTimeline({ conversations, onAdd, onDelete, presetType }: Props) {
+export default function ConversationTimeline({ conversations, onAdd, onUpdate, onDelete, presetType }: Props) {
   const [showForm, setShowForm] = useState(conversations.length === 0 || !!presetType);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [callType, setCallType] = useState(presetType || '');
   const [duration, setDuration] = useState('');
   const [topics, setTopics] = useState<string[]>([]);
@@ -106,8 +110,13 @@ export default function ConversationTimeline({ conversations, onAdd, onDelete, p
   const [theirVibe, setTheirVibe] = useState('');
   const [followUp, setFollowUp] = useState('');
   const [note, setNote] = useState('');
+  const [customTopicText, setCustomTopicText] = useState('');
+  const [showCustomTopic, setShowCustomTopic] = useState(false);
+
+  const customTopics = topics.filter(t => !CATEGORY_TOPIC_SET.has(t));
 
   const resetForm = () => {
+    setEditingId(null);
     setCallType(presetType || '');
     setDuration('');
     setTopics([]);
@@ -115,6 +124,22 @@ export default function ConversationTimeline({ conversations, onAdd, onDelete, p
     setTheirVibe('');
     setFollowUp('');
     setNote('');
+    setCustomTopicText('');
+    setShowCustomTopic(false);
+  };
+
+  const startEdit = (c: ConversationLog) => {
+    setEditingId(c.id);
+    setCallType(c.callType);
+    setDuration(c.duration);
+    setTopics(c.topics ?? []);
+    setMood(c.mood);
+    setTheirVibe(c.theirVibe);
+    setFollowUp(c.followUp);
+    setNote(c.note ?? '');
+    setCustomTopicText('');
+    setShowCustomTopic(false);
+    setShowForm(true);
   };
 
   const canSave = callType && duration && mood && theirVibe && followUp;
@@ -124,14 +149,19 @@ export default function ConversationTimeline({ conversations, onAdd, onDelete, p
     if (!canSave) return;
     setSaving(true);
     try {
-      const now = new Date();
-      await onAdd({
-        callType, duration, topics, mood, theirVibe, followUp,
-        note: note || undefined,
-        date: now.toLocaleDateString('en-IN'),
-        time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-        createdAt: Date.now(),
-      });
+      const fields = { callType, duration, topics, mood, theirVibe, followUp };
+      if (editingId && onUpdate) {
+        await onUpdate(editingId, { ...fields, note: note || '' });
+      } else {
+        const now = new Date();
+        await onAdd({
+          ...fields,
+          note: note || undefined,
+          date: now.toLocaleDateString('en-IN'),
+          time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+          createdAt: Date.now(),
+        });
+      }
       resetForm();
       setShowForm(false);
     } finally {
@@ -140,6 +170,14 @@ export default function ConversationTimeline({ conversations, onAdd, onDelete, p
   };
 
   const toggleTopic = (t: string) => setTopics(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
+
+  const addCustomTopic = () => {
+    const t = customTopicText.trim();
+    if (!t) return;
+    if (!topics.includes(t)) setTopics(prev => [...prev, t]);
+    setCustomTopicText('');
+    setShowCustomTopic(false);
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -181,7 +219,7 @@ export default function ConversationTimeline({ conversations, onAdd, onDelete, p
                 <PhoneIcon />
               </div>
               <div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'white', lineHeight: 1.2 }}>Log Conversation</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'white', lineHeight: 1.2 }}>{editingId ? 'Edit Conversation' : 'Log Conversation'}</div>
                 <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
                   {filledCount} of 5 required fields filled
                 </div>
@@ -310,6 +348,53 @@ export default function ConversationTimeline({ conversations, onAdd, onDelete, p
                     </div>
                   </div>
                 ))}
+
+                {/* Custom topics */}
+                <div>
+                  <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#8B2A2A', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, opacity: 0.8 }}>
+                    Custom
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center' }}>
+                    {customTopics.map(t => (
+                      <span key={t} style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        padding: '5px 8px 5px 11px', borderRadius: 20,
+                        border: '1.5px solid #c13e2a', background: 'rgba(193,62,42,0.09)',
+                        color: '#c13e2a', fontSize: '0.72rem', fontWeight: 600,
+                      }}>
+                        {t}
+                        <button onClick={() => toggleTopic(t)} style={{ fontWeight: 800, lineHeight: 1, cursor: 'pointer', color: '#c13e2a' }}>×</button>
+                      </span>
+                    ))}
+                    {showCustomTopic ? (
+                      <input
+                        type="text"
+                        value={customTopicText}
+                        onChange={e => setCustomTopicText(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomTopic(); } }}
+                        onBlur={addCustomTopic}
+                        placeholder="Add topic…"
+                        autoFocus
+                        style={{
+                          padding: '5px 11px', borderRadius: 20, width: 150,
+                          border: '1.5px solid #c13e2a', background: 'white',
+                          fontSize: '0.72rem', color: '#1a1410', outline: 'none',
+                        }}
+                      />
+                    ) : (
+                      <button
+                        onClick={() => setShowCustomTopic(true)}
+                        style={{
+                          padding: '5px 11px', borderRadius: 20, cursor: 'pointer',
+                          border: '1.5px dashed #c13e2a', background: 'white',
+                          color: '#c13e2a', fontSize: '0.72rem', fontWeight: 600,
+                        }}
+                      >
+                        + Other
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </Section>
 
@@ -578,14 +663,30 @@ export default function ConversationTimeline({ conversations, onAdd, onDelete, p
                           </span>
                         </div>
                       </div>
-                      <button
-                        onClick={() => onDelete(c.id)}
-                        style={{
-                          width: 24, height: 24, borderRadius: '50%', border: '1px solid #e8dece',
-                          background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          cursor: 'pointer', color: '#c0b8ae', fontSize: '0.95rem', lineHeight: 1, flexShrink: 0, marginLeft: 8,
-                        }}
-                      >×</button>
+                      <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginLeft: 8 }}>
+                        {onUpdate && (
+                          <button
+                            onClick={() => startEdit(c)}
+                            aria-label="Edit conversation"
+                            style={{
+                              width: 24, height: 24, borderRadius: '50%', border: '1px solid #e8dece',
+                              background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              cursor: 'pointer', color: '#c13e2a',
+                            }}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 20h9" stroke="#c13e2a" strokeWidth="1.8" strokeLinecap="round"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" stroke="#c13e2a" strokeWidth="1.8" strokeLinejoin="round"/></svg>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => onDelete(c.id)}
+                          aria-label="Delete conversation"
+                          style={{
+                            width: 24, height: 24, borderRadius: '50%', border: '1px solid #e8dece',
+                            background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', color: '#c0b8ae', fontSize: '0.95rem', lineHeight: 1,
+                          }}
+                        >×</button>
+                      </div>
                     </div>
 
                     {/* Topics */}
