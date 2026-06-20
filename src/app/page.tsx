@@ -387,6 +387,7 @@ const FAQS: { cat: 'PRODUCT' | 'PRIVACY' | 'BILLING' | 'FOR PARENTS'; q: string;
 export default function LandingPage() {
   const router = useRouter();
   const [authLoading, setAuthLoading] = useState(true);
+  const [loggedIn, setLoggedIn] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(true);
   const [scrolled, setScrolled] = useState(false);
@@ -417,11 +418,11 @@ export default function LandingPage() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, user => {
-      if (user) router.replace('/dashboard');
-      else setAuthLoading(false);
+      setLoggedIn(!!user);
+      setAuthLoading(false);
     });
     return unsub;
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 40);
@@ -516,31 +517,49 @@ export default function LandingPage() {
       >
         <Logo dark style={{ fontSize: scrolled ? '1.25rem' : '1.45rem', transition: 'font-size 0.25s ease' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            onClick={() => setShowModal(true)}
-            style={{
-              fontFamily: 'var(--font-dm-sans, sans-serif)',
-              fontSize: '14px', fontWeight: 500, color: '#ffffff',
-              background: 'transparent', border: 'none',
-              borderRadius: '8px', padding: '10px 14px', cursor: 'pointer',
-              minHeight: 44,
-            }}
-          >
-            Sign In
-          </button>
-          <button
-            onClick={() => setShowModal(true)}
-            style={{
-              fontFamily: 'var(--font-dm-sans, sans-serif)',
-              fontSize: '14px', fontWeight: 700, color: '#c13e2a',
-              background: '#ffffff',
-              border: 'none', borderRadius: '8px', padding: '10px 18px',
-              cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,0,0,0.12)',
-              minHeight: 44,
-            }}
-          >
-            Start Free
-          </button>
+          {loggedIn ? (
+            <button
+              onClick={() => router.push('/dashboard')}
+              style={{
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
+                fontSize: '14px', fontWeight: 700, color: '#c13e2a',
+                background: '#ffffff',
+                border: 'none', borderRadius: '8px', padding: '10px 18px',
+                cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,0,0,0.12)',
+                minHeight: 44,
+              }}
+            >
+              Go to Dashboard
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => setShowModal(true)}
+                style={{
+                  fontFamily: 'var(--font-dm-sans, sans-serif)',
+                  fontSize: '14px', fontWeight: 500, color: '#ffffff',
+                  background: 'transparent', border: 'none',
+                  borderRadius: '8px', padding: '10px 14px', cursor: 'pointer',
+                  minHeight: 44,
+                }}
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => setShowModal(true)}
+                style={{
+                  fontFamily: 'var(--font-dm-sans, sans-serif)',
+                  fontSize: '14px', fontWeight: 700, color: '#c13e2a',
+                  background: '#ffffff',
+                  border: 'none', borderRadius: '8px', padding: '10px 18px',
+                  cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,0,0,0.12)',
+                  minHeight: 44,
+                }}
+              >
+                Start Free
+              </button>
+            </>
+          )}
         </div>
       </nav>
 
@@ -1087,7 +1106,7 @@ export default function LandingPage() {
         </FadeSection>
 
         {/* 11. PRICING */}
-        <FadeSection style={{ padding: '72px 24px', background: '#faf4e8' }}>
+        {/* <FadeSection style={{ padding: '72px 24px', background: '#faf4e8' }}>
           <div style={{ maxWidth: '820px', margin: '0 auto', textAlign: 'center' }}>
             <SectionLabel>PRICING</SectionLabel>
             <h2 style={{
@@ -1102,7 +1121,6 @@ export default function LandingPage() {
               gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
               gap: '24px', marginBottom: '20px',
             }}>
-              {/* Free */}
               <div style={{
                 background: '#ffffff', border: '1px solid #d6c9b0',
                 borderRadius: '12px', padding: '32px', textAlign: 'left',
@@ -1146,7 +1164,6 @@ export default function LandingPage() {
                 </button>
               </div>
 
-              {/* Premium */}
               <div style={{
                 background: '#ffffff', border: '1px solid #d6c9b0',
                 borderTop: '3px solid #c13e2a',
@@ -1175,8 +1192,6 @@ export default function LandingPage() {
                   Launch price for first 50 users
                 </div>
                 <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', color: '#6b5e4d', marginBottom: '16px' }}>or ₹1,299 / year</div>
-
-                {/* Scarcity bar */}
                 <div style={{ marginBottom: 24 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 11, color: '#6b5e4d', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
                     <span>12 of 50 seats claimed</span>
@@ -1186,7 +1201,6 @@ export default function LandingPage() {
                     <div style={{ width: '24%', height: '100%', background: 'linear-gradient(90deg,#c13e2a,#e8c870)' }} />
                   </div>
                 </div>
-
                 {[
                   'Everything in Free',
                   'Unlimited prospects',
@@ -1227,7 +1241,7 @@ export default function LandingPage() {
               Cancel anytime. Your data is always yours.
             </p>
           </div>
-        </FadeSection>
+        </FadeSection> */}
 
         {/* 12. ANTI-FEATURES */}
         <FadeSection style={{ padding: '72px 24px', background: '#ffffff' }}>
