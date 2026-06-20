@@ -4,21 +4,23 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import {
   getProspect, updateProspect, subscribeToNotes, addNote, deleteProspect,
-  subscribeToConversations, addConversation, deleteConversation,
+  subscribeToConversations, addConversation, updateConversation, deleteConversation,
   subscribeToFlags, addFlag, deleteFlag,
   subscribeFamilyScorecard, saveFamilyScorecard,
   subscribeMeetingData, saveMeetingData,
   logStageChange,
 } from '@/lib/firestore';
 import { compressImage } from '@/lib/compress-image';
-import { calculateOverallScore } from '@/lib/scoring';
+import { calculateOverallScore, calculateGunaScore, calculateCompatScore } from '@/lib/scoring';
+import { calculateKundli } from '@/lib/kundli';
+import { getCityByName } from '@/lib/indian-cities';
 import {
-  Prospect, Note, ProspectStage, STAGE_LABELS, NAKSHATRAS,
+  Prospect, Note, ProspectStage, STAGE_LABELS, NAKSHATRAS, HOBBIES,
   ConversationLog, Flag, FamilyScorecard, FamilyScorecardKey,
   FAMILY_SCORECARD_DIMENSIONS, MeetingData, MeetingRecord, MeetingDimensionKey,
   POST_MEETING_DIMENSIONS,
   GREEN_FLAGS, RED_FLAGS,
-  PRE_MEETING_CHECKLIST, MEETING_QUESTIONS, GUT_FEELING_OPTIONS,
+  MEETING_QUESTIONS, GUT_FEELING_OPTIONS,
   STAGE_PROMPT_CONFIG,
 } from '@/types';
 import KundliReport from '@/components/KundliReport';
@@ -60,6 +62,156 @@ const JOURNEY_LABELS: Record<string, string> = {
   on_hold: 'On Hold', rejected: 'Rejected',
 };
 
+const SOURCE_OPTIONS = [
+  'Matrimonial Website', 'Relative', 'Family Friend', 'Pandit ji', 'Community Event', 'Other',
+];
+
+// ── Overview display components (top-level so children don't remount on render) ─
+
+function DetailChip({ label, value }: { label: string; value?: string | number | null }) {
+  if (!value && value !== 0) return null;
+  return (
+    <div style={{ background: '#faf8f5', borderRadius: 10, border: '1px solid #ede8df', padding: '8px 12px' }}>
+      <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 3 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1a1410', lineHeight: 1.3 }}>
+        {String(value)}
+      </div>
+    </div>
+  );
+}
+
+function SectionCard({ icon, title, cols = 2, children }: { icon: React.ReactNode; title: string; cols?: number; children: React.ReactNode }) {
+  return (
+    <div style={{ background: 'white', borderRadius: 18, border: '1px solid #e8dece', boxShadow: '0 2px 14px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+      <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid #f0ebe2', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(193,62,42,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {icon}
+        </div>
+        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+          {title}
+        </span>
+      </div>
+      <div style={{ padding: '12px 14px 14px', display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 8 }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ── Edit-mode field components (top-level so internal state is stable) ─────────
+
+const editLabelStyle: React.CSSProperties = {
+  fontSize: '0.6rem', fontWeight: 700, color: '#c13e2a',
+  textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4, display: 'block',
+};
+const editInputStyle: React.CSSProperties = {
+  width: '100%', border: '1.5px solid #d6c9b0', borderRadius: 10,
+  padding: '7px 10px', fontSize: '0.82rem', color: '#1a1410', background: 'white', outline: 'none',
+};
+
+function EditChip({ label, value, onChange, type = 'text', placeholder }: {
+  label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string;
+}) {
+  return (
+    <div style={{ background: '#faf8f5', borderRadius: 10, border: '1px solid #ede8df', padding: '8px 12px' }}>
+      <label style={editLabelStyle}>{label}</label>
+      <input type={type} value={value} placeholder={placeholder}
+        onChange={e => onChange(e.target.value)} style={editInputStyle} />
+    </div>
+  );
+}
+
+function EditTextarea({ label, value, onChange, placeholder }: {
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string;
+}) {
+  return (
+    <div style={{ background: '#faf8f5', borderRadius: 10, border: '1px solid #ede8df', padding: '8px 12px' }}>
+      <label style={editLabelStyle}>{label}</label>
+      <textarea value={value} placeholder={placeholder} rows={3}
+        onChange={e => onChange(e.target.value)} style={{ ...editInputStyle, resize: 'vertical' }} />
+    </div>
+  );
+}
+
+function EditPills({ label, options, value, onChange }: {
+  label: string; options: readonly string[]; value: string; onChange: (v: string) => void;
+}) {
+  return (
+    <div style={{ background: '#faf8f5', borderRadius: 10, border: '1px solid #ede8df', padding: '8px 12px' }}>
+      <label style={editLabelStyle}>{label}</label>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map(opt => (
+          <button key={opt} type="button" onClick={() => onChange(value === opt ? '' : opt)}
+            className="px-2.5 py-1 rounded-full border text-xs font-medium transition-all"
+            style={value === opt
+              ? { background: '#c13e2a', color: 'white', borderColor: '#c13e2a' }
+              : { background: 'white', color: '#6b5e4d', borderColor: '#d6c9b0' }}>
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EditNakshatra({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <div style={{ background: '#faf8f5', borderRadius: 10, border: '1px solid #ede8df', padding: '8px 12px' }}>
+      <label style={editLabelStyle}>Nakshatra</label>
+      <select value={value} onChange={e => onChange(Number(e.target.value))} style={editInputStyle}>
+        <option value={-1}>Not set</option>
+        {NAKSHATRAS.map((n, i) => <option key={n} value={i}>{n}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function EditHobbies({ selected, onToggle }: { selected: string[]; onToggle: (v: string) => void }) {
+  const [showInput, setShowInput] = useState(false);
+  const [text, setText] = useState('');
+  const custom = selected.filter(h => !(HOBBIES as readonly string[]).includes(h));
+  const add = () => {
+    const v = text.trim();
+    if (!v) return;
+    if (!selected.includes(v)) onToggle(v);
+    setText(''); setShowInput(false);
+  };
+  return (
+    <div className="flex flex-wrap gap-2">
+      {HOBBIES.map(opt => (
+        <button key={opt} type="button" onClick={() => onToggle(opt)}
+          className="px-3 py-1.5 rounded-full border text-xs font-medium transition-all"
+          style={selected.includes(opt)
+            ? { background: '#c13e2a', color: 'white', borderColor: '#c13e2a' }
+            : { background: 'white', color: '#6b5e4d', borderColor: '#d6c9b0' }}>
+          {opt}
+        </button>
+      ))}
+      {custom.map(c => (
+        <span key={c} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium"
+          style={{ background: '#c13e2a', color: 'white', border: '1px solid #c13e2a' }}>
+          {c}
+          <button type="button" onClick={() => onToggle(c)} style={{ marginLeft: 2, fontWeight: 700, lineHeight: 1 }}>×</button>
+        </span>
+      ))}
+      {showInput ? (
+        <input type="text" value={text} onChange={e => setText(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+          onBlur={add} placeholder="Add hobby…" autoFocus
+          className="px-3 py-1.5 rounded-full text-xs" style={{ width: 130, borderColor: '#c13e2a', border: '1.5px solid #c13e2a' }} />
+      ) : (
+        <button type="button" onClick={() => setShowInput(true)}
+          className="px-3 py-1.5 rounded-full border text-xs font-medium"
+          style={{ background: 'white', color: '#c13e2a', borderColor: '#c13e2a' }}>
+          + Other
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function ProspectDetailPage() {
   const { user, profile } = useAuth();
   const router = useRouter();
@@ -88,12 +240,95 @@ export default function ProspectDetailPage() {
   const [familyScores, setFamilyScores] = useState<Partial<Record<FamilyScorecardKey, number>>>({});
   const [savingFamily, setSavingFamily] = useState(false);
 
-  const [meetingLocal, setMeetingLocal] = useState<MeetingData>({ checkedItems: [], questionsAsked: [...MEETING_QUESTIONS] });
+  const [meetingLocal, setMeetingLocal] = useState<MeetingData>({ checkedItems: [], questionsAsked: [] });
   const [savingMeeting, setSavingMeeting] = useState(false);
   const [customQuestionText, setCustomQuestionText] = useState('');
   const [activeMeetingIdx, setActiveMeetingIdx] = useState(0);
 
   const photoRef = useRef<HTMLInputElement>(null);
+
+  // ── Overview edit mode ──
+  type EditForm = {
+    age: string; city: string; height: string; diet: string; source: string;
+    education: string; profession: string; income: string; property: string;
+    familyType: string; fatherOcc: string; motherOcc: string; siblings: string;
+    manglik: string; gotra: string; rashi: string;
+    nakshatra: number; rashiIndex: number; dobDate: string; dobTime: string; dobPlace: string;
+    hobbies: string[]; phone: string; firstImpression: string;
+  };
+  const [editing, setEditing] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editForm, setEditForm] = useState<EditForm | null>(null);
+
+  const startEdit = () => {
+    if (!prospect) return;
+    setEditForm({
+      age: prospect.age ? String(prospect.age) : '',
+      city: prospect.city || '', height: prospect.height || '', diet: prospect.diet || '',
+      source: prospect.source || '',
+      education: prospect.education || '', profession: prospect.profession || '',
+      income: prospect.income || '', property: prospect.property || '',
+      familyType: prospect.familyType || '', fatherOcc: prospect.fatherOcc || '',
+      motherOcc: prospect.motherOcc || '', siblings: prospect.siblings || '',
+      manglik: prospect.manglik || '', gotra: prospect.gotra || '', rashi: prospect.rashi || '',
+      nakshatra: prospect.nakshatra ?? -1, rashiIndex: prospect.rashiIndex ?? -1,
+      dobDate: prospect.dobDate || '', dobTime: prospect.dobTime || '', dobPlace: prospect.dobPlace || '',
+      hobbies: prospect.hobbies || [], phone: prospect.phone || '',
+      firstImpression: prospect.firstImpression || '',
+    });
+    setEditing(true);
+  };
+
+  const cancelEdit = () => { setEditing(false); setEditForm(null); };
+  const setEdit = (k: keyof EditForm, v: any) => setEditForm(f => f ? { ...f, [k]: v } : f);
+  const toggleEditHobby = (h: string) => setEditForm(f => f
+    ? { ...f, hobbies: f.hobbies.includes(h) ? f.hobbies.filter(x => x !== h) : [...f.hobbies, h] }
+    : f);
+
+  const recalcEditKundli = () => {
+    if (!editForm) return;
+    const { dobDate, dobTime, dobPlace } = editForm;
+    if (!dobDate || !dobTime || !dobPlace) { toast('Enter date, time and place of birth first.', { icon: 'ℹ️' }); return; }
+    const city = getCityByName(dobPlace);
+    if (!city) { toast('City not found — pick the Nakshatra manually.', { icon: 'ℹ️' }); return; }
+    try {
+      const r = calculateKundli({ date: dobDate, time: dobTime, lat: city.lat, lng: city.lng, tzOffset: city.tz });
+      setEditForm(f => f ? { ...f, nakshatra: r.nakshatra, rashiIndex: r.rashi, rashi: r.rashiName } : f);
+      toast.success(`Nakshatra: ${r.nakshatraName} (${r.rashiName})`);
+    } catch { toast.error('Could not calculate — pick the Nakshatra manually.'); }
+  };
+
+  const saveEdit = async () => {
+    if (!user || !prospect || !editForm || !profile) return;
+    setSavingEdit(true);
+    try {
+      const f = editForm;
+      const nakshatra = f.nakshatra >= 0 ? f.nakshatra : undefined;
+      const base = {
+        age: Number(f.age) || 0,
+        city: f.city, height: f.height, diet: f.diet, source: (f.source || prospect.source) as Prospect['source'],
+        education: f.education, profession: f.profession, income: f.income, property: f.property,
+        familyType: f.familyType, fatherOcc: f.fatherOcc, motherOcc: f.motherOcc, siblings: f.siblings,
+        manglik: f.manglik, gotra: f.gotra, rashi: f.rashi,
+        nakshatra, rashiIndex: f.rashiIndex >= 0 ? f.rashiIndex : undefined,
+        dobDate: f.dobDate, dobTime: f.dobTime, dobPlace: f.dobPlace,
+        hobbies: f.hobbies.length > 0 ? f.hobbies : undefined,
+        phone: f.phone, firstImpression: f.firstImpression,
+      };
+      // Recompute scores from the edited values
+      const gunaScore = profile.nakshatra >= 0 && nakshatra !== undefined
+        ? calculateGunaScore(profile.nakshatra, nakshatra)
+        : prospect.gunaScore ?? null;
+      const compatScore = calculateCompatScore(profile, { ...prospect, ...base } as Prospect);
+      const payload = { ...base, gunaScore, compatScore };
+      await updateProspect(user.uid, id, payload);
+      setProspect(p => p ? { ...p, ...payload } : p);
+      toast.success('Details updated');
+      setEditing(false); setEditForm(null);
+    } catch {
+      toast.error('Failed to save changes.');
+    } finally { setSavingEdit(false); }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -113,7 +348,7 @@ export default function ProspectDetailPage() {
       subscribeMeetingData(user.uid, id, m => {
         setMeetingData(m);
         if (m) {
-          setMeetingLocal({ ...m, questionsAsked: m.questionsAsked.length > 0 ? m.questionsAsked : [...MEETING_QUESTIONS] });
+          setMeetingLocal({ ...m, questionsAsked: m.questionsAsked ?? [] });
           if (m.meetings && m.meetings.length > 0) {
             setActiveMeetingIdx(m.meetings.length - 1);
           }
@@ -128,7 +363,6 @@ export default function ProspectDetailPage() {
     await updateProspect(user.uid, id, { stage });
     setProspect(p => p ? { ...p, stage } : p);
     await logStageChange(user.uid, id, prospect.name, STAGE_LABELS[stage]);
-    toast.success('Stage updated');
     if (stage === 'call_done') setActiveTab('conversations');
     if (stage === 'meeting_fixed' || stage === 'met') setActiveTab('meeting');
     if (stage === 'interested' || stage === 'on_hold' || stage === 'rejected') setActiveTab('decision');
@@ -192,6 +426,12 @@ export default function ProspectDetailPage() {
     if (!user || !prospect) return;
     await addConversation(user.uid, id, prospect.name, data);
     toast.success('Conversation logged!');
+  };
+
+  const handleUpdateConversation = async (convId: string, data: Partial<Omit<ConversationLog, 'id'>>) => {
+    if (!user) return;
+    await updateConversation(user.uid, id, convId, data);
+    toast.success('Conversation updated');
   };
 
   const handleDeleteConversation = async (convId: string) => {
@@ -749,7 +989,6 @@ export default function ProspectDetailPage() {
               )
             ) : (
               <button
-                disabled={currentIdx === JOURNEY_STAGES.length - 1}
                 onClick={() => {
                   if (currentIdx < JOURNEY_STAGES.length - 1) {
                     changeStage(JOURNEY_STAGES[currentIdx + 1] as ProspectStage);
@@ -826,43 +1065,39 @@ export default function ProspectDetailPage() {
 
         {/* ── OVERVIEW TAB ── */}
         {activeTab === 'overview' && (() => {
-          const DetailChip = ({ label, value }: { label: string; value?: string | number | null }) => {
-            if (!value && value !== 0) return null;
-            return (
-              <div style={{ background: '#faf8f5', borderRadius: 10, border: '1px solid #ede8df', padding: '8px 12px' }}>
-                <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 3 }}>
-                  {label}
-                </div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1a1410', lineHeight: 1.3 }}>
-                  {String(value)}
-                </div>
-              </div>
-            );
-          };
-
-          const SectionCard = ({ icon, title, cols = 2, children }: { icon: React.ReactNode; title: string; cols?: number; children: React.ReactNode }) => (
-            <div style={{ background: 'white', borderRadius: 18, border: '1px solid #e8dece', boxShadow: '0 2px 14px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-              <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid #f0ebe2', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(193,62,42,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  {icon}
-                </div>
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-                  {title}
-                </span>
-              </div>
-              <div style={{ padding: '12px 14px 14px', display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 8 }}>
-                {children}
-              </div>
-            </div>
-          );
-
           return (
             <>
               {/* Hidden file input */}
               <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={e => handleAddPhotos(e.target.files)} />
 
+              {/* ── Edit toolbar ── */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 14 }}>
+                {!editing ? (
+                  <button onClick={startEdit}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', fontWeight: 700, color: '#c13e2a', background: 'rgba(193,62,42,0.06)', border: '1.5px solid rgba(193,62,42,0.35)', borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 20h9" stroke="#c13e2a" strokeWidth="1.8" strokeLinecap="round"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" stroke="#c13e2a" strokeWidth="1.8" strokeLinejoin="round"/></svg>
+                    Edit Details
+                  </button>
+                ) : (
+                  <>
+                    <button onClick={cancelEdit} disabled={savingEdit}
+                      style={{ fontSize: '0.78rem', fontWeight: 600, color: '#6b5e4d', background: 'white', border: '1px solid #d6c9b0', borderRadius: 20, padding: '7px 16px', cursor: 'pointer' }}>
+                      Cancel
+                    </button>
+                    <button onClick={saveEdit} disabled={savingEdit}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', fontWeight: 700, color: 'white', background: 'linear-gradient(135deg, #d44d36, #b83521)', border: 'none', borderRadius: 20, padding: '7px 18px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(193,62,42,0.3)' }}>
+                      {savingEdit ? <span className="gold-spinner" style={{ width: 13, height: 13, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} /> : null}
+                      {savingEdit ? 'Saving…' : 'Save Changes'}
+                    </button>
+                  </>
+                )}
+              </div>
+
               {/* ── 2-column grid ── */}
-              <div className="overview-grid">
+              <div
+                className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-4 md:gap-5"
+                style={{ alignItems: 'start' }}
+              >
 
                 {/* ════ LEFT SIDEBAR ════ */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -970,16 +1205,22 @@ export default function ProspectDetailPage() {
                   </div>
 
                   {/* Quick contact card */}
-                  {(prospect.phone) && (
+                  {(editing || prospect.phone) && (
                     <div style={{ background: 'white', borderRadius: 18, border: '1px solid #e8dece', boxShadow: '0 2px 14px rgba(0,0,0,0.05)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Contact</span>
-                      <a href={`tel:${prospect.phone}`}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12, background: 'linear-gradient(135deg, #c13e2a, #8B2A2A)', color: 'white', textDecoration: 'none', fontWeight: 600, fontSize: '0.85rem' }}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                          <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5 19.79 19.79 0 01.01 4.82 2 2 0 012 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 9.91a16 16 0 006.72 6.72l1.28-1.28a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        {prospect.phone}
-                      </a>
+                      {editing && editForm ? (
+                        <input type="tel" value={editForm.phone} placeholder="Contact number"
+                          onChange={e => setEdit('phone', e.target.value)}
+                          style={{ width: '100%', border: '1.5px solid #d6c9b0', borderRadius: 10, padding: '8px 10px', fontSize: '0.85rem', color: '#1a1410', background: 'white', outline: 'none' }} />
+                      ) : (
+                        <a href={`tel:${prospect.phone}`}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12, background: 'linear-gradient(135deg, #c13e2a, #8B2A2A)', color: 'white', textDecoration: 'none', fontWeight: 600, fontSize: '0.85rem' }}>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5 19.79 19.79 0 01.01 4.82 2 2 0 012 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 9.91a16 16 0 006.72 6.72l1.28-1.28a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          {prospect.phone}
+                        </a>
+                      )}
                     </div>
                   )}
                 </div>
@@ -989,49 +1230,104 @@ export default function ProspectDetailPage() {
 
                   {/* Personal */}
                   <SectionCard icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#c13e2a" strokeWidth="1.6"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#c13e2a" strokeWidth="1.6" strokeLinecap="round"/></svg>} title="Personal" cols={3}>
-                    <DetailChip label="Age" value={prospect.age} />
-                    <DetailChip label="City" value={prospect.city} />
-                    <DetailChip label="Height" value={prospect.height} />
-                    <DetailChip label="Diet" value={prospect.diet} />
-                    <DetailChip label="Source" value={prospect.source} />
-                    <DetailChip label="Added" value={prospect.addedDate} />
+                    {editing && editForm ? (
+                      <>
+                        <EditChip label="Age" type="number" value={editForm.age} onChange={v => setEdit('age', v)} />
+                        <EditChip label="City" value={editForm.city} onChange={v => setEdit('city', v)} />
+                        <EditChip label="Height" value={editForm.height} onChange={v => setEdit('height', v)} placeholder={`5'6"`} />
+                        <EditPills label="Diet" options={['Pure Veg', 'Jain', 'Eggetarian', 'Non-Veg']} value={editForm.diet} onChange={v => setEdit('diet', v)} />
+                        <EditPills label="Source" options={SOURCE_OPTIONS} value={editForm.source} onChange={v => setEdit('source', v)} />
+                        <DetailChip label="Added" value={prospect.addedDate} />
+                      </>
+                    ) : (
+                      <>
+                        <DetailChip label="Age" value={prospect.age} />
+                        <DetailChip label="City" value={prospect.city} />
+                        <DetailChip label="Height" value={prospect.height} />
+                        <DetailChip label="Diet" value={prospect.diet} />
+                        <DetailChip label="Source" value={prospect.source} />
+                        <DetailChip label="Added" value={prospect.addedDate} />
+                      </>
+                    )}
                   </SectionCard>
 
                   {/* Professional */}
-                  {(prospect.education || prospect.profession || prospect.income) && (
+                  {(editing || prospect.education || prospect.profession || prospect.income) && (
                     <SectionCard icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" stroke="#c13e2a" strokeWidth="1.6" strokeLinejoin="round"/><path d="M9 22V12h6v10" stroke="#c13e2a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>} title="Professional" cols={3}>
-                      <DetailChip label="Education" value={prospect.education} />
-                      <DetailChip label="Profession" value={prospect.profession} />
-                      <DetailChip label="Income" value={prospect.income} />
-                      <DetailChip label="Property" value={prospect.property} />
+                      {editing && editForm ? (
+                        <>
+                          <EditChip label="Education" value={editForm.education} onChange={v => setEdit('education', v)} placeholder="e.g. B.Tech, MBA" />
+                          <EditChip label="Profession" value={editForm.profession} onChange={v => setEdit('profession', v)} />
+                          <EditPills label="Income" options={['< 5 LPA', '5-10', '10-20', '20-35', '35-50', '50+']} value={editForm.income} onChange={v => setEdit('income', v)} />
+                          <EditChip label="Property" value={editForm.property} onChange={v => setEdit('property', v)} />
+                        </>
+                      ) : (
+                        <>
+                          <DetailChip label="Education" value={prospect.education} />
+                          <DetailChip label="Profession" value={prospect.profession} />
+                          <DetailChip label="Income" value={prospect.income} />
+                          <DetailChip label="Property" value={prospect.property} />
+                        </>
+                      )}
                     </SectionCard>
                   )}
 
                   {/* Astrological + Family side-by-side on wide screens */}
-                  <div className="astro-family-grid">
-                    {(prospect.rashi || prospect.nakshatra !== undefined || prospect.manglik || prospect.gotra || prospect.dobDate) && (
+                  <div className="grid grid-cols-1 min-[1100px]:grid-cols-2 gap-4">
+                    {(editing || prospect.rashi || prospect.nakshatra !== undefined || prospect.manglik || prospect.gotra || prospect.dobDate) && (
                       <SectionCard icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z" stroke="#c13e2a" strokeWidth="1.5" strokeLinejoin="round"/></svg>} title="Astrological" cols={2}>
-                        <DetailChip label="Rashi" value={prospect.rashi} />
-                        <DetailChip label="Nakshatra" value={prospect.nakshatra !== undefined ? NAKSHATRAS[prospect.nakshatra] : null} />
-                        <DetailChip label="Manglik" value={prospect.manglik} />
-                        <DetailChip label="Gotra" value={prospect.gotra} />
-                        <DetailChip label="DOB" value={prospect.dobDate} />
-                        <DetailChip label="Birth Time" value={prospect.dobTime} />
-                        <DetailChip label="Birth Place" value={prospect.dobPlace} />
+                        {editing && editForm ? (
+                          <>
+                            <EditNakshatra value={editForm.nakshatra} onChange={v => setEdit('nakshatra', v)} />
+                            <EditChip label="Rashi" value={editForm.rashi} onChange={v => setEdit('rashi', v)} />
+                            <EditPills label="Manglik" options={['Yes', 'No', 'Partial', "Don't Know"]} value={editForm.manglik} onChange={v => setEdit('manglik', v)} />
+                            <EditChip label="Gotra" value={editForm.gotra} onChange={v => setEdit('gotra', v)} />
+                            <EditChip label="DOB" type="date" value={editForm.dobDate} onChange={v => setEdit('dobDate', v)} />
+                            <EditChip label="Birth Time" type="time" value={editForm.dobTime} onChange={v => setEdit('dobTime', v)} />
+                            <EditChip label="Birth Place" value={editForm.dobPlace} onChange={v => setEdit('dobPlace', v)} />
+                            <div style={{ gridColumn: '1 / -1' }}>
+                              <button type="button" onClick={recalcEditKundli}
+                                style={{ width: '100%', fontSize: '0.76rem', fontWeight: 700, color: '#b8892b', background: 'rgba(184,137,43,0.08)', border: '1px solid rgba(184,137,43,0.35)', borderRadius: 10, padding: '8px', cursor: 'pointer' }}>
+                                ✨ Recalculate Nakshatra from birth details
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <DetailChip label="Rashi" value={prospect.rashi} />
+                            <DetailChip label="Nakshatra" value={prospect.nakshatra !== undefined ? NAKSHATRAS[prospect.nakshatra] : null} />
+                            <DetailChip label="Manglik" value={prospect.manglik} />
+                            <DetailChip label="Gotra" value={prospect.gotra} />
+                            <DetailChip label="DOB" value={prospect.dobDate} />
+                            <DetailChip label="Birth Time" value={prospect.dobTime} />
+                            <DetailChip label="Birth Place" value={prospect.dobPlace} />
+                          </>
+                        )}
                       </SectionCard>
                     )}
-                    {(prospect.familyType || prospect.fatherOcc || prospect.motherOcc || prospect.siblings) && (
+                    {(editing || prospect.familyType || prospect.fatherOcc || prospect.motherOcc || prospect.siblings) && (
                       <SectionCard icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#c13e2a" strokeWidth="1.6" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke="#c13e2a" strokeWidth="1.6"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="#c13e2a" strokeWidth="1.6" strokeLinecap="round"/></svg>} title="Family Background" cols={2}>
-                        <DetailChip label="Family Type" value={prospect.familyType} />
-                        <DetailChip label="Father's Occ." value={prospect.fatherOcc} />
-                        <DetailChip label="Mother's Occ." value={prospect.motherOcc} />
-                        <DetailChip label="Siblings" value={prospect.siblings} />
+                        {editing && editForm ? (
+                          <>
+                            <EditPills label="Family Type" options={['Joint', 'Nuclear']} value={editForm.familyType} onChange={v => setEdit('familyType', v)} />
+                            <EditChip label="Father's Occ." value={editForm.fatherOcc} onChange={v => setEdit('fatherOcc', v)} />
+                            <EditChip label="Mother's Occ." value={editForm.motherOcc} onChange={v => setEdit('motherOcc', v)} />
+                            <EditChip label="Siblings" value={editForm.siblings} onChange={v => setEdit('siblings', v)} />
+                          </>
+                        ) : (
+                          <>
+                            <DetailChip label="Family Type" value={prospect.familyType} />
+                            <DetailChip label="Father's Occ." value={prospect.fatherOcc} />
+                            <DetailChip label="Mother's Occ." value={prospect.motherOcc} />
+                            <DetailChip label="Siblings" value={prospect.siblings} />
+                          </>
+                        )}
                       </SectionCard>
                     )}
                   </div>
 
                   {/* Hobbies & Interests */}
-                  {prospect.hobbies && prospect.hobbies.length > 0 && (
+                  {(editing || (prospect.hobbies && prospect.hobbies.length > 0)) && (
                     <div style={{ background: 'white', borderRadius: 18, border: '1px solid #e8dece', boxShadow: '0 2px 14px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
                       <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid #f0ebe2', display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(193,62,42,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -1040,17 +1336,21 @@ export default function ProspectDetailPage() {
                         <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Hobbies & Interests</span>
                       </div>
                       <div style={{ padding: '12px 14px 14px', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                        {prospect.hobbies.map(h => (
-                          <span key={h} style={{ background: '#faf8f5', border: '1px solid #ede8df', borderRadius: 20, padding: '5px 12px', fontSize: '0.78rem', fontWeight: 600, color: '#1a1410' }}>
-                            {h}
-                          </span>
-                        ))}
+                        {editing && editForm ? (
+                          <EditHobbies selected={editForm.hobbies} onToggle={toggleEditHobby} />
+                        ) : (
+                          prospect.hobbies!.map(h => (
+                            <span key={h} style={{ background: '#faf8f5', border: '1px solid #ede8df', borderRadius: 20, padding: '5px 12px', fontSize: '0.78rem', fontWeight: 600, color: '#1a1410' }}>
+                              {h}
+                            </span>
+                          ))
+                        )}
                       </div>
                     </div>
                   )}
 
                   {/* First Impression */}
-                  {prospect.firstImpression && (
+                  {(editing || prospect.firstImpression) && (
                     <div style={{ background: 'linear-gradient(135deg, #fff8f3 0%, #fff3ed 100%)', borderRadius: 18, border: '1px solid rgba(193,62,42,0.18)', boxShadow: '0 2px 14px rgba(193,62,42,0.07)', padding: '16px 18px 18px', position: 'relative', overflow: 'hidden' }}>
                       <div aria-hidden style={{ position: 'absolute', top: -8, left: 10, fontFamily: 'Georgia, serif', fontSize: '5rem', lineHeight: 1, color: 'rgba(193,62,42,0.12)', fontWeight: 900, userSelect: 'none' }}>&#8220;</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -1059,9 +1359,15 @@ export default function ProspectDetailPage() {
                         </div>
                         <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>First Impression</span>
                       </div>
-                      <p style={{ fontSize: '0.88rem', lineHeight: 1.65, color: '#1a1410', fontStyle: 'italic', position: 'relative', zIndex: 1, margin: 0 }}>
-                        {prospect.firstImpression}
-                      </p>
+                      {editing && editForm ? (
+                        <textarea value={editForm.firstImpression} placeholder="Your initial thoughts…" rows={3}
+                          onChange={e => setEdit('firstImpression', e.target.value)}
+                          style={{ width: '100%', border: '1.5px solid #d6c9b0', borderRadius: 10, padding: '8px 10px', fontSize: '0.85rem', color: '#1a1410', background: 'white', outline: 'none', resize: 'vertical', position: 'relative', zIndex: 1 }} />
+                      ) : (
+                        <p style={{ fontSize: '0.88rem', lineHeight: 1.65, color: '#1a1410', fontStyle: 'italic', position: 'relative', zIndex: 1, margin: 0 }}>
+                          {prospect.firstImpression}
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -1139,6 +1445,7 @@ export default function ProspectDetailPage() {
           <ConversationTimeline
             conversations={conversations}
             onAdd={handleAddConversation}
+            onUpdate={handleUpdateConversation}
             onDelete={handleDeleteConversation}
           />
         )}
@@ -1468,75 +1775,61 @@ export default function ProspectDetailPage() {
                 )}
               </div>
 
-              {/* Dimension Rows */}
-              <div style={{ padding: '6px 0' }}>
-                {FAMILY_SCORECARD_DIMENSIONS.map((dim, idx) => {
-                  const score = familyScores[dim.key as FamilyScorecardKey] ?? 0;
-                  const barColor = score >= 4 ? '#3db87a' : score === 3 ? '#e0b852' : score >= 1 ? '#e05252' : '#ede8df';
-                  const dimIcons: Record<string, string> = {
-                    responseTime: '⏱',
-                    respectfulness: '🤝',
-                    transparency: '💎',
-                    valuesAlignment: '🧿',
-                    financialCompat: '💰',
-                    openness: '🗣',
-                    commStyle: '💬',
-                    respectForFamily: '🏡',
-                  };
-                  return (
-                    <div
-                      key={dim.key}
-                      style={{
-                        padding: '14px 20px',
-                        borderBottom: idx < FAMILY_SCORECARD_DIMENSIONS.length - 1 ? '1px solid #f5ede0' : 'none',
-                        transition: 'background 0.15s',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                        {/* Left: icon + label */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+              {/* Dimension Grid */}
+              <div style={{ padding: '14px 16px 6px' }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {FAMILY_SCORECARD_DIMENSIONS.map(dim => {
+                    const score = familyScores[dim.key as FamilyScorecardKey] ?? 0;
+                    const tint = score >= 4 ? '61,184,122' : score === 3 ? '224,184,82' : '224,82,82';
+                    const dimIcons: Record<string, string> = {
+                      responseTime: '⏱',
+                      respectfulness: '🤝',
+                      transparency: '💎',
+                      valuesAlignment: '🧿',
+                      financialCompat: '💰',
+                      openness: '🗣',
+                      commStyle: '💬',
+                      respectForFamily: '🏡',
+                    };
+                    return (
+                      <div
+                        key={dim.key}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+                          padding: '10px 12px', borderRadius: 12,
+                          border: `1px solid ${score > 0 ? `rgba(${tint},0.3)` : '#f0e9dd'}`,
+                          background: score > 0 ? `rgba(${tint},0.05)` : '#faf8f5',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
                           <div style={{
-                            width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                            background: score > 0 ? `rgba(${score >= 4 ? '61,184,122' : score === 3 ? '224,184,82' : '224,82,82'},0.1)` : '#f9f5f0',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '1rem',
-                            transition: 'background 0.2s',
-                            border: score > 0 ? `1px solid rgba(${score >= 4 ? '61,184,122' : score === 3 ? '224,184,82' : '224,82,82'},0.2)` : '1px solid #ede8df',
+                            width: 30, height: 30, borderRadius: 9, flexShrink: 0,
+                            background: score > 0 ? `rgba(${tint},0.12)` : 'white',
+                            border: `1px solid ${score > 0 ? `rgba(${tint},0.25)` : '#ede8df'}`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem',
                           }}>
                             {dimIcons[dim.key] ?? '⭐'}
                           </div>
                           <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#1a1410', marginBottom: 2 }}>{dim.label}</div>
-                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                              <span style={{ fontSize: '0.6rem', color: '#c8a07a' }}>{dim.low}</span>
-                              <span style={{ fontSize: '0.55rem', color: '#d6c9b0' }}>→</span>
-                              <span style={{ fontSize: '0.6rem', color: '#2D6B4F' }}>{dim.high}</span>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1410', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{dim.label}</div>
+                            <div style={{ fontSize: '0.58rem', color: '#a89e92', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {dim.low} → {dim.high}
                             </div>
                           </div>
                         </div>
-                        {/* Right: stars */}
                         <div style={{ flexShrink: 0 }}>
                           <StarRating
                             value={score}
                             onChange={v => setFamilyScores(prev => ({ ...prev, [dim.key]: v }))}
-                            size="md"
+                            size="sm"
                             color="#c13e2a"
                           />
                         </div>
                       </div>
-                      {/* Progress bar */}
-                      <div style={{ marginTop: 10, height: 3, borderRadius: 2, background: '#f5ede0', overflow: 'hidden' }}>
-                        <div style={{
-                          height: '100%',
-                          borderRadius: 2,
-                          background: score > 0 ? `linear-gradient(90deg, ${barColor}cc, ${barColor})` : 'transparent',
-                          width: score > 0 ? `${(score / 5) * 100}%` : '0%',
-                          transition: 'width 0.5s cubic-bezier(0.34,1.56,0.64,1), background 0.3s',
-                        }}/>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Save Button */}
@@ -1606,42 +1899,6 @@ export default function ProspectDetailPage() {
                     )}
                   </div>
                 )}
-
-                {/* Pre-meeting checklist */}
-                <div style={{ background: 'white', borderRadius: 18, border: '1px solid #e8dece', boxShadow: '0 2px 14px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-                  <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid #f0ebe2', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(45,107,79,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4" stroke="#2D6B4F" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="#2D6B4F" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    </div>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#2D6B4F', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Pre-Meeting Checklist</span>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'white', background: '#2D6B4F', borderRadius: 20, padding: '1px 7px', marginLeft: 2 }}>
-                      {meetingLocal.checkedItems.length}/{PRE_MEETING_CHECKLIST.length}
-                    </span>
-                  </div>
-                  <div style={{ padding: '10px 14px 14px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-                    {PRE_MEETING_CHECKLIST.map(item => {
-                      const checked = meetingLocal.checkedItems.includes(item);
-                      return (
-                        <button key={item} type="button" onClick={() => toggleMeetingItem(item, 'checkedItems')}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12, textAlign: 'left', cursor: 'pointer', width: '100%',
-                            background: checked ? 'rgba(45,107,79,0.07)' : '#faf8f5',
-                            border: `1px solid ${checked ? 'rgba(45,107,79,0.3)' : '#ede8df'}`,
-                            transition: 'all 0.15s',
-                          }}>
-                          <span style={{
-                            width: 20, height: 20, borderRadius: '50%', border: `2px solid ${checked ? '#2D6B4F' : '#d6c9b0'}`,
-                            flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem',
-                            background: checked ? '#2D6B4F' : 'white', color: 'white', transition: 'all 0.15s',
-                          }}>
-                            {checked && '✓'}
-                          </span>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 500, color: checked ? '#2D6B4F' : '#1a1410', textDecoration: checked ? 'line-through' : 'none', flex: 1 }}>{item}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
 
                 {/* Questions to ask */}
                 <div style={{ background: 'white', borderRadius: 18, border: '1px solid #e8dece', boxShadow: '0 2px 14px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
