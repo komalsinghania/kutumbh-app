@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider,
+  signInWithRedirect, getRedirectResult, GoogleAuthProvider,
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
   onAuthStateChanged,
 } from 'firebase/auth';
@@ -21,37 +21,19 @@ function AuthModal({ onClose }: { onClose: () => void }) {
   const [googleLoading, setGoogleLoading] = useState(false);
   
 
-  // Handle redirect result on mount (fires after signInWithRedirect returns from Google)
-  useEffect(() => {
-    getRedirectResult(auth).catch((err: any) => {
-      if (err?.code) toast.error(`Sign-in error: ${err.code}`);
-    });
-  }, []);
-
   const handleGoogle = async () => {
     setGoogleLoading(true);
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
+      // Use redirect instead of popup to avoid Cross-Origin-Opener-Policy issues
+      // with Google's OAuth popup. Page will redirect to Google and return.
+      await signInWithRedirect(auth, new GoogleAuthProvider());
     } catch (err: any) {
       const code: string = err?.code ?? '';
-      // Popup blocked or closed — fall back to redirect (common on mobile/Safari)
-      if (
-        code === 'auth/popup-blocked' ||
-        code === 'auth/popup-closed-by-user' ||
-        code === 'auth/cancelled-popup-request'
-      ) {
-        try {
-          await signInWithRedirect(auth, new GoogleAuthProvider());
-          return; // page redirects away — no finally needed
-        } catch (redirectErr: any) {
-          toast.error(redirectErr?.code ?? 'Google sign-in failed.');
-        }
-      } else {
-        toast.error(code ? `Sign-in failed: ${code}` : 'Google sign-in failed. Please try again.');
-      }
-    } finally {
+      toast.error(code ? `Sign-in failed: ${code}` : 'Google sign-in failed. Please try again.');
       setGoogleLoading(false);
     }
+    // Note: setGoogleLoading(false) is intentionally not called in finally —
+    // on success the page navigates away.
   };
 
   const handleEmail = async (e: React.FormEvent) => {
@@ -417,6 +399,11 @@ export default function LandingPage() {
   };
 
   useEffect(() => {
+    // Handle result from signInWithRedirect (Google OAuth redirect flow)
+    getRedirectResult(auth).catch((err: any) => {
+      if (err?.code) toast.error(`Sign-in error: ${err.code}`);
+    });
+
     const unsub = onAuthStateChanged(auth, user => {
       setLoggedIn(!!user);
       setAuthLoading(false);
