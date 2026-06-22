@@ -13,7 +13,7 @@ import { Logo } from '@/components/Logo';
 
 // ── Auth Modal ─────────────────────────────────────────────────────────────────
 
-function AuthModal({ onClose }: { onClose: () => void }) {
+function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -23,15 +23,19 @@ function AuthModal({ onClose }: { onClose: () => void }) {
 
   // Handle redirect result on mount (fires after signInWithRedirect returns from Google)
   useEffect(() => {
-    getRedirectResult(auth).catch((err: any) => {
-      if (err?.code) toast.error(`Sign-in error: ${err.code}`);
-    });
+    getRedirectResult(auth)
+      .then((result) => { if (result?.user) onSuccess(); })
+      .catch((err: any) => {
+        if (err?.code) toast.error(`Sign-in error: ${err.code}`);
+      });
   }, []);
 
   const handleGoogle = async () => {
     setGoogleLoading(true);
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
+      onSuccess();
+      return;
     } catch (err: any) {
       const code: string = err?.code ?? '';
       // Popup blocked or closed — fall back to redirect (common on mobile/Safari)
@@ -60,6 +64,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
     try {
       if (isSignUp) await createUserWithEmailAndPassword(auth, email, password);
       else await signInWithEmailAndPassword(auth, email, password);
+      onSuccess();
     } catch (err: any) {
       toast.error(err.message || 'Authentication failed.');
     } finally { setSubmitting(false); }
@@ -472,7 +477,12 @@ export default function LandingPage() {
         .marquee-track:hover .marquee-inner { animation-play-state: paused !important; }
       `}} />
 
-      {showModal && <AuthModal onClose={() => setShowModal(false)} />}
+      {showModal && (
+        <AuthModal
+          onClose={() => setShowModal(false)}
+          onSuccess={() => { setShowModal(false); router.push('/dashboard'); }}
+        />
+      )}
 
       {/* 2. LAUNCH DISCOUNT BANNER */}
       {!bannerDismissed && (
