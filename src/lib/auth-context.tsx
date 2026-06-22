@@ -30,6 +30,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     return onAuthStateChanged(auth, async (u) => {
+      // Reset loading on every auth change so consumers (e.g. the dashboard's
+      // onboarding guard) never evaluate during the profile-fetch gap, where
+      // `user` is set but `profile` hasn't resolved yet.
+      setLoading(true);
       setUser(u);
       if (u) {
         const p = await getUserProfile(u.uid);
