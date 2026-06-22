@@ -34,6 +34,120 @@ function timeAgo(ts?: number): string {
   return `${d}d ago`;
 }
 
+/* ─── Almanac helpers ──────────────────────────────────────────────────── */
+const NUM_WORDS = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven',
+  'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'];
+function numWord(n: number): string { return NUM_WORDS[n] ?? String(n); }
+
+const ORDINAL_WORDS = ['zeroth', 'first', 'second', 'third', 'fourth', 'fifth',
+  'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh'];
+function ordinalWord(n: number): string { return ORDINAL_WORDS[n] ?? `${n}th`; }
+
+// Maps a nudge icon to a short noun for the "Needs You" stat (e.g. "One call").
+const NUDGE_NOUN: Record<string, string> = {
+  '📋': 'review', '📞': 'call', '🔯': 'kundli', '🚩': 'flag', '🕐': 'follow-up',
+};
+
+// Linear visible path for the lead's "path so far" breadcrumb (… → Roka).
+const LEAD_PATH: { stage: ProspectStage; label: string }[] = [
+  { stage: 'new', label: 'New' },
+  { stage: 'photo_exchanged', label: 'Photos' },
+  { stage: 'kundli_sent', label: 'Kundli' },
+  { stage: 'kundli_matched', label: 'Matched' },
+  { stage: 'call_done', label: 'Call' },
+  { stage: 'family_call', label: 'Family' },
+  { stage: 'meeting_fixed', label: 'Meeting' },
+];
+
+// Issue number for the masthead — weeks since the user joined.
+function weeksSince(ts: number): number {
+  return Math.max(1, Math.floor((Date.now() - ts) / 604800000) + 1);
+}
+
+function diaryDate(d: Date): { weekday: string; rest: string } {
+  return {
+    weekday: d.toLocaleDateString('en-GB', { weekday: 'long' }),
+    rest: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+  };
+}
+
+// Soft, diary-voiced "n days ago" for narrative copy.
+function timeAgoWords(ts?: number): string {
+  if (!ts) return 'a while ago';
+  const d = Math.floor((Date.now() - ts) / 86400000);
+  if (d <= 0) return 'earlier today';
+  if (d === 1) return 'yesterday';
+  if (d <= 12) return `${numWord(d).toLowerCase()} days ago`;
+  return `${d} days ago`;
+}
+
+// Picks the one prospect to feature as the diary's "Lead".
+function pickLead(prospects: Prospect[], nudges: Nudge[]): Prospect | null {
+  if (prospects.length === 0) return null;
+  const active = prospects.filter(p => p.stage !== 'rejected');
+  // 1. The first nudge that points at a still-active prospect.
+  for (const n of nudges) {
+    const p = active.find(x => x.id === n.prospectId);
+    if (p) return p;
+  }
+  // 2. Otherwise the furthest-along active prospect, most-recent first.
+  const ranked = [...active].sort((a, b) => {
+    const ja = JOURNEY_STAGES.indexOf(a.stage);
+    const jb = JOURNEY_STAGES.indexOf(b.stage);
+    if (jb !== ja) return jb - ja;
+    return (b.lastActivityAt ?? b.createdAt) - (a.lastActivityAt ?? a.createdAt);
+  });
+  return ranked[0] ?? prospects[0];
+}
+
+// One italic sentence describing where the lead stands and what's due next.
+function leadNarrative(p: Prospect): string {
+  const pos = stageOrderIndex(p.stage) + 1;
+  const when = timeAgoWords(p.lastActivityAt ?? p.createdAt);
+  switch (p.stage) {
+    case 'new':
+      return `Newly added — ${ordinalWord(pos)} of eleven. Her biodata is waiting for your first read.`;
+    case 'photo_exchanged':
+      return `At the Photos stage — ${ordinalWord(pos)} of eleven. Look closely, then decide if the kundli is worth matching.`;
+    case 'kundli_sent':
+      return `Kundli is out for matching — ${ordinalWord(pos)} of eleven. The pandit's verdict is what you're waiting on.`;
+    case 'kundli_matched':
+      return `Kundli matched — ${ordinalWord(pos)} of eleven. A first call is the natural next step.`;
+    case 'call_done':
+      return `At the Call stage — ${ordinalWord(pos)} of eleven. You spoke ${when}; a follow-up is due to keep things warm.`;
+    case 'family_call':
+      return `Families are talking — ${ordinalWord(pos)} of eleven. Listen for warmth and genuine intent.`;
+    case 'meeting_fixed':
+      return `A meeting is fixed — ${ordinalWord(pos)} of eleven. Prepare what you most want to observe.`;
+    case 'met':
+      return `You've met — ${ordinalWord(pos)} of eleven. Sit with how it felt before the next move.`;
+    case 'interested':
+      return `Mutually interested — ${ordinalWord(pos)} of eleven. The conversation now turns gently toward roka.`;
+    case 'on_hold':
+      return `On hold — paused ${when}. A gentle nudge may bring it back to life.`;
+    default:
+      return `Last touched ${when}.`;
+  }
+}
+
+// Short italic note for each entry in "Also in the Diary".
+function diaryNote(p: Prospect): string {
+  const when = timeAgoWords(p.lastActivityAt ?? p.createdAt);
+  switch (p.stage) {
+    case 'new': return 'Newly added — biodata awaiting your first read.';
+    case 'photo_exchanged': return 'Photos shared — appearance review pending.';
+    case 'kundli_sent': return 'Kundli sent — waiting on the match verdict.';
+    case 'kundli_matched': return 'Newly matched — a first call is next.';
+    case 'call_done': return `Spoke ${when} — a follow-up call is due.`;
+    case 'family_call': return 'Families talking — waiting to hear back.';
+    case 'meeting_fixed': return 'Meeting fixed — preparation pending.';
+    case 'met': return 'Met in person — reflecting on the next step.';
+    case 'interested': return 'Mutually interested — roka on the horizon.';
+    case 'on_hold': return `On hold — paused ${when}.`;
+    default: return STAGE_TAB_LABELS[p.stage];
+  }
+}
+
 const STAGE_ORDER: ProspectStage[] = [
   'new', 'photo_exchanged', 'kundli_sent', 'kundli_matched',
   'call_done', 'family_call', 'meeting_fixed', 'met', 'interested', 'on_hold', 'rejected',
@@ -49,11 +163,6 @@ const JOURNEY_STAGES: ProspectStage[] = [
   'new', 'photo_exchanged', 'kundli_sent', 'kundli_matched',
   'call_done', 'family_call', 'meeting_fixed', 'met', 'interested',
 ];
-
-const JOURNEY_LABELS: Record<string, string> = {
-  new: 'New', photo_exchanged: 'Photos', kundli_sent: 'Kundli', kundli_matched: 'Matched',
-  call_done: 'Call', family_call: 'Family', meeting_fixed: 'Meeting', met: 'Met', interested: 'Interested',
-};
 
 const STAGE_QUICK_ACTION: Partial<Record<ProspectStage, string>> = {
   new: 'Review Biodata', photo_exchanged: 'Check Kundli', kundli_sent: 'View Report',
@@ -120,7 +229,6 @@ export default function DashboardPage() {
   const [matchSub, setMatchSub] = useState<MatchSubTab>('compat');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [compareIds, setCompareIds] = useState<string[]>([]);
-  const [showAllNudges, setShowAllNudges] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   const toggleExpand = (id: string) =>
@@ -184,9 +292,27 @@ export default function DashboardPage() {
     ? Math.round(prospectsWithCompat.reduce((sum, p) => sum + (p.compatScore ?? 0), 0) / prospectsWithCompat.length)
     : null;
   const nudges = computeNudges(prospects);
-  const visibleNudges = showAllNudges ? nudges : nudges.slice(0, 3);
-  const activeJourneyStages = JOURNEY_STAGES.filter(s => (stageCounts[s] ?? 0) > 0);
   const totalDecisions = (stageCounts['interested'] ?? 0) + (stageCounts['on_hold'] ?? 0) + (stageCounts['rejected'] ?? 0);
+
+  // ── Almanac (board) derived values ──
+  const lead = pickLead(prospects, nudges);
+  const diaryProspects = lead
+    ? prospects
+        .filter(p => p.id !== lead.id && p.stage !== 'rejected')
+        .sort((a, b) => (b.lastActivityAt ?? b.createdAt) - (a.lastActivityAt ?? a.createdAt))
+        .slice(0, 4)
+    : [];
+  const almanacDate = diaryDate(new Date());
+  const weekNo = weeksSince(profile.createdAt);
+  const needsValue = nudges.length === 0
+    ? 'All clear'
+    : `${numWord(nudges.length)} ${NUDGE_NOUN[nudges[0].icon] ?? 'task'}${nudges.length > 1 ? 's' : ''}`;
+  const onHoldCount = stageCounts['on_hold'] ?? 0;
+  const noteToSelf = onHoldCount > 0
+    ? `${numWord(onHoldCount)} ${onHoldCount === 1 ? 'prospect rests' : 'prospects rest'} on hold — worth a review before the week is out.`
+    : nudges.length > 0
+    ? `${numWord(nudges.length)} ${nudges.length === 1 ? 'task waits' : 'tasks wait'} for you in the register below.`
+    : 'All caught up — enjoy the calm before the next maybe.';
 
   const byCompat = [...prospects].sort((a, b) =>
     (calculateOverallScore(b.gunaScore, b.compatScore) ?? 0) - (calculateOverallScore(a.gunaScore, a.compatScore) ?? 0)
@@ -347,8 +473,8 @@ export default function DashboardPage() {
           </header>
         )}
 
-        {/* ── Desktop Top Bar ── */}
-        {!isMobile && (
+        {/* ── Desktop Top Bar ── (hidden on the board — the Almanac has its own masthead) */}
+        {!isMobile && mainTab !== 'board' && (
           <header style={{
             height: 64, background: 'white',
             borderBottom: '1px solid #ede4d4',
@@ -361,32 +487,18 @@ export default function DashboardPage() {
                 fontFamily: 'var(--font-fraunces, Fraunces, serif)',
                 fontSize: '1.15rem', color: '#1a1410', fontWeight: 700, lineHeight: 1.2,
               }}>
-                {mainTab === 'board' ? `Welcome back, ${firstName} ✦` :
-                 mainTab === 'matches' ? 'Match Rankings' :
+                {mainTab === 'matches' ? 'Match Rankings' :
                  mainTab === 'decision' ? 'Final Decisions' :
                  mainTab === 'compare' ? 'Compare Prospects' : 'My Profile'}
               </h1>
               <p style={{ fontSize: '0.68rem', color: '#9b8e7e', marginTop: 3, fontWeight: 400 }}>
-                {mainTab === 'board' ? `${prospects.length} prospect${prospects.length !== 1 ? 's' : ''} across your pipeline` :
-                 mainTab === 'matches' ? 'Sorted by overall compatibility and kundli scores' :
+                {mainTab === 'matches' ? 'Sorted by overall compatibility and kundli scores' :
                  mainTab === 'decision' ? `${totalDecisions} total decisions recorded` :
                  mainTab === 'compare' ? 'Pick 2 or 3 prospects to compare side by side' :
                  `${profile.profession} · ${profile.city}`}
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {mainTab === 'board' && (
-                <Link href="/prospects/new" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  background: 'linear-gradient(135deg, #d44d36 0%, #b83521 100%)',
-                  color: '#fff', borderRadius: 9, padding: '9px 18px',
-                  fontSize: '0.82rem', fontWeight: 700, textDecoration: 'none',
-                  boxShadow: '0 4px 14px rgba(193,62,42,0.35)',
-                }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                  New Prospect
-                </Link>
-              )}
               {mainTab === 'compare' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: '0.78rem', color: '#6b5e4d', fontWeight: 500 }}>{compareIds.length}/3 selected</span>
@@ -414,7 +526,7 @@ export default function DashboardPage() {
 
         {/* ── Scrollable Content ── */}
         <div className="flex-1 overflow-y-auto scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-          <div style={{ maxWidth: isMobile ? '100%' : 880, margin: '0 auto', paddingBottom: isMobile ? 'calc(72px + env(safe-area-inset-bottom) + 16px)' : 40 }}>
+          <div style={{ maxWidth: isMobile ? '100%' : (mainTab === 'board' ? 1080 : 880), margin: '0 auto', paddingBottom: isMobile ? 'calc(72px + env(safe-area-inset-bottom) + 16px)' : 40 }}>
 
 
         {/* ═══════════════════════════════════════════════════════
@@ -454,226 +566,209 @@ export default function DashboardPage() {
 
             ) : (
               <>
-                {/* ── Stat Cards Row ────────────────────────── */}
-                <div style={{ padding: `22px ${isMobile ? 16 : 28}px 0` }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
-
-                    {/* Prospects */}
-                    <div style={{
-                      background: 'white', borderRadius: 16, padding: '18px 20px',
-                      border: '1px solid #ede4d4',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-                      animation: 'fadeUpIn 0.45s ease-out 0.05s both',
-                      position: 'relative', overflow: 'hidden',
-                    }}>
-                      <div style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-                        background: 'linear-gradient(90deg, #c13e2a, #e06044)',
-                        borderRadius: '16px 16px 0 0',
-                      }} />
-                      <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#9b8e7e', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Prospects</div>
-                      <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '2.4rem', fontWeight: 800, color: '#1a1410', lineHeight: 1 }}>
-                        {prospects.length}
-                      </div>
-                      <div style={{ fontSize: '0.68rem', color: '#9b8e7e', marginTop: 6 }}>
-                        across {activeJourneyStages.length} stage{activeJourneyStages.length !== 1 ? 's' : ''}
-                      </div>
+                {/* ── Almanac Masthead ──────────────────────── */}
+                <div style={{ padding: `${isMobile ? 22 : 34}px ${isMobile ? 16 : 28}px 0` }}>
+                  <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#b08442' }}>
+                    Your Weekly Companion · No. {weekNo}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginTop: 8, flexWrap: 'wrap' }}>
+                    <h1 style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: isMobile ? '2rem' : '2.9rem', fontWeight: 600, color: '#1a1410', lineHeight: 1.04, letterSpacing: '-0.01em', margin: 0 }}>
+                      The Marriage Almanac
+                    </h1>
+                    <div style={{ textAlign: 'right', fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontStyle: 'italic', color: '#6b5e4d', fontSize: '0.92rem', lineHeight: 1.3 }}>
+                      <div>{almanacDate.weekday}</div>
+                      <div>{almanacDate.rest}</div>
                     </div>
+                  </div>
+                  <div style={{ height: 2.5, background: '#1a1410', marginTop: 14, borderRadius: 2 }} />
+                </div>
 
-                    {/* Best Match */}
-                    <div style={{
-                      background: bestMatchScore !== null ? 'linear-gradient(135deg, #fef5f3 0%, #fff 60%)' : 'white',
-                      borderRadius: 16, padding: '18px 20px',
-                      border: `1px solid ${bestMatchScore !== null ? 'rgba(193,62,42,0.2)' : '#ede4d4'}`,
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-                      animation: 'fadeUpIn 0.45s ease-out 0.12s both',
-                      position: 'relative', overflow: 'hidden',
-                    }}>
-                      <div style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-                        background: 'linear-gradient(90deg, #b8892b, #d4a84c)',
-                        borderRadius: '16px 16px 0 0',
-                      }} />
-                      <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#9b8e7e', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Best Match</div>
-                      {bestMatch && bestMatchScore !== null ? (
-                        <>
-                          <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '2.4rem', fontWeight: 800, color: '#c13e2a', lineHeight: 1 }}>
-                            {bestMatchScore}%
+                {/* ── Almanac Stats Strip ───────────────────── */}
+                <div style={{ padding: `18px ${isMobile ? 16 : 28}px 0` }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', rowGap: 18 }}>
+                    {([
+                      { label: 'In Pipeline', value: numWord(prospects.length), color: '#1a1410' },
+                      { label: 'Best Match', value: bestMatchScore !== null ? `${bestMatchScore}%` : '—', color: '#c13e2a' },
+                      { label: 'Avg Warmth', value: avgCompat !== null ? `${avgCompat}%` : '—', color: '#2D6B4F' },
+                      { label: 'Needs You', value: needsValue, color: '#1a1410' },
+                    ]).map((s, i) => {
+                      const divided = (!isMobile && i > 0) || (isMobile && i % 2 === 1);
+                      return (
+                        <div key={s.label} style={{
+                          paddingLeft: divided ? 18 : 0,
+                          borderLeft: divided ? '1px solid #e3d9c6' : 'none',
+                        }}>
+                          <div style={{ fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#9b8e7e', marginBottom: 6 }}>
+                            {s.label}
                           </div>
-                          <div style={{ fontSize: '0.68rem', color: '#6b5e4d', marginTop: 6, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {bestMatch.name.split(' ')[0]}
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '2.4rem', fontWeight: 800, color: '#d6c9b0', lineHeight: 1 }}>—</div>
-                          <div style={{ fontSize: '0.68rem', color: '#9b8e7e', marginTop: 6 }}>No scores yet</div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Avg Compat */}
-                    <div style={{
-                      background: 'white', borderRadius: 16, padding: '18px 20px',
-                      border: '1px solid #ede4d4',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-                      animation: 'fadeUpIn 0.45s ease-out 0.2s both',
-                      position: 'relative', overflow: 'hidden',
-                    }}>
-                      <div style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-                        background: 'linear-gradient(90deg, #2D6B4F, #4a9a75)',
-                        borderRadius: '16px 16px 0 0',
-                      }} />
-                      <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#9b8e7e', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Avg Compat</div>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '2.4rem', fontWeight: 800, color: '#1a1410', lineHeight: 1 }}>
-                            {avgCompat !== null ? `${avgCompat}%` : '—'}
-                          </div>
-                          <div style={{ fontSize: '0.68rem', color: '#9b8e7e', marginTop: 6 }}>
-                            {prospectsWithCompat.length} scored
+                          <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: isMobile ? '1.5rem' : '1.9rem', fontWeight: 600, color: s.color, lineHeight: 1.05 }}>
+                            {s.value}
                           </div>
                         </div>
-                        {avgCompat !== null && (
-                          <div style={{ marginTop: 2 }}>
-                            <CircleProgress value={avgCompat} size={38} color={scoreColor(avgCompat)} />
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
+                  <div style={{ height: 1, background: '#e3d9c6', marginTop: 18 }} />
                 </div>
 
-                {/* ── Journey Pipeline ──────────────────────── */}
-                <div style={{ padding: `20px ${isMobile ? 16 : 28}px 0` }}>
-                  <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c13e2a', marginBottom: 12 }}>
-                    Pipeline
-                  </div>
-                  <div style={{
-                    background: 'white', borderRadius: 14, padding: '16px 18px',
-                    border: '1px solid #ede4d4', boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-                  }}>
-                    <div className="overflow-x-auto scrollbar-none">
-                      <div style={{ display: 'flex', alignItems: 'center', minWidth: `${JOURNEY_STAGES.length * 72}px`, padding: '4px 2px 8px' }}>
-                        {JOURNEY_STAGES.map((s, i) => {
-                          const count = stageCounts[s] ?? 0;
-                          const isActive = count > 0;
-                          const isCurrent = boardStage === s;
-                          const dotSize = isActive ? Math.min(44, 24 + count * 5) : 24;
-                          return (
-                            <div key={s} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: dotSize + 10 }}>
-                                <button onClick={() => { if (isActive) setBoardStage(s); }}
-                                  style={{
-                                    width: dotSize, height: dotSize, borderRadius: '50%',
-                                    background: isActive
-                                      ? isCurrent
-                                        ? 'linear-gradient(135deg, #d44d36, #b83521)'
-                                        : 'rgba(193,62,42,0.12)'
-                                      : 'rgba(214,201,176,0.25)',
-                                    border: `2px solid ${isActive ? (isCurrent ? '#c13e2a' : 'rgba(193,62,42,0.35)') : '#d6c9b0'}`,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    cursor: isActive ? 'pointer' : 'default',
-                                    flexShrink: 0, transition: 'all 0.2s ease',
-                                    boxShadow: isCurrent ? '0 4px 14px rgba(193,62,42,0.35)' : 'none',
-                                    outline: isCurrent ? '3px solid rgba(193,62,42,0.2)' : 'none',
-                                    outlineOffset: 2,
-                                    animation: isActive ? `fadeUpIn 0.4s ease-out ${i * 0.05}s both` : undefined,
-                                  }}>
-                                  <span style={{
-                                    fontFamily: 'var(--font-fraunces, Fraunces, serif)',
-                                    fontSize: dotSize > 32 ? '0.72rem' : '0.6rem', fontWeight: 800,
-                                    color: isActive ? (isCurrent ? '#fff' : '#c13e2a') : '#c8bfb0',
-                                  }}>{count}</span>
-                                </button>
-                                <span style={{ fontSize: '0.5rem', color: isCurrent ? '#c13e2a' : '#9b8e7e', marginTop: 5, textAlign: 'center', whiteSpace: 'nowrap', fontWeight: isCurrent ? 700 : 400 }}>
-                                  {JOURNEY_LABELS[s]}
-                                </span>
-                              </div>
-                              {i < JOURNEY_STAGES.length - 1 && (
-                                <div style={{
-                                  flex: 1, height: 2, marginBottom: 16, borderRadius: 1,
-                                  background: isActive
-                                    ? 'linear-gradient(90deg, rgba(193,62,42,0.5), rgba(193,62,42,0.15))'
-                                    : 'rgba(214,201,176,0.4)',
-                                  animation: `journeyLineDraw 0.7s ease-out ${i * 0.05 + 0.1}s both`,
-                                  transformOrigin: 'left',
-                                }} />
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* ── Almanac Body: Lead + Diary ────────────── */}
+                <div style={{
+                  padding: `24px ${isMobile ? 16 : 28}px 0`,
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.7fr) minmax(0, 1fr)',
+                  gap: isMobile ? 30 : 38,
+                }}>
 
-                {/* ── Needs Attention ───────────────────────── */}
-                <div style={{ padding: `18px ${isMobile ? 16 : 28}px 0` }}>
-                  <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c13e2a', marginBottom: 12 }}>
-                    Needs Attention
-                  </div>
-                  {nudges.length === 0 ? (
-                    <div style={{
-                      background: 'white', borderRadius: 12, padding: '14px 18px',
-                      border: '1px solid #ede4d4', display: 'flex', alignItems: 'center', gap: 12,
-                      boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
-                    }}>
-                      <div style={{
-                        width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                        background: 'rgba(45,107,79,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#2D6B4F"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                  {/* LEAD — Needs Your Attention */}
+                  {lead && (
+                    <div style={{ animation: 'fadeUpIn 0.45s ease-out 0.05s both' }}>
+                      <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#b08442', marginBottom: 16 }}>
+                        Lead — Needs Your Attention
                       </div>
-                      <div>
-                        <p style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1a1410' }}>All caught up!</p>
-                        <p style={{ fontSize: '0.7rem', color: '#6b5e4d', marginTop: 1 }}>No pending actions.</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {visibleNudges.map((nudge, i) => (
-                        <button key={`${nudge.prospectId}-${i}`}
-                          onClick={() => router.push(`/prospects/${nudge.prospectId}`)}
-                          style={{
-                            width: '100%', textAlign: 'left',
-                            background: 'white', borderRadius: 12, padding: '12px 16px',
-                            border: '1px solid #ede4d4', borderLeft: '4px solid #c13e2a',
-                            display: 'flex', alignItems: 'center', gap: 12,
-                            boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
-                            animation: `slideInRight 0.35s ease-out ${i * 0.07}s both`,
-                            cursor: 'pointer', transition: 'box-shadow 0.18s ease',
-                          }}>
+                      <div style={{ display: 'flex', gap: isMobile ? 16 : 22, flexDirection: isMobile ? 'column' : 'row' }}>
+                        {lead.photos?.[0] ? (
+                          <img src={lead.photos[0]} alt="" style={{ width: isMobile ? '100%' : 148, height: isMobile ? 220 : 188, borderRadius: 6, objectFit: 'cover', flexShrink: 0, border: '1px solid #e3d9c6' }} />
+                        ) : (
                           <div style={{
-                            width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                            background: 'rgba(193,62,42,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '1rem',
-                          }}>{nudge.icon}</div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a1410', marginBottom: 2 }}>{nudge.prospectName}</div>
-                            <div style={{ fontSize: '0.7rem', color: '#6b5e4d', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nudge.text}</div>
+                            width: isMobile ? '100%' : 148, height: isMobile ? 150 : 188, borderRadius: 6, flexShrink: 0,
+                            background: 'linear-gradient(150deg, #efe2cf 0%, #e7cbb8 100%)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '2.6rem', fontWeight: 500,
+                            color: 'rgba(193,62,42,0.45)', border: '1px solid #e3d9c6',
+                          }}>{initials(lead.name)}</div>
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <h2 style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: isMobile ? '1.5rem' : '1.8rem', fontWeight: 600, color: '#1a1410', lineHeight: 1.1, margin: 0 }}>
+                            {lead.name}
+                          </h2>
+                          <p style={{ fontSize: '0.78rem', color: '#7a6e62', marginTop: 4 }}>
+                            {[lead.age ? `${lead.age}` : null, lead.city, lead.profession].filter(Boolean).join(' · ')}
+                          </p>
+                          <p style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontStyle: 'italic', fontSize: '1.02rem', color: '#4a4038', lineHeight: 1.5, marginTop: 14 }}>
+                            “{leadNarrative(lead)}”
+                          </p>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 18, flexWrap: 'wrap' }}>
+                            <button onClick={() => router.push(`/prospects/${lead.id}`)} style={{
+                              background: 'linear-gradient(135deg, #d44d36 0%, #b83521 100%)',
+                              color: '#fff', borderRadius: 8, padding: '10px 20px',
+                              fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer', border: 'none',
+                              boxShadow: '0 4px 14px rgba(193,62,42,0.32)',
+                            }}>
+                              {STAGE_QUICK_ACTION[lead.stage] ?? 'Open her page'}
+                            </button>
+                            {(() => {
+                              const ov = calculateOverallScore(lead.gunaScore, lead.compatScore);
+                              if (lead.gunaScore == null && ov === null) return null;
+                              return (
+                                <span style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontStyle: 'italic', fontSize: '0.82rem', color: '#9b8e7e' }}>
+                                  {lead.gunaScore != null && `— kundli ${lead.gunaScore} of 36 `}
+                                  {ov !== null && <span style={{ color: scoreColor(ov), fontWeight: 600, fontStyle: 'normal' }}>✦ {ov}%</span>}
+                                </span>
+                              );
+                            })()}
                           </div>
-                          <span style={{
-                            fontSize: '0.7rem', color: '#c13e2a', fontWeight: 700, flexShrink: 0,
-                            fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontStyle: 'italic',
-                            padding: '5px 12px', border: '1px solid rgba(193,62,42,0.35)',
-                            borderRadius: 20, background: 'rgba(193,62,42,0.05)',
-                          }}>{nudge.cta}</span>
-                        </button>
-                      ))}
-                      {nudges.length > 3 && (
-                        <button onClick={() => setShowAllNudges(v => !v)}
-                          style={{ fontSize: '0.72rem', color: '#c13e2a', fontWeight: 700, padding: '4px 0', cursor: 'pointer' }}>
-                          {showAllNudges ? '▲ Show less' : `See all ${nudges.length} actions →`}
-                        </button>
-                      )}
+                        </div>
+                      </div>
+
+                      {/* Her path so far */}
+                      <div style={{ marginTop: 24, borderTop: '1px solid #e3d9c6', paddingTop: 16 }}>
+                        <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9b8e7e', marginBottom: 12 }}>
+                          {lead.name.split(' ')[0]}&rsquo;s Path So Far
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', rowGap: 6, fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '0.84rem' }}>
+                          {(() => {
+                            let cur = LEAD_PATH.findIndex(s => s.stage === lead.stage);
+                            if (lead.stage === 'met' || lead.stage === 'interested') cur = LEAD_PATH.length;
+                            if (cur < 0) cur = 0;
+                            const nodes: React.ReactNode[] = [];
+                            LEAD_PATH.forEach((s, i) => {
+                              const done = i < cur;
+                              const isCur = i === cur;
+                              nodes.push(
+                                <span key={s.stage} style={{
+                                  color: done || isCur ? '#c13e2a' : '#b3a692',
+                                  fontWeight: isCur ? 700 : done ? 600 : 400,
+                                  borderBottom: isCur ? '1.5px solid #c13e2a' : 'none',
+                                  paddingBottom: isCur ? 1 : 0,
+                                }}>{done ? `✓ ${s.label}` : s.label}</span>
+                              );
+                              nodes.push(<span key={`sep-${i}`} style={{ color: '#cdbfa6', padding: '0 6px' }}>—</span>);
+                            });
+                            const reached = lead.stage === 'interested';
+                            nodes.push(<span key="ellipsis" style={{ color: '#cdbfa6' }}>…</span>);
+                            nodes.push(<span key="roka-sep" style={{ color: '#cdbfa6', padding: '0 6px' }}>—</span>);
+                            nodes.push(
+                              <span key="roka" style={{ color: reached ? '#b8892b' : '#b3a692', fontWeight: reached ? 700 : 500 }}>
+                                Roka ✦
+                              </span>
+                            );
+                            return nodes;
+                          })()}
+                        </div>
+                      </div>
                     </div>
                   )}
+
+                  {/* ALSO IN THE DIARY */}
+                  <div style={{ borderLeft: isMobile ? 'none' : '1px solid #e3d9c6', paddingLeft: isMobile ? 0 : 26, animation: 'fadeUpIn 0.45s ease-out 0.12s both' }}>
+                    <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9b8e7e', marginBottom: 14 }}>
+                      Also in the Diary
+                    </div>
+                    {diaryProspects.length === 0 ? (
+                      <p style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontStyle: 'italic', fontSize: '0.9rem', color: '#9b8e7e' }}>
+                        No one else in the diary just yet.
+                      </p>
+                    ) : diaryProspects.map((p, i) => {
+                      const ov = calculateOverallScore(p.gunaScore, p.compatScore);
+                      return (
+                        <button key={p.id} onClick={() => router.push(`/prospects/${p.id}`)} style={{
+                          width: '100%', textAlign: 'left', display: 'block', cursor: 'pointer',
+                          background: 'transparent', border: 'none',
+                          padding: '13px 0',
+                          borderTop: i === 0 ? 'none' : '1px solid #ece3d2',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+                            <h3 style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.05rem', fontWeight: 600, color: '#1a1410', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
+                              {p.name}
+                            </h3>
+                            {ov !== null && (
+                              <span style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '0.92rem', fontWeight: 700, color: scoreColor(ov), flexShrink: 0 }}>{ov}%</span>
+                            )}
+                          </div>
+                          <p style={{ fontSize: '0.72rem', color: '#7a6e62', marginTop: 2 }}>
+                            {[p.age ? `${p.age}` : null, p.city, p.profession].filter(Boolean).join(' · ')}
+                          </p>
+                          <p style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontStyle: 'italic', fontSize: '0.84rem', color: '#9b8e7e', marginTop: 6, lineHeight: 1.4 }}>
+                            {diaryNote(p)}
+                          </p>
+                        </button>
+                      );
+                    })}
+
+                    {/* A note to self */}
+                    <button onClick={() => setMainTab('decision')} style={{
+                      marginTop: 18, width: '100%', textAlign: 'left', display: 'block', cursor: 'pointer',
+                      border: '1px solid #e3d9c6', borderRadius: 8, padding: '14px 16px',
+                      background: 'rgba(255,255,255,0.45)',
+                    }}>
+                      <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontStyle: 'italic', fontSize: '0.88rem', color: '#6b5e4d', marginBottom: 4 }}>
+                        A note to self
+                      </div>
+                      <p style={{ fontSize: '0.78rem', color: '#4a4038', lineHeight: 1.5 }}>
+                        {noteToSelf}
+                      </p>
+                    </button>
+                  </div>
                 </div>
 
-                {/* ── Stage Tabs ────────────────────────────── */}
-                <div style={{ padding: `18px ${isMobile ? 16 : 28}px 0` }}>
+                {/* ── The Full Register (stage tabs + cards) ── */}
+                <div style={{ padding: `34px ${isMobile ? 16 : 28}px 0` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+                    <span style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: isMobile ? '1.1rem' : '1.3rem', fontWeight: 600, color: '#1a1410', whiteSpace: 'nowrap' }}>
+                      The Full Register
+                    </span>
+                    <span style={{ flex: 1, height: 1, background: '#e3d9c6' }} />
+                  </div>
                   <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c13e2a', marginBottom: 12 }}>
                     By Stage
                   </div>
