@@ -3,6 +3,10 @@ import { Fraunces, Instrument_Serif, DM_Sans } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
 import { Toaster } from 'react-hot-toast';
+import CookieConsent from '@/components/CookieConsent';
+import AnalyticsProvider from '@/components/AnalyticsProvider';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const fraunces = Fraunces({
   weight: ['300', '400', '500', '600', '700'],
@@ -38,6 +42,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen" suppressHydrationWarning>
         <AuthProvider>
           {children}
+          <AnalyticsProvider />
+          <CookieConsent />
           <Toaster
             position="top-right"
             toastOptions={{
@@ -64,6 +70,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               },
             }}
           />
+          <Analytics />
+          <SpeedInsights />
         </AuthProvider>
       </body>
     </html>

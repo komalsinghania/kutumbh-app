@@ -1,0 +1,49 @@
+rules_version = '2';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RokaMaybe — Firestore security rules
+//
+// Threat model: the Firebase project id and web API key are public (they ship in
+// the client bundle as NEXT_PUBLIC_* vars). Anyone can therefore talk to this
+// database directly with the JS SDK. These rules are the ONLY thing stopping a
+// stranger from reading every user's prospects (names, phones, photos, birth
+// details). Default is deny; access is granted ONLY to the signed-in owner of
+// the /users/{uid} document and everything beneath it.
+//
+// Data model (all private, per-user):
+//   users/{uid}
+//   users/{uid}/prospects/{prospectId}
+//   users/{uid}/prospects/{prospectId}/notes/{id}
+//   users/{uid}/prospects/{prospectId}/conversations/{id}
+//   users/{uid}/prospects/{prospectId}/flags/{id}
+//   users/{uid}/prospects/{prospectId}/meta/{id}      (familyScorecard, meeting)
+//   users/{uid}/activityLog/{id}
+// ─────────────────────────────────────────────────────────────────────────────
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // The user's own document and its entire subtree.
+    match /users/{uid} {
+      // A user may only ever read/write their own profile document.
+      allow read: if isOwner(uid);
+      allow write: if isOwner(uid);
+
+      // All nested collections (prospects, notes, conversations, flags, meta,
+      // activityLog, and anything added later) inherit owner-only access.
+      match /{document=**} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // Everything outside /users/{uid} is denied by default — no rule = no access.
+  }
+}

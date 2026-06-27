@@ -10,6 +10,7 @@ import {
 import { auth } from '@/lib/firebase';
 import toast from 'react-hot-toast';
 import { Logo } from '@/components/Logo';
+import { track } from '@/lib/analytics';
 
 // ── Auth Modal ─────────────────────────────────────────────────────────────────
 
@@ -24,7 +25,7 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
   // Handle redirect result on mount (fires after signInWithRedirect returns from Google)
   useEffect(() => {
     getRedirectResult(auth)
-      .then((result) => { if (result?.user) onSuccess(); })
+      .then((result) => { if (result?.user) { track('logged_in', { method: 'google' }); onSuccess(); } })
       .catch((err: any) => {
         if (err?.code) toast.error(`Sign-in error: ${err.code}`);
       });
@@ -34,6 +35,7 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
     setGoogleLoading(true);
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
+      track('logged_in', { method: 'google' });
       onSuccess();
       return;
     } catch (err: any) {
@@ -64,6 +66,7 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
     try {
       if (isSignUp) await createUserWithEmailAndPassword(auth, email, password);
       else await signInWithEmailAndPassword(auth, email, password);
+      track(isSignUp ? 'signed_up' : 'logged_in', { method: 'email' });
       onSuccess();
     } catch (err: any) {
       toast.error(err.message || 'Authentication failed.');
@@ -137,7 +140,14 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
           </button>
         </form>
 
-        <p className="text-center text-sm mt-5" style={{ color: '#6b5e4d' }}>
+        <p className="text-center mt-4" style={{ color: '#9b8e7e', fontSize: '0.72rem', lineHeight: 1.5 }}>
+          By continuing, you agree to our{' '}
+          <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: '#c13e2a' }}>Terms</a>{' '}
+          and{' '}
+          <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: '#c13e2a' }}>Privacy Policy</a>.
+        </p>
+
+        <p className="text-center text-sm mt-4" style={{ color: '#6b5e4d' }}>
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button onClick={() => setIsSignUp(!isSignUp)} className="font-semibold underline" style={{ color: '#c13e2a' }}>
             {isSignUp ? 'Sign In' : 'Sign Up'}
@@ -1596,9 +1606,9 @@ export default function LandingPage() {
                   { label: 'Mummy Mode', href: '#' },
                 ] },
                 { title: 'Legal', links: [
-                  { label: 'Privacy', href: '#' },
-                  { label: 'Terms', href: '#' },
-                  { label: 'Data policy', href: '#' },
+                  { label: 'Privacy', href: '/privacy' },
+                  { label: 'Terms', href: '/terms' },
+                  { label: 'Data policy', href: '/privacy#data' },
                 ] },
               ].map((group) => (
                 <div key={group.title}>
