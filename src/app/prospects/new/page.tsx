@@ -3,6 +3,7 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { addProspect } from '@/lib/firestore';
+import { track } from '@/lib/analytics';
 import { calculateGunaScore, calculateCompatScore } from '@/lib/scoring';
 import { compressImage } from '@/lib/compress-image';
 import {
@@ -140,6 +141,7 @@ export default function NewProspectPage() {
       const result = calculateKundli({ date: dobDate, time: dobTime, lat: city.lat, lng: city.lng, tzOffset: city.tz });
       setForm(f => ({ ...f, nakshatra: result.nakshatra, rashiIndex: result.rashi, rashi: result.rashiName }));
       setKundliCalcDone(true);
+      track('kundli_calculated', { context: 'new_prospect' });
       toast.success(`Nakshatra: ${result.nakshatraName} (${result.rashiName})`);
       return true;
     } catch {
@@ -236,10 +238,16 @@ export default function NewProspectPage() {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const res = await fetch('/api/extract-biodata', { method: 'POST', body: fd });
+      const token = await user?.getIdToken();
+      const res = await fetch('/api/extract-biodata', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `Server error ${res.status}`);
       applyExtracted(json.data);
+      track('biodata_extracted', { method: 'file' });
     } catch (err: any) {
       setExtractError(err?.message || 'Unknown error');
     } finally {
@@ -254,14 +262,16 @@ export default function NewProspectPage() {
     setExtractError(null);
     setShowPasteText(false);
     try {
+      const token = await user?.getIdToken();
       const res = await fetch('/api/extract-biodata', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ text: pasteText }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `Server error ${res.status}`);
       applyExtracted(json.data);
+      track('biodata_extracted', { method: 'text' });
     } catch (err: any) {
       setExtractError(err?.message || 'Unknown error');
       setShowPasteText(true);
@@ -337,6 +347,12 @@ export default function NewProspectPage() {
         addedDate: new Date().toLocaleDateString('en-IN'),
         createdAt: Date.now(),
         updatedAt: Date.now(),
+      });
+      track('prospect_added', {
+        source: form.source,
+        stage: form.stage,
+        has_photo: photos.length > 0,
+        has_kundli: form.nakshatra >= 0,
       });
       toast.success('Prospect added!');
       router.replace(`/prospects/${prospectId}`);

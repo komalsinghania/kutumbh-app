@@ -3,6 +3,7 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { saveUserProfile } from '@/lib/firestore';
+import { track } from '@/lib/analytics';
 import {
   NAKSHATRAS, DEALBREAKERS, DEALBREAKER_CATEGORIES, HOBBIES,
   Gender, Diet, Manglik, Education, Income, IncomePref, FamilyType,
@@ -235,10 +236,16 @@ export default function OnboardingPage() {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const res = await fetch('/api/extract-biodata', { method: 'POST', body: fd });
+      const token = await user?.getIdToken();
+      const res = await fetch('/api/extract-biodata', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `Server error ${res.status}`);
       applyExtracted(json.data);
+      track('biodata_extracted', { method: 'file', context: 'onboarding' });
     } catch (err: any) {
       setExtractError(err?.message || 'Unknown error');
       if (fileRef.current) fileRef.current.value = '';
@@ -253,14 +260,16 @@ export default function OnboardingPage() {
     setExtractError(null);
     setShowPasteText(false);
     try {
+      const token = await user?.getIdToken();
       const res = await fetch('/api/extract-biodata', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ text: pasteText }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `Server error ${res.status}`);
       applyExtracted(json.data);
+      track('biodata_extracted', { method: 'text', context: 'onboarding' });
     } catch (err: any) {
       setExtractError(err?.message || 'Unknown error');
       setShowPasteText(true);
@@ -298,6 +307,7 @@ export default function OnboardingPage() {
         hobbies: form.hobbies.length > 0 ? form.hobbies : undefined,
       });
       await refreshProfile();
+      track('onboarding_completed', { has_kundli: form.nakshatra >= 0 });
       router.replace('/dashboard');
     } catch {
       toast.error('Failed to save profile. Please try again.');

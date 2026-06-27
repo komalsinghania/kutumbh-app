@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import mammoth from 'mammoth';
+import { verifyFirebaseIdToken } from '@/lib/verify-firebase-token';
+
+// ── Abuse controls ───────────────────────────────────────────────────────────
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;   // 8 MB hard cap on any uploaded file
+const MAX_TEXT_CHARS = 60_000;              // pasted/extracted text ceiling
+const ALLOWED_UPLOAD_MIME = new Set([
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+  'application/msword', // legacy .doc (rejected later with a friendly message)
+]);
+
+// Best-effort in-memory rate limit (per-uid, per warm instance). For strict,
+// cross-instance limits move this to Vercel KV / Upstash Redis.
+const RATE_LIMIT_MAX = 20;          // requests
+const RATE_LIMIT_WINDOW_MS = 60_000; // per minute
+const rateBuckets = new Map<string, number[]>();
+function isRateLimited(uid: string): boolean {
+  const now = Date.now();
+  const hits = (rateBuckets.get(uid) || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  if (hits.length >= RATE_LIMIT_MAX) { rateBuckets.set(uid, hits); return true; }
+  hits.push(now);
+  rateBuckets.set(uid, hits);
+  return false;
+}
 
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const DOC_MIME = 'application/msword';
@@ -113,9 +137,21 @@ height: output in feet-inches format like "5'6\\"
 gender: "Male" or "Female"`;
 
 export async function POST(req: NextRequest) {
-  const apiKey = (process.env.ANTHROPIC_API_KEY || '').trim();
-  console.log('API key loaded:', apiKey ? `yes, length: ${apiKey.length}, prefix: ${apiKey.slice(0, 10)}` : 'NO KEY FOUND');
+  // ── 1. Authenticate: must be a signed-in user of THIS Firebase project ──────
+  const uid = await verifyFirebaseIdToken(req.headers.get('authorization'));
+  if (!uid) {
+    return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+  }
 
+  // ── 2. Throttle per user (best-effort, in-memory) ──────────────────────────
+  if (isRateLimited(uid)) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please wait a minute and try again.' },
+      { status: 429 },
+    );
+  }
+
+  const apiKey = (process.env.ANTHROPIC_API_KEY || '').trim();
   if (!apiKey) {
     return NextResponse.json({ error: 'AI extraction is not configured.' }, { status: 503 });
   }
@@ -134,15 +170,24 @@ export async function POST(req: NextRequest) {
 
       if (body.image && body.mimeType) {
         // Base64 image sent as JSON
+        const allowedImg = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+        if (!allowedImg.has(body.mimeType)) {
+          return NextResponse.json({ error: 'Unsupported image type.' }, { status: 415 });
+        }
+        // base64 inflates ~33%; cap the decoded size at MAX_UPLOAD_BYTES.
+        if (typeof body.image !== 'string' || body.image.length > MAX_UPLOAD_BYTES * 1.4) {
+          return NextResponse.json({ error: 'Image too large.' }, { status: 413 });
+        }
         const mimeType = body.mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
-        console.log('[extract-biodata] JSON image received | mimeType:', mimeType, '| base64 length:', body.image?.length ?? 0);
         messageContent = [
           { type: 'text', text: EXTRACTION_PROMPT },
           { type: 'image', source: { type: 'base64', media_type: mimeType, data: body.image } },
         ];
       } else if (body.text) {
         // Plain text biodata pasted by user
-        console.log('[extract-biodata] JSON text received | length:', body.text.length);
+        if (typeof body.text !== 'string' || body.text.length > MAX_TEXT_CHARS) {
+          return NextResponse.json({ error: 'Text is too long.' }, { status: 413 });
+        }
         messageContent = [
           { type: 'text', text: EXTRACTION_PROMPT },
           { type: 'text', text: `Biodata text to extract from:\n\n${body.text}` },
@@ -160,7 +205,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'No file provided' }, { status: 400 });
       }
 
-      console.log('[extract-biodata] File received:', file.name, '| type:', file.type, '| size:', file.size, 'bytes');
+      // Reject oversized or disallowed files before reading them into memory.
+      if (file.size > MAX_UPLOAD_BYTES) {
+        return NextResponse.json({ error: 'File is too large (max 8 MB).' }, { status: 413 });
+      }
+      const declaredType = file.type || '';
+      const nameOk = isWord(file) || /\.(jpe?g|png|gif|webp|pdf|docx?)$/i.test(file.name || '');
+      if (declaredType && !ALLOWED_UPLOAD_MIME.has(declaredType) && !nameOk) {
+        return NextResponse.json({ error: 'Unsupported file type.' }, { status: 415 });
+      }
 
       const bytes = await file.arrayBuffer();
 
@@ -183,7 +236,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: 'Word document appears to be empty.' }, { status: 422 });
         }
 
-        console.log('[extract-biodata] Word text extracted | length:', text.length);
+        if (text.length > MAX_TEXT_CHARS) text = text.slice(0, MAX_TEXT_CHARS);
         messageContent = [
           { type: 'text', text: EXTRACTION_PROMPT },
           { type: 'text', text: `Biodata text to extract from:\n\n${text}` },
@@ -207,18 +260,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    console.log('[extract-biodata] Calling Anthropic API | model: claude-sonnet-4-5');
-
     const response = await client.messages.create({
       model: 'claude-sonnet-4-5',
       max_tokens: 1024,
       messages: [{ role: 'user', content: messageContent }],
     });
 
-    console.log('[extract-biodata] stop_reason:', response.stop_reason, '| usage:', JSON.stringify(response.usage));
-
     const text = response.content[0].type === 'text' ? response.content[0].text : '';
-    console.log('[extract-biodata] Raw output:', text);
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -227,15 +275,15 @@ export async function POST(req: NextRequest) {
     }
 
     const extracted = JSON.parse(jsonMatch[0]);
-    console.log('[extract-biodata] Extracted fields:', Object.keys(extracted).filter(k => extracted[k] !== null).join(', '));
     return NextResponse.json({ data: extracted });
 
   } catch (err: any) {
-    console.error('[extract-biodata] Error:', err.name, '|', err.message, '| status:', err.status);
-    console.error('[extract-biodata] Body:', JSON.stringify(err.error ?? err.body ?? null));
-    return NextResponse.json(
-      { error: err.message || 'Extraction failed' },
-      { status: err.status ?? 500 }
-    );
+    // Log only non-sensitive diagnostics server-side; never echo internals to the client.
+    console.error('[extract-biodata] Error:', err?.name, '| status:', err?.status);
+    const status = typeof err?.status === 'number' ? err.status : 500;
+    const safeMessage = status === 429
+      ? 'The AI service is busy. Please try again shortly.'
+      : 'Extraction failed. Please try again.';
+    return NextResponse.json({ error: safeMessage }, { status });
   }
 }

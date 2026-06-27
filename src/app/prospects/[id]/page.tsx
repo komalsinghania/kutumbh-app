@@ -13,6 +13,7 @@ import {
 import { compressImage } from '@/lib/compress-image';
 import { calculateOverallScore, calculateGunaScore, calculateCompatScore } from '@/lib/scoring';
 import { calculateKundli } from '@/lib/kundli';
+import { track } from '@/lib/analytics';
 import { getCityByName } from '@/lib/indian-cities';
 import {
   Prospect, Note, ProspectStage, STAGE_LABELS, NAKSHATRAS, HOBBIES,
@@ -294,6 +295,7 @@ export default function ProspectDetailPage() {
     try {
       const r = calculateKundli({ date: dobDate, time: dobTime, lat: city.lat, lng: city.lng, tzOffset: city.tz });
       setEditForm(f => f ? { ...f, nakshatra: r.nakshatra, rashiIndex: r.rashi, rashi: r.rashiName } : f);
+      track('kundli_calculated', { context: 'edit_prospect' });
       toast.success(`Nakshatra: ${r.nakshatraName} (${r.rashiName})`);
     } catch { toast.error('Could not calculate — pick the Nakshatra manually.'); }
   };
@@ -365,7 +367,10 @@ export default function ProspectDetailPage() {
     await logStageChange(user.uid, id, prospect.name, STAGE_LABELS[stage]);
     if (stage === 'call_done') setActiveTab('conversations');
     if (stage === 'meeting_fixed' || stage === 'met') setActiveTab('meeting');
-    if (stage === 'interested' || stage === 'on_hold' || stage === 'rejected') setActiveTab('decision');
+    if (stage === 'interested' || stage === 'on_hold' || stage === 'rejected') {
+      setActiveTab('decision');
+      track('decision_made', { decision: stage });
+    }
   };
 
   const handleStagePromptConfirm = async (data: any) => {
@@ -425,6 +430,7 @@ export default function ProspectDetailPage() {
   const handleAddConversation = async (data: Omit<ConversationLog, 'id'>) => {
     if (!user || !prospect) return;
     await addConversation(user.uid, id, prospect.name, data);
+    track('call_logged', { call_type: data.callType });
     toast.success('Conversation logged!');
   };
 
@@ -487,6 +493,7 @@ export default function ProspectDetailPage() {
       const dataToSave = { ...meetingLocal, meetings: updated, updatedAt: Date.now() };
       await saveMeetingData(user.uid, id, prospect.name, dataToSave);
       setMeetingLocal(dataToSave);
+      track('meeting_rated', { meeting_number: activeMeetingIdx + 1 });
       toast.success('Meeting rating saved!');
     } catch { toast.error('Failed to save.'); }
     finally { setSavingMeeting(false); }
@@ -2084,44 +2091,37 @@ export default function ProspectDetailPage() {
                     />
                   </div>
 
-                  {/* Dimension rows */}
-                  <div style={{ padding: '6px 0' }}>
-                    {POST_MEETING_DIMENSIONS.map(({ label, key, low, high }, idx) => {
-                      const score = activeMeeting[key as MeetingDimensionKey] ?? 0;
-                      const barColor = score >= 4 ? '#3db87a' : score === 3 ? '#e0b852' : score >= 1 ? '#e05252' : '#ede8df';
-                      const dimEmojis: Record<string, string> = {
-                        appearanceMatch: '👤',
-                        convQuality: '💬',
-                        connectionFelt: '✨',
-                        familyImpression: '🏡',
-                        financialStability: '💰',
-                        socialSkills: '🤝',
-                        friendLifestyle: '🌐',
-                        familyValues: '🧿',
-                        emotionalMaturity: '🧠',
-                        communicationStyle: '📢',
-                      };
-                      return (
-                        <div key={key} style={{ padding: '14px 20px', borderBottom: idx < POST_MEETING_DIMENSIONS.length - 1 ? '1px solid #f5ede0' : 'none', transition: 'background 0.15s' }}>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                            {/* Icon + label */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
-                              <div style={{
-                                width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                                background: score > 0 ? `rgba(${score >= 4 ? '61,184,122' : score === 3 ? '224,184,82' : '224,82,82'},0.1)` : '#f9f5f0',
-                                border: score > 0 ? `1px solid rgba(${score >= 4 ? '61,184,122' : score === 3 ? '224,184,82' : '224,82,82'},0.2)` : '1px solid #ede8df',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: '1rem', transition: 'background 0.2s, border 0.2s',
-                              }}>
-                                {dimEmojis[key] ?? '⭐'}
-                              </div>
-                              <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#1a1410', marginBottom: 2 }}>{label}</div>
-                                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                                  <span style={{ fontSize: '0.6rem', color: '#c8a07a' }}>{low}</span>
-                                  <span style={{ fontSize: '0.55rem', color: '#d6c9b0' }}>→</span>
-                                  <span style={{ fontSize: '0.6rem', color: '#2D6B4F' }}>{high}</span>
-                                </div>
+                  {/* Dimension rows — compact 2-up ledger */}
+                  <div style={{ padding: '6px 14px 10px' }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 md:gap-x-8">
+                      {POST_MEETING_DIMENSIONS.map(({ label, key, low, high }) => {
+                        const score = activeMeeting[key as MeetingDimensionKey] ?? 0;
+                        const tone = score >= 4 ? '61,184,122' : score === 3 ? '224,184,82' : '224,82,82';
+                        const dimEmojis: Record<string, string> = {
+                          appearanceMatch: '👤', convQuality: '💬', connectionFelt: '✨',
+                          familyImpression: '🏡', financialStability: '💰', socialSkills: '🤝',
+                          friendLifestyle: '🌐', familyValues: '🧿', emotionalMaturity: '🧠',
+                          communicationStyle: '📢',
+                        };
+                        return (
+                          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '8px 4px', borderBottom: '1px solid #f5ede0' }}>
+                            {/* Icon */}
+                            <div style={{
+                              width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                              background: score > 0 ? `rgba(${tone},0.1)` : '#f9f5f0',
+                              border: score > 0 ? `1px solid rgba(${tone},0.2)` : '1px solid #ede8df',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '0.95rem', transition: 'background 0.2s, border 0.2s',
+                            }}>
+                              {dimEmojis[key] ?? '⭐'}
+                            </div>
+                            {/* Label + hint */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1a1410', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</div>
+                              <div style={{ fontSize: '0.58rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <span style={{ color: '#c8a07a' }}>{low}</span>
+                                <span style={{ color: '#d6c9b0' }}> → </span>
+                                <span style={{ color: '#2D6B4F' }}>{high}</span>
                               </div>
                             </div>
                             {/* Stars */}
@@ -2134,18 +2134,9 @@ export default function ProspectDetailPage() {
                               />
                             </div>
                           </div>
-                          {/* Progress bar */}
-                          <div style={{ marginTop: 10, height: 3, borderRadius: 2, background: '#f5ede0', overflow: 'hidden' }}>
-                            <div style={{
-                              height: '100%', borderRadius: 2,
-                              background: score > 0 ? `linear-gradient(90deg, ${barColor}cc, ${barColor})` : 'transparent',
-                              width: score > 0 ? `${(score / 5) * 100}%` : '0%',
-                              transition: 'width 0.5s cubic-bezier(0.34,1.56,0.64,1), background 0.3s',
-                            }}/>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Meeting Notes */}
