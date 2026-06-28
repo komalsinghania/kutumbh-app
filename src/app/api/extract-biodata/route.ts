@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import mammoth from 'mammoth';
 import { verifyFirebaseIdToken } from '@/lib/verify-firebase-token';
+import { isRateLimited } from '@/lib/rate-limit';
 
 // ── Abuse controls ───────────────────────────────────────────────────────────
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;   // 8 MB hard cap on any uploaded file
@@ -11,20 +12,6 @@ const ALLOWED_UPLOAD_MIME = new Set([
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
   'application/msword', // legacy .doc (rejected later with a friendly message)
 ]);
-
-// Best-effort in-memory rate limit (per-uid, per warm instance). For strict,
-// cross-instance limits move this to Vercel KV / Upstash Redis.
-const RATE_LIMIT_MAX = 20;          // requests
-const RATE_LIMIT_WINDOW_MS = 60_000; // per minute
-const rateBuckets = new Map<string, number[]>();
-function isRateLimited(uid: string): boolean {
-  const now = Date.now();
-  const hits = (rateBuckets.get(uid) || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
-  if (hits.length >= RATE_LIMIT_MAX) { rateBuckets.set(uid, hits); return true; }
-  hits.push(now);
-  rateBuckets.set(uid, hits);
-  return false;
-}
 
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const DOC_MIME = 'application/msword';
@@ -143,8 +130,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
   }
 
-  // ── 2. Throttle per user (best-effort, in-memory) ──────────────────────────
-  if (isRateLimited(uid)) {
+  // ── 2. Throttle per user (durable via Upstash, in-memory fallback) ─────────
+  if (await isRateLimited(uid)) {
     return NextResponse.json(
       { error: 'Too many requests. Please wait a minute and try again.' },
       { status: 429 },

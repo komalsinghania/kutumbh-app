@@ -84,9 +84,11 @@ export default function PrivacyPage() {
       <h2>7. Data retention &amp; deletion</h2>
       <p>
         We keep your data for as long as your account is active. You can delete individual prospects and their
-        records at any time from within the app. To delete your entire account and all associated data, contact{' '}
-        <a href={`mailto:${LEGAL.contactEmail}`}>{LEGAL.contactEmail}</a> and we will action your request within a
-        reasonable period, subject to any legal retention obligations.
+        records at any time from within the app. To erase your <strong>entire account and all associated data</strong>,
+        use <strong>Profile → Danger Zone → “Delete my account &amp; data”</strong>, which permanently removes your
+        profile and every prospect, note, conversation, rating, and meeting. You may also email{' '}
+        <a href={`mailto:${LEGAL.contactEmail}`}>{LEGAL.contactEmail}</a> for assistance. Deletion is immediate and
+        irreversible, subject to any legal retention obligations.
       </p>
 
       <h2>8. Security</h2>

@@ -1,7 +1,7 @@
 import {
   doc, getDoc, setDoc, updateDoc, collection, addDoc,
   deleteDoc, onSnapshot, query, orderBy, limit, increment,
-  getDocs, writeBatch,
+  getDocs, writeBatch, type DocumentReference,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import {
@@ -117,6 +117,35 @@ export async function updateProspect(uid: string, prospectId: string, data: Part
 
 export async function deleteProspect(uid: string, prospectId: string): Promise<void> {
   await deleteDoc(doc(db, 'users', uid, 'prospects', prospectId));
+}
+
+// Commit deletes in chunks (Firestore caps a batch at 500 writes).
+async function deleteRefsInBatches(refs: DocumentReference[]): Promise<void> {
+  for (let i = 0; i < refs.length; i += 400) {
+    const batch = writeBatch(db);
+    refs.slice(i, i + 400).forEach(r => batch.delete(r));
+    await batch.commit();
+  }
+}
+
+// Permanently erase ALL data for a user: every prospect and its subcollections
+// (notes, conversations, flags, meta), the activity log, and the profile doc.
+// Firestore does not cascade, so each subcollection is deleted explicitly.
+// Must run while the user is still authenticated (rules require it).
+export async function deleteAllUserData(uid: string): Promise<void> {
+  const prospectsSnap = await getDocs(collection(db, 'users', uid, 'prospects'));
+  for (const p of prospectsSnap.docs) {
+    for (const sub of ['notes', 'conversations', 'flags', 'meta']) {
+      const subSnap = await getDocs(collection(db, 'users', uid, 'prospects', p.id, sub));
+      await deleteRefsInBatches(subSnap.docs.map(d => d.ref));
+    }
+  }
+  await deleteRefsInBatches(prospectsSnap.docs.map(d => d.ref));
+
+  const activitySnap = await getDocs(collection(db, 'users', uid, 'activityLog'));
+  await deleteRefsInBatches(activitySnap.docs.map(d => d.ref));
+
+  await deleteDoc(doc(db, 'users', uid));
 }
 
 export async function getProspect(uid: string, prospectId: string): Promise<Prospect | null> {

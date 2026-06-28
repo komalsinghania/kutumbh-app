@@ -2,8 +2,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { saveUserProfile, recalcAllProspectScores } from '@/lib/firestore';
+import { saveUserProfile, recalcAllProspectScores, deleteAllUserData } from '@/lib/firestore';
 import { NAKSHATRAS, DEALBREAKERS, DEALBREAKER_CATEGORIES, HOBBIES, Gender, Diet, Manglik, Education, Income, IncomePref, FamilyType } from '@/types';
+import {
+  deleteUser, reauthenticateWithPopup, reauthenticateWithCredential,
+  EmailAuthProvider, GoogleAuthProvider,
+} from 'firebase/auth';
+import { track } from '@/lib/analytics';
 import toast from 'react-hot-toast';
 
 function PillSelect({ options, value, onSelect }: { options: string[]; value: string; onSelect: (v: string) => void }) {
@@ -81,6 +86,52 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customText, setCustomText] = useState('');
+
+  // Account deletion
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const isPasswordUser = user?.providerData?.[0]?.providerId === 'password';
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    if (deleteConfirm.trim().toUpperCase() !== 'DELETE') {
+      toast.error('Type DELETE to confirm.');
+      return;
+    }
+    if (isPasswordUser && !deletePassword) {
+      toast.error('Enter your password to confirm.');
+      return;
+    }
+    setDeleting(true);
+    try {
+      // Re-verify identity (required by Firebase before deleting an account).
+      const providerId = user.providerData?.[0]?.providerId;
+      if (providerId === 'google.com') {
+        await reauthenticateWithPopup(user, new GoogleAuthProvider());
+      } else if (providerId === 'password') {
+        const cred = EmailAuthProvider.credential(user.email || '', deletePassword);
+        await reauthenticateWithCredential(user, cred);
+      }
+      track('account_deleted');
+      // Delete all Firestore data WHILE still authenticated, then the auth account.
+      await deleteAllUserData(user.uid);
+      await deleteUser(user);
+      toast.success('Your account and all data have been deleted.');
+      router.replace('/');
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code || '';
+      if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+        toast.error('Incorrect password.');
+      } else if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        toast.error('Verification was cancelled.');
+      } else {
+        toast.error('Could not delete account. Please try again.');
+      }
+      setDeleting(false);
+    }
+  };
 
   const [form, setForm] = useState({
     name: '', gender: '' as Gender, age: '', city: '', education: '' as Education,
@@ -277,7 +328,108 @@ export default function ProfilePage() {
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
         </div>
+
+        {/* ── Danger Zone ── */}
+        <div style={{
+          marginTop: 28, borderRadius: 16, border: '1px solid rgba(139,42,42,0.3)',
+          background: 'rgba(139,42,42,0.04)', padding: '18px 20px',
+        }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8B2A2A', marginBottom: 6 }}>
+            Danger Zone
+          </div>
+          <p style={{ fontSize: '0.82rem', color: '#6b5e4d', lineHeight: 1.6, marginBottom: 14 }}>
+            Permanently delete your account and <strong style={{ color: '#1a1410' }}>all</strong> your data — every prospect,
+            note, conversation, rating, and your profile. This cannot be undone.
+          </p>
+          <button
+            onClick={() => { setShowDelete(true); setDeleteConfirm(''); setDeletePassword(''); }}
+            style={{
+              background: 'white', color: '#8B2A2A', border: '1.5px solid rgba(139,42,42,0.4)',
+              borderRadius: 10, padding: '10px 18px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer',
+            }}
+          >
+            Delete my account & data
+          </button>
+        </div>
       </div>
+
+      {/* ── Delete confirmation modal ── */}
+      {showDelete && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(26,20,16,0.55)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+          }}
+          onClick={() => !deleting && setShowDelete(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'white', borderRadius: 18, maxWidth: 440, width: '100%',
+              padding: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            }}
+          >
+            <h3 style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.3rem', fontWeight: 700, color: '#8B2A2A', marginBottom: 8 }}>
+              Delete your account?
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: '#6b5e4d', lineHeight: 1.6, marginBottom: 16 }}>
+              This permanently erases your profile and every prospect, note, conversation, flag, and meeting.
+              <strong style={{ color: '#1a1410' }}> There is no way to recover it.</strong>
+            </p>
+
+            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b5e4d', display: 'block', marginBottom: 6 }}>
+              Type <span style={{ color: '#8B2A2A', fontWeight: 800 }}>DELETE</span> to confirm
+            </label>
+            <input
+              type="text"
+              value={deleteConfirm}
+              onChange={e => setDeleteConfirm(e.target.value)}
+              placeholder="DELETE"
+              autoFocus
+              style={{ marginBottom: isPasswordUser ? 12 : 18 }}
+            />
+
+            {isPasswordUser && (
+              <>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b5e4d', display: 'block', marginBottom: 6 }}>
+                  Confirm your password
+                </label>
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={e => setDeletePassword(e.target.value)}
+                  placeholder="Your password"
+                  style={{ marginBottom: 18 }}
+                />
+              </>
+            )}
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setShowDelete(false)}
+                disabled={deleting}
+                style={{
+                  flex: 1, background: 'white', color: '#6b5e4d', border: '1px solid #d6c9b0',
+                  borderRadius: 10, padding: '11px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting || deleteConfirm.trim().toUpperCase() !== 'DELETE'}
+                style={{
+                  flex: 1, background: '#8B2A2A', color: 'white', border: 'none',
+                  borderRadius: 10, padding: '11px', fontSize: '0.85rem', fontWeight: 700,
+                  cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting || deleteConfirm.trim().toUpperCase() !== 'DELETE' ? 0.6 : 1,
+                }}
+              >
+                {deleting ? 'Deleting…' : 'Delete forever'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
