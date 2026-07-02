@@ -48,17 +48,6 @@ const NUDGE_NOUN: Record<string, string> = {
   '📋': 'review', '📞': 'call', '🔯': 'kundli', '🚩': 'flag', '🕐': 'follow-up',
 };
 
-// Linear visible path for the lead's "path so far" breadcrumb (… → Roka).
-const LEAD_PATH: { stage: ProspectStage; label: string }[] = [
-  { stage: 'new', label: 'New' },
-  { stage: 'photo_exchanged', label: 'Photos' },
-  { stage: 'kundli_sent', label: 'Kundli' },
-  { stage: 'kundli_matched', label: 'Matched' },
-  { stage: 'call_done', label: 'Call' },
-  { stage: 'family_call', label: 'Family' },
-  { stage: 'meeting_fixed', label: 'Meeting' },
-];
-
 // Issue number for the masthead — weeks since the user joined.
 function weeksSince(ts: number): number {
   return Math.max(1, Math.floor((Date.now() - ts) / 604800000) + 1);
@@ -670,42 +659,6 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Her path so far */}
-                      <div style={{ marginTop: 24, borderTop: '1px solid #e3d9c6', paddingTop: 16 }}>
-                        <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9b8e7e', marginBottom: 12 }}>
-                          {lead.name.split(' ')[0]}&rsquo;s Path So Far
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', rowGap: 6, fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '0.84rem' }}>
-                          {(() => {
-                            let cur = LEAD_PATH.findIndex(s => s.stage === lead.stage);
-                            if (lead.stage === 'met' || lead.stage === 'interested') cur = LEAD_PATH.length;
-                            if (cur < 0) cur = 0;
-                            const nodes: React.ReactNode[] = [];
-                            LEAD_PATH.forEach((s, i) => {
-                              const done = i < cur;
-                              const isCur = i === cur;
-                              nodes.push(
-                                <span key={s.stage} style={{
-                                  color: done || isCur ? '#c13e2a' : '#b3a692',
-                                  fontWeight: isCur ? 700 : done ? 600 : 400,
-                                  borderBottom: isCur ? '1.5px solid #c13e2a' : 'none',
-                                  paddingBottom: isCur ? 1 : 0,
-                                }}>{done ? `✓ ${s.label}` : s.label}</span>
-                              );
-                              nodes.push(<span key={`sep-${i}`} style={{ color: '#cdbfa6', padding: '0 6px' }}>—</span>);
-                            });
-                            const reached = lead.stage === 'interested';
-                            nodes.push(<span key="ellipsis" style={{ color: '#cdbfa6' }}>…</span>);
-                            nodes.push(<span key="roka-sep" style={{ color: '#cdbfa6', padding: '0 6px' }}>—</span>);
-                            nodes.push(
-                              <span key="roka" style={{ color: reached ? '#b8892b' : '#b3a692', fontWeight: reached ? 700 : 500 }}>
-                                Roka ✦
-                              </span>
-                            );
-                            return nodes;
-                          })()}
-                        </div>
-                      </div>
                     </div>
                   )}
 
