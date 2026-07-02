@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider,
@@ -366,18 +366,6 @@ const RED_FLAGS = {
     "Her mother called my mother to 'check my habits'. On the first day.",
     "Refused to meet unless I sent my company ID card first.",
   ],
-  parents: [
-    "His mother sent me a list of things I need to learn to cook before marriage.",
-    "Her father asked my gotra, caste, and sub-caste � in that order � before hello.",
-    "They asked 'what's wrong with her' when I said she's 28 and unmarried.",
-    "Mom said we'll figure out career after wedding. Didn't even ask me.",
-    "Their family wanted a 'fair and tall' girl. In writing.",
-    "He said the girl must leave her job if they move cities. Non-negotiable.",
-    "They asked for a kundli within 5 minutes of receiving the biodata.",
-    "Her parents wanted a 'boy who can take care of everything'. A.k.a. ATM.",
-    "They rejected him because he is the only son and 'too much responsibility'.",
-    "First question to my parents: 'Does she know how to make rotis?'",
-  ],
 };
 
 const FAQS: { cat: 'PRODUCT' | 'PRIVACY' | 'BILLING' | 'FOR PARENTS'; q: string; a: string }[] = [
@@ -437,10 +425,8 @@ export default function LandingPage() {
   const [linkCopied, setLinkCopied] = useState(false);
   const [mummyEmail, setMummyEmail] = useState('');
   const [mummySaved, setMummySaved] = useState(false);
-  const [flagTab, setFlagTab] = useState<'he' | 'she' | 'parents'>('he');
   const [shuffledFlagsHe] = useState(() => [...RED_FLAGS.he].sort(() => Math.random() - 0.5));
   const [shuffledFlagsShe] = useState(() => [...RED_FLAGS.she].sort(() => Math.random() - 0.5));
-  const [shuffledFlagsParents] = useState(() => [...RED_FLAGS.parents].sort(() => Math.random() - 0.5));
 
   useEffect(() => {
     const stored = typeof window !== 'undefined' ? localStorage.getItem('rm.banner.dismissed') : null;
@@ -509,11 +495,53 @@ export default function LandingPage() {
           from { transform: translateX(0); }
           to { transform: translateX(-50%); }
         }
+        @keyframes marqueeScrollReverse {
+          from { transform: translateX(-50%); }
+          to { transform: translateX(0); }
+        }
         @keyframes fadeSlideIn {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
         }
         .marquee-track:hover .marquee-inner { animation-play-state: paused !important; }
+        .marquee-track {
+          -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+        }
+        .redflag-split-wrap {
+          position: relative;
+          display: grid;
+          grid-template-columns: 1fr auto 1fr;
+          align-items: stretch;
+          width: 100%;
+          box-shadow: 0 4px 24px rgba(26,20,16,0.08);
+        }
+        .redflag-vs-divider {
+          width: 1px;
+          background: repeating-linear-gradient(to bottom, rgba(26,20,16,0.18) 0 8px, transparent 8px 16px);
+          position: relative;
+        }
+        .redflag-vs {
+          position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+          width: 58px; height: 58px; border-radius: 50%;
+          background: #1a1410; color: #f5ede0;
+          display: flex; align-items: center; justify-content: center;
+          font-family: var(--font-instrument, serif); font-weight: 700; font-size: 14px;
+          letter-spacing: 0.02em;
+          box-shadow: 0 10px 24px rgba(26,20,16,0.35), 0 0 0 6px #f5ede0;
+          z-index: 3;
+        }
+        .flag-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+        .flag-card:hover {
+          transform: rotate(0deg) scale(1.045) !important;
+          box-shadow: 0 18px 36px rgba(26,20,16,0.22) !important;
+          z-index: 5;
+        }
+        @media (max-width: 860px) {
+          .redflag-split-wrap { grid-template-columns: 1fr; }
+          .redflag-vs-divider { width: 100%; height: 1px; background: repeating-linear-gradient(to right, rgba(26,20,16,0.18) 0 8px, transparent 8px 16px); }
+          .redflag-vs-divider .redflag-vs { top: 0; }
+        }
       `}} />
 
       {showModal && (
@@ -663,7 +691,7 @@ export default function LandingPage() {
               minHeight: 52, outline: '2px solid #c13e2a',
             }}
           >
-            Start Free � No credit card needed
+            Start Free
           </button>
           <p style={{
             fontFamily: 'var(--font-dm-sans, sans-serif)',
@@ -1053,86 +1081,96 @@ export default function LandingPage() {
             <h2 style={{
               fontFamily: 'var(--font-instrument, serif)',
               fontSize: 'clamp(32px, 5vw, 42px)',
-              color: '#1a1410', fontWeight: 600, marginBottom: '8px',
+              color: '#c13e2a', fontWeight: 600, marginBottom: '8px',
             }}>
-              Real red flags people have flagged.
+              The Red Flag Hall of Fame.
             </h2>
-            <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: '#6b5e4d', marginBottom: '28px' }}>
-              Shared with permission. The rishta search is wild out there.
+            <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: '#6b5e4d' }}>
+              Shared with permission. Collected from first calls, second meetings, and one very memorable kundli discussion.
             </p>
-            {/* Tabs */}
-            <div style={{ display: 'inline-flex', gap: '8px', background: '#ede0cc', borderRadius: '999px', padding: '5px' }}>
-              {(['he', 'she', 'parents'] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setFlagTab(tab)}
-                  style={{
-                    fontFamily: 'var(--font-dm-sans, sans-serif)',
-                    fontSize: '13px', fontWeight: 600,
-                    padding: '7px 20px', borderRadius: '999px', border: 'none',
-                    cursor: 'pointer', transition: 'all 0.2s',
-                    background: flagTab === tab ? '#1a1410' : 'transparent',
-                    color: flagTab === tab ? '#fff' : '#6b5e4d',
-                  }}
-                >
-                  {tab === 'he' ? '🙋‍♂️ He Said' : tab === 'she' ? '🙋‍♀️ She Said' : '👨‍👩‍👧 Parents Said'}
-                </button>
-              ))}
-            </div>
           </div>
-          <div className="marquee-track" style={{ overflow: 'hidden', position: 'relative', padding: '16px 0' }}>
-            <div
-              key={flagTab}
-              className="marquee-inner"
-              style={{
-                display: 'flex',
-                gap: '22px',
-                width: 'max-content',
-                animation: 'marqueeScroll 40s linear infinite',
-                paddingLeft: '24px',
-                alignItems: 'center',
-              }}
-            >
-              {(() => {
-                const list = flagTab === 'he' ? shuffledFlagsHe : flagTab === 'she' ? shuffledFlagsShe : shuffledFlagsParents;
-                const accentColor = flagTab === 'he' ? '#b0c4de' : flagTab === 'she' ? '#e8c0c8' : '#c8d8b0';
-                const rots = [-2, 1, -1, 2, -1.5, 1.5];
-                const widths = [290, 320, 280, 310, 295, 315];
-                return [...list, ...list].map((flag, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      width: `${widths[i % widths.length]}px`, flexShrink: 0,
-                      background: '#ffffff',
-                      border: `1px solid ${accentColor}`,
-                      borderRadius: '10px', padding: '22px 20px',
-                      boxShadow: '0 6px 18px rgba(26,20,16,0.08)',
-                      transform: `rotate(${rots[i % rots.length]}deg)`,
-                      position: 'relative',
-                    }}
-                  >
-                    <span style={{
-                      position: 'absolute', top: -6, left: 12,
-                      fontFamily: 'var(--font-instrument, serif)',
-                      fontSize: 44, color: accentColor, lineHeight: 1, fontStyle: 'italic',
-                    }}>&ldquo;</span>
-                    <p style={{
-                      fontFamily: 'var(--font-dm-sans, sans-serif)',
-                      fontSize: '14px', color: '#1a1410', lineHeight: 1.6,
-                      paddingTop: 4,
-                    }}>
-                      {flag}
-                    </p>
-                    <p style={{
-                      fontFamily: 'var(--font-dm-sans, sans-serif)',
-                      fontSize: 10, color: '#6b5e4d', marginTop: 10, letterSpacing: '0.06em',
-                    }}>
-                      — Shared with permission
-                    </p>
+          <div className="redflag-split-wrap">
+            {[
+              { key: 'he', label: 'He Said', icon: '🙋‍♂️', accent: '#3b5c85', bg: 'linear-gradient(165deg, #eef3f9, #e0eaf3)', flags: shuffledFlagsHe, anim: 'marqueeScroll 46s linear infinite' },
+              { key: 'she', label: 'She Said', icon: '🙋‍♀️', accent: '#a8395a', bg: 'linear-gradient(165deg, #fdeef2, #f8dee5)', flags: shuffledFlagsShe, anim: 'marqueeScrollReverse 46s linear infinite' },
+            ].map(({ key, label, icon, accent, bg, flags, anim }, idx) => (
+              <Fragment key={key}>
+                {idx === 1 && (
+                  <div className="redflag-vs-divider">
+                    <span className="redflag-vs">VS</span>
                   </div>
-                ));
-              })()}
-            </div>
+                )}
+                <div style={{ background: bg, padding: '44px 0 40px', minWidth: 0, overflow: 'hidden' }}>
+                  <div style={{ textAlign: 'center', marginBottom: '26px', padding: '0 20px' }}>
+                    <div style={{
+                      width: '60px', height: '60px', borderRadius: '50%', margin: '0 auto 14px',
+                      background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '26px', boxShadow: `0 10px 22px ${accent}33`,
+                    }}>
+                      {icon}
+                    </div>
+                    <div style={{
+                      fontFamily: 'var(--font-instrument, serif)', fontStyle: 'italic', fontWeight: 700,
+                      fontSize: 'clamp(24px, 3.2vw, 32px)', color: accent,
+                    }}>
+                      {label}
+                    </div>
+                    <div style={{ width: '40px', height: '3px', background: accent, borderRadius: '2px', margin: '12px auto 0' }} />
+                  </div>
+                  <div className="marquee-track" style={{ overflow: 'hidden', position: 'relative', padding: '10px 0' }}>
+                    <div
+                      className="marquee-inner"
+                      style={{
+                        display: 'flex',
+                        gap: '18px',
+                        width: 'max-content',
+                        animation: anim,
+                        paddingLeft: '20px',
+                        alignItems: 'center',
+                      }}
+                    >
+                      {[...flags, ...flags].map((flag, i) => {
+                        const rots = [-1.5, 1, -1, 1.5, -0.5, 0.5];
+                        const widths = [240, 260, 230, 250, 245, 255];
+                        return (
+                          <div
+                            key={i}
+                            className="flag-card"
+                            style={{
+                              width: `${widths[i % widths.length]}px`, flexShrink: 0,
+                              background: '#ffffff',
+                              borderRadius: '14px',
+                              borderLeft: `4px solid ${accent}`,
+                              padding: '20px 18px 15px',
+                              boxShadow: '0 10px 22px rgba(26,20,16,0.08)',
+                              transform: `rotate(${rots[i % rots.length]}deg)`,
+                            }}
+                          >
+                            <span style={{
+                              fontFamily: 'var(--font-instrument, serif)',
+                              fontSize: 32, color: accent, opacity: 0.35, lineHeight: 1, fontStyle: 'italic',
+                            }}>&ldquo;</span>
+                            <p style={{
+                              fontFamily: 'var(--font-dm-sans, sans-serif)',
+                              fontSize: '13.5px', color: '#1a1410', lineHeight: 1.6, marginTop: '2px',
+                            }}>
+                              {flag}
+                            </p>
+                            <div style={{
+                              marginTop: '14px', paddingTop: '10px', borderTop: '1px solid rgba(26,20,16,0.08)',
+                              fontFamily: 'var(--font-dm-sans, sans-serif)',
+                              fontSize: 10, color: '#a89a82', letterSpacing: '0.05em',
+                            }}>
+                              Shared with permission
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </Fragment>
+            ))}
           </div>
           <p style={{
             fontFamily: 'var(--font-dm-sans, sans-serif)',
