@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 import { Logo } from '@/components/Logo';
 import { track } from '@/lib/analytics';
 
-// ── Auth Modal ─────────────────────────────────────────────────────────────────
+// -- Auth Modal -----------------------------------------------------------------
 
 function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [email, setEmail] = useState('');
@@ -40,7 +40,7 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
       return;
     } catch (err: any) {
       const code: string = err?.code ?? '';
-      // Popup blocked or closed — fall back to redirect (common on mobile/Safari)
+      // Popup blocked or closed � fall back to redirect (common on mobile/Safari)
       if (
         code === 'auth/popup-blocked' ||
         code === 'auth/popup-closed-by-user' ||
@@ -48,7 +48,7 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
       ) {
         try {
           await signInWithRedirect(auth, new GoogleAuthProvider());
-          return; // page redirects away — no finally needed
+          return; // page redirects away � no finally needed
         } catch (redirectErr: any) {
           toast.error(redirectErr?.code ?? 'Google sign-in failed.');
         }
@@ -89,7 +89,7 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
           className="absolute top-4 right-4 text-2xl leading-none"
           style={{ color: '#6b5e4d' }}
           aria-label="Close"
-        >×</button>
+        >�</button>
 
         <div className="text-center mb-6">
           <Logo style={{ fontSize: '2rem' }} />
@@ -108,7 +108,7 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
             ? <span className="gold-spinner" style={{ borderColor: 'rgba(193,62,42,0.2)', borderTopColor: '#c13e2a', width: '18px', height: '18px' }} />
             : <GoogleIcon />
           }
-          {googleLoading ? 'Signing in…' : 'Continue with Google'}
+          {googleLoading ? 'Signing in�' : 'Continue with Google'}
         </button>
 
         <div className="flex items-center gap-3 my-5">
@@ -158,7 +158,7 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
   );
 }
 
-// ── Google Icon ────────────────────────────────────────────────────────────────
+// -- Google Icon ----------------------------------------------------------------
 
 function GoogleIcon() {
   return (
@@ -171,7 +171,7 @@ function GoogleIcon() {
   );
 }
 
-// ── WhatsApp Icon ─────────────────────────────────────────────────────────────
+// -- WhatsApp Icon -------------------------------------------------------------
 
 function WhatsAppIcon() {
   return (
@@ -181,7 +181,7 @@ function WhatsAppIcon() {
   );
 }
 
-// ── Scroll-fade hook ───────────────────────────────────────────────────────────
+// -- Scroll-fade hook -----------------------------------------------------------
 
 function useFadeIn() {
   const ref = useRef<HTMLElement>(null);
@@ -199,7 +199,7 @@ function useFadeIn() {
   return { ref, visible };
 }
 
-// ── Section wrapper ────────────────────────────────────────────────────────────
+// -- Section wrapper ------------------------------------------------------------
 
 function FadeSection({
   children, className, style, id,
@@ -227,7 +227,7 @@ function FadeSection({
   );
 }
 
-// ── Section label ─────────────────────────────────────────────────────────────
+// -- Section label -------------------------------------------------------------
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -245,7 +245,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ── Feature card ──────────────────────────────────────────────────────────────
+// -- Feature card --------------------------------------------------------------
 
 function FeatureCard({ icon, title, body, surface = 'paper' }: {
   icon: React.ReactNode;
@@ -294,7 +294,7 @@ function FeatureCard({ icon, title, body, surface = 'paper' }: {
   );
 }
 
-// ── Line icons (sindoor, 32px) ────────────────────────────────────────────────
+// -- Line icons (sindoor, 32px) ------------------------------------------------
 
 const iconProps = {
   width: 32, height: 32, viewBox: '0 0 24 24',
@@ -339,46 +339,72 @@ const IconFlag = () => (
   <svg {...iconProps}><path d="M5 3v18"/><path d="M5 4h12l-2 3 2 3H5"/></svg>
 );
 
-// ── Data ──────────────────────────────────────────────────────────────────────
+// -- Data ----------------------------------------------------------------------
 
-const RED_FLAGS_LIST = [
-  "Said he wants a 'homely but career-oriented' wife. Pick one.",
-  "His mother sent me a list of things I need to learn to cook before marriage.",
-  "He asked my salary before my name.",
-  "Said her family is very modern. Then asked my caste in the second call.",
-  "His first question on the call was 'do you do fast on karwa chauth?'",
-  "Told me women who work after marriage 'lose their family values'.",
-  "Mom said we'll figure out career after wedding. Didn't even ask me.",
-  "Asked for salary slips before the first meeting. Excuse me?",
-  "Said he's progressive. Then told me his wife will live with his parents 'of course'.",
-  "His family asked if I could 'adjust' and not work in Bangalore.",
-];
+const RED_FLAGS = {
+  he: [
+    "Said he wants a 'homely but career-oriented' wife. Pick one.",
+    "Asked for salary slips before the first meeting. Excuse me?",
+    "His first question on the call was 'do you fast on karwa chauth?'",
+    "Told me women who work after marriage 'lose their family values'.",
+    "Said he's progressive. Then said his wife will live with his parents 'of course'.",
+    "His family asked if I could 'adjust' and not work in Bangalore.",
+    "He asked my salary before my name.",
+    "Wanted a wife who is independent but also available 24/7 for the family.",
+    "Said 'I don't believe in dowry' then listed all the things he expected.",
+    "Asked if I know cooking in the very first message.",
+  ],
+  she: [
+    "Said her family is very modern. Then asked my caste in the second call.",
+    "Her parents expected me to 'prove myself' financially before meeting her.",
+    "She said she's 'not like other girls' � while expecting the guy to pay for everything.",
+    "Her first question was my package. Not even my name.",
+    "Expected me to relocate cities without even asking if that's okay.",
+    "Her family wanted a written list of my assets before proceeding.",
+    "She ghosted after finding out I drive a hatchback.",
+    "Said she wants an equal partner but expected me to handle all EMIs.",
+    "Her mother called my mother to 'check my habits'. On the first day.",
+    "Refused to meet unless I sent my company ID card first.",
+  ],
+  parents: [
+    "His mother sent me a list of things I need to learn to cook before marriage.",
+    "Her father asked my gotra, caste, and sub-caste � in that order � before hello.",
+    "They asked 'what's wrong with her' when I said she's 28 and unmarried.",
+    "Mom said we'll figure out career after wedding. Didn't even ask me.",
+    "Their family wanted a 'fair and tall' girl. In writing.",
+    "He said the girl must leave her job if they move cities. Non-negotiable.",
+    "They asked for a kundli within 5 minutes of receiving the biodata.",
+    "Her parents wanted a 'boy who can take care of everything'. A.k.a. ATM.",
+    "They rejected him because he is the only son and 'too much responsibility'.",
+    "First question to my parents: 'Does she know how to make rotis?'",
+  ],
+};
 
 const FAQS: { cat: 'PRODUCT' | 'PRIVACY' | 'BILLING' | 'FOR PARENTS'; q: string; a: string }[] = [
   {
     cat: 'PRODUCT',
     q: "Is this like a matrimonial app?",
-    a: "No. RokaMaybe doesn't show you new matches or connect you with other users. It's a personal tracker for the prospects you're already meeting — whether they come from matrimonial sites, pandits, relatives, or family friends. Think of it as your private dashboard for your own search.",
+    a: "No. RokaMaybe doesn't show you new matches or connect you with other users. It's a personal tracker for the prospects you're already meeting � whether they come from matrimonial sites, pandits, relatives, or family friends. Think of it as your private dashboard for your own search.",
   },
   {
     cat: 'PRODUCT',
     q: "Do I need to download an app?",
-    a: "Nope. RokaMaybe runs in your browser — phone or laptop, doesn't matter. On your phone, you can 'Add to Home Screen' so it feels exactly like a regular app.",
+    a: "Nope. RokaMaybe runs in your browser � phone or laptop, doesn't matter. On your phone, you can 'Add to Home Screen' so it feels exactly like a regular app.",
   },
   {
     cat: 'PRODUCT',
     q: "How does the biodata AI thing work?",
-    a: "You upload a biodata PDF, Word doc, or photo. AI reads it and fills in the form — name, age, family details, kundli info, all of it. Saves you a lot of typing. You can review and edit anything before saving.",
+    a: "You upload a biodata PDF, Word doc, or photo. AI reads it and fills in the form � name, age, family details, kundli info, all of it. Saves you a lot of typing. You can review and edit anything before saving.",
   },
   {
     cat: 'PRODUCT',
     q: "Is the kundli matching reliable?",
-    a: "The calculations are based on real Vedic astronomy — we compute the Moon's position from the birth details and run the full 36-point Ashtakoot. It's accurate for reference. That said, astrology is a deep subject and we always recommend consulting a qualified pandit before making any final decisions. Think of RokaMaybe's kundli score as a starting point, not the final word.",
+    a: "The calculations are based on real Vedic astronomy � we compute the Moon's position from the birth details and run the full 36-point Ashtakoot. It's accurate for reference. That said, astrology is a deep subject and we always recommend consulting a qualified pandit before making any final decisions. Think of RokaMaybe's kundli score as a starting point, not the final word.",
   },
   {
     cat: 'PRODUCT',
     q: "Who built this?",
-    a: "Me — Komal. I built RokaMaybe because I was going through my own rishta search and couldn't find anything that actually helped. If you have feedback or run into issues, email me directly: komal.singhania1222@gmail.com",
+    a: "Me � Komal. I built RokaMaybe because I was going through my own rishta search and couldn't find anything that actually helped. If you have feedback or run into issues, email me directly: namaste@rokamaybe.com",
   },
   {
     cat: 'PRIVACY',
@@ -388,7 +414,7 @@ const FAQS: { cat: 'PRODUCT' | 'PRIVACY' | 'BILLING' | 'FOR PARENTS'; q: string;
   {
     cat: 'BILLING',
     q: "Can I cancel Premium?",
-    a: "Of course. Cancel anytime — Premium stays active until the end of whatever period you paid for, then you go back to the free tier. You keep all your data.",
+    a: "Of course. Cancel anytime � Premium stays active until the end of whatever period you paid for, then you go back to the free tier. You keep all your data.",
   },
   {
     cat: 'FOR PARENTS',
@@ -397,7 +423,7 @@ const FAQS: { cat: 'PRODUCT' | 'PRIVACY' | 'BILLING' | 'FOR PARENTS'; q: string;
   },
 ];
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+// -- Main Page -----------------------------------------------------------------
 
 export default function LandingPage() {
   const router = useRouter();
@@ -411,7 +437,10 @@ export default function LandingPage() {
   const [linkCopied, setLinkCopied] = useState(false);
   const [mummyEmail, setMummyEmail] = useState('');
   const [mummySaved, setMummySaved] = useState(false);
-  const [shuffledFlags] = useState(() => [...RED_FLAGS_LIST].sort(() => Math.random() - 0.5));
+  const [flagTab, setFlagTab] = useState<'he' | 'she' | 'parents'>('he');
+  const [shuffledFlagsHe] = useState(() => [...RED_FLAGS.he].sort(() => Math.random() - 0.5));
+  const [shuffledFlagsShe] = useState(() => [...RED_FLAGS.she].sort(() => Math.random() - 0.5));
+  const [shuffledFlagsParents] = useState(() => [...RED_FLAGS.parents].sort(() => Math.random() - 0.5));
 
   useEffect(() => {
     const stored = typeof window !== 'undefined' ? localStorage.getItem('rm.banner.dismissed') : null;
@@ -456,7 +485,7 @@ export default function LandingPage() {
   };
 
   const waText = encodeURIComponent(
-    'I know आपको रोज़ updates चाहिए. I know you\'re worried. I know अंकल की बेटी is already engaged.\n\nमैं ignore नहीं कर रही हूँ. I\'m being careful. यह मेरी ज़िन्दगी का सबसे बड़ा decision है, and I want to make it right — not fast.\n\nमैंने RokaMaybe use करना शुरू किया है. Every prospect is tracked. Every conversation logged. Every kundli matched. इस weekend साथ बैठते हैं, I\'ll show you everything.\n\nTry it: ' + (typeof window !== 'undefined' ? window.location.href : 'https://rokamaybe.in')
+    'I know ???? ???? updates ?????. I know you\'re worried. I know ???? ?? ???? is already engaged.\n\n??? ignore ???? ?? ??? ???. I\'m being careful. ?? ???? ???????? ?? ???? ???? decision ??, and I want to make it right � not fast.\n\n????? RokaMaybe use ???? ???? ???? ??. Every prospect is tracked. Every conversation logged. Every kundli matched. ?? weekend ??? ????? ???, I\'ll show you everything.\n\nTry it: ' + (typeof window !== 'undefined' ? window.location.href : 'https://rokamaybe.in')
   );
 
   const bannerH = bannerDismissed ? 0 : 36;
@@ -507,7 +536,7 @@ export default function LandingPage() {
             fontSize: '13px', color: '#f5ede0', fontWeight: 500, textAlign: 'center',
             lineHeight: 1.2, margin: 0, whiteSpace: 'nowrap',
           }}>
-            🎉 Launch offer: First 50 users get Premium at <span style={{ color: '#b8892b', fontWeight: 700 }}>₹299</span> for 3 months. Limited seats.
+            ?? Launch offer: First 50 users get Premium at <span style={{ color: '#b8892b', fontWeight: 700 }}>?299</span> for 3 months. Limited seats.
           </p>
           <button
             onClick={dismissBanner}
@@ -518,7 +547,7 @@ export default function LandingPage() {
               color: '#f5ede0', fontSize: '1.1rem', lineHeight: 1,
               background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, borderRadius: 6,
             }}
-          >×</button>
+          >�</button>
         </div>
       )}
 
@@ -634,16 +663,16 @@ export default function LandingPage() {
               minHeight: 52, outline: '2px solid #c13e2a',
             }}
           >
-            Start Free — No credit card needed
+            Start Free � No credit card needed
           </button>
           <p style={{
             fontFamily: 'var(--font-dm-sans, sans-serif)',
             fontSize: '13px', color: '#6b5e4d', marginTop: '12px',
           }}>
-            Takes 2 minutes to set up · Cancel anytime · Private by default
+            Takes 2 minutes to set up � Cancel anytime � Private by default
           </p>
 
-          {/* Product mockup — browser chrome */}
+          {/* Product mockup � browser chrome */}
           <div style={{ marginTop: 48, position: 'relative' }}>
             <div style={{
               maxWidth: 720, margin: '0 auto',
@@ -708,9 +737,9 @@ export default function LandingPage() {
                 {/* Prospect rows */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {[
-                    { name: 'Aarav M.', meta: '28 · Bengaluru · Joint family', score: '78%', stage: 'Kundli matched', stageColor: '#c13e2a' },
-                    { name: 'Rohan K.', meta: '30 · Mumbai · Nuclear', score: '64%', stage: 'Called', stageColor: '#1a1410' },
-                    { name: 'Sneha P.', meta: '27 · Pune · Joint family', score: '52%', stage: 'New biodata', stageColor: '#6b5e4d' },
+                    { name: 'Aarav M.', meta: '28 � Bengaluru � Joint family', score: '78%', stage: 'Kundli matched', stageColor: '#c13e2a' },
+                    { name: 'Rohan K.', meta: '30 � Mumbai � Nuclear', score: '64%', stage: 'Called', stageColor: '#1a1410' },
+                    { name: 'Sneha P.', meta: '27 � Pune � Joint family', score: '52%', stage: 'New biodata', stageColor: '#6b5e4d' },
                   ].map((p) => (
                     <div key={p.name} style={{
                       background: '#ffffff', borderRadius: 8, padding: '10px 12px',
@@ -829,7 +858,7 @@ export default function LandingPage() {
               You know how it goes. Biodatas piling up in WhatsApp. Your dad's friend sent 'a very good profile' last Tuesday and you can't find it. The pandit gave you a kundli report on paper and you've already lost it. You had a call with someone last week and now you can't remember if he was the one who wanted to move abroad or the one with the joint family in Jaipur. Your mom keeps asking for updates. You don't have updates. You just have chaos.
             </p>
             <p style={{ fontFamily: 'var(--font-fraunces, sans-serif)', fontSize: '1rem', color: '#6b5e4d', lineHeight: 1.85 }}>
-              Matrimonial apps don't fix this. They just add more profiles to the chaos. Pandits don't fix it. Relatives definitely don't fix it. So I built RokaMaybe — the thing I wished existed when I started my own search.
+              Matrimonial apps don't fix this. They just add more profiles to the chaos. Pandits don't fix it. Relatives definitely don't fix it. So I built RokaMaybe � the thing I wished existed when I started my own search.
             </p>
           </div>
         </FadeSection>
@@ -846,7 +875,7 @@ export default function LandingPage() {
               One place for everything.
             </h2>
             <p style={{ fontFamily: 'var(--font-fraunces, sans-serif)', fontSize: '1rem', color: '#6b5e4d', lineHeight: 1.85, marginBottom: '20px' }}>
-              Upload a biodata — AI reads every detail and fills it in for you. Track each person through stages, from first introduction to final yes-or-no. Log your calls so you don't forget what you talked about. Rate the family separately from the person. Flag the weird stuff before you forget it. And when it's time to decide, compare them side by side — not just on income and education, but on everything that actually matters.
+              Upload a biodata � AI reads every detail and fills it in for you. Track each person through stages, from first introduction to final yes-or-no. Log your calls so you don't forget what you talked about. Rate the family separately from the person. Flag the weird stuff before you forget it. And when it's time to decide, compare them side by side � not just on income and education, but on everything that actually matters.
             </p>
             <p style={{ fontFamily: 'var(--font-fraunces, sans-serif)', fontSize: '1rem', color: '#6b5e4d', lineHeight: 1.85 }}>
               This is not another matrimonial site. This is the quiet, private dashboard you actually needed.
@@ -875,12 +904,12 @@ export default function LandingPage() {
               <FeatureCard
                 icon={<IconDoc />}
                 title="AI reads biodatas for you"
-                body="Drop a PDF, Word doc, or screenshot. In 30 seconds, every field is filled — name, age, family, kundli details, the works."
+                body="Drop a PDF, Word doc, or screenshot. In 30 seconds, every field is filled � name, age, family, kundli details, the works."
               />
               <FeatureCard
                 icon={<IconSparkle />}
                 title="Real kundli matching, not a gimmick"
-                body="Full 36-point Ashtakoot Milan from actual birth details. Nadi, Bhakut, Gana dosha — all flagged automatically. Always consult a pandit for final guidance."
+                body="Full 36-point Ashtakoot Milan from actual birth details. Nadi, Bhakut, Gana dosha � all flagged automatically. Always consult a pandit for final guidance."
               />
               <FeatureCard
                 icon={<IconTarget />}
@@ -917,7 +946,7 @@ export default function LandingPage() {
                     fontFamily: 'var(--font-fraunces, serif)',
                     fontSize: '20px', fontWeight: 600, color: '#1a1410', marginBottom: '4px',
                   }}>
-                    Mummy Mode — coming soon
+                    Mummy Mode � coming soon
                   </div>
                   <div style={{
                     fontFamily: 'var(--font-dm-sans, sans-serif)',
@@ -932,7 +961,7 @@ export default function LandingPage() {
                   fontFamily: 'var(--font-dm-sans, sans-serif)',
                   fontSize: 13, color: '#2D6B4F', fontWeight: 600,
                 }}>
-                  ✓ You&apos;re on the list. We&apos;ll email you at launch.
+                  ? You&apos;re on the list. We&apos;ll email you at launch.
                 </p>
               ) : (
                 <form onSubmit={handleMummyNotify} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -979,7 +1008,7 @@ export default function LandingPage() {
             }}>
               {[
                 { num: '1', title: 'Sign up', body: 'Google or email, takes 30 seconds.' },
-                { num: '2', title: 'Quick preference setup (2 minutes)', body: 'Pick from pills — city, age range, diet, income, family type. Done.' },
+                { num: '2', title: 'Quick preference setup (2 minutes)', body: 'Pick from pills � city, age range, diet, income, family type. Done.' },
                 { num: '3', title: 'Start adding prospects', body: 'One by one, or bulk upload biodatas (PDF, Word, or photo).' },
               ].map(({ num, title, body }) => (
                 <div key={num}>
@@ -1028,12 +1057,32 @@ export default function LandingPage() {
             }}>
               Real red flags people have flagged.
             </h2>
-            <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: '#6b5e4d' }}>
+            <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: '#6b5e4d', marginBottom: '28px' }}>
               Shared with permission. The rishta search is wild out there.
             </p>
+            {/* Tabs */}
+            <div style={{ display: 'inline-flex', gap: '8px', background: '#ede0cc', borderRadius: '999px', padding: '5px' }}>
+              {(['he', 'she', 'parents'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setFlagTab(tab)}
+                  style={{
+                    fontFamily: 'var(--font-dm-sans, sans-serif)',
+                    fontSize: '13px', fontWeight: 600,
+                    padding: '7px 20px', borderRadius: '999px', border: 'none',
+                    cursor: 'pointer', transition: 'all 0.2s',
+                    background: flagTab === tab ? '#1a1410' : 'transparent',
+                    color: flagTab === tab ? '#fff' : '#6b5e4d',
+                  }}
+                >
+                  {tab === 'he' ? '🙋‍♂️ He Said' : tab === 'she' ? '🙋‍♀️ She Said' : '👨‍👩‍👧 Parents Said'}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="marquee-track" style={{ overflow: 'hidden', position: 'relative', padding: '16px 0' }}>
             <div
+              key={flagTab}
               className="marquee-inner"
               style={{
                 display: 'flex',
@@ -1044,16 +1093,18 @@ export default function LandingPage() {
                 alignItems: 'center',
               }}
             >
-              {[...shuffledFlags, ...shuffledFlags].map((flag, i) => {
+              {(() => {
+                const list = flagTab === 'he' ? shuffledFlagsHe : flagTab === 'she' ? shuffledFlagsShe : shuffledFlagsParents;
+                const accentColor = flagTab === 'he' ? '#b0c4de' : flagTab === 'she' ? '#e8c0c8' : '#c8d8b0';
                 const rots = [-2, 1, -1, 2, -1.5, 1.5];
                 const widths = [290, 320, 280, 310, 295, 315];
-                return (
+                return [...list, ...list].map((flag, i) => (
                   <div
                     key={i}
                     style={{
                       width: `${widths[i % widths.length]}px`, flexShrink: 0,
                       background: '#ffffff',
-                      border: '1px solid #d6c9b0',
+                      border: `1px solid ${accentColor}`,
                       borderRadius: '10px', padding: '22px 20px',
                       boxShadow: '0 6px 18px rgba(26,20,16,0.08)',
                       transform: `rotate(${rots[i % rots.length]}deg)`,
@@ -1063,7 +1114,7 @@ export default function LandingPage() {
                     <span style={{
                       position: 'absolute', top: -6, left: 12,
                       fontFamily: 'var(--font-instrument, serif)',
-                      fontSize: 44, color: '#e8c870', lineHeight: 1, fontStyle: 'italic',
+                      fontSize: 44, color: accentColor, lineHeight: 1, fontStyle: 'italic',
                     }}>&ldquo;</span>
                     <p style={{
                       fontFamily: 'var(--font-dm-sans, sans-serif)',
@@ -1079,8 +1130,8 @@ export default function LandingPage() {
                       — Shared with permission
                     </p>
                   </div>
-                );
-              })}
+                ));
+              })()}
             </div>
           </div>
           <p style={{
@@ -1120,7 +1171,7 @@ export default function LandingPage() {
               fontFamily: 'var(--font-fraunces, sans-serif)',
               fontSize: '0.9rem', color: '#c13e2a', fontWeight: 600,
             }}>
-              — Komal Singhania, Founder
+              � Komal Singhania, Founder
             </p>
           </div>
         </FadeSection>
@@ -1146,7 +1197,7 @@ export default function LandingPage() {
                 borderRadius: '12px', padding: '32px', textAlign: 'left',
               }}>
                 <div style={{ fontFamily: 'var(--font-fraunces, serif)', fontSize: '22px', fontWeight: 700, color: '#1a1410', marginBottom: '8px' }}>Free</div>
-                <div style={{ fontFamily: 'var(--font-instrument, serif)', fontSize: '44px', fontWeight: 700, color: '#1a1410', lineHeight: 1 }}>₹0</div>
+                <div style={{ fontFamily: 'var(--font-instrument, serif)', fontSize: '44px', fontWeight: 700, color: '#1a1410', lineHeight: 1 }}>?0</div>
                 <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', color: '#6b5e4d', marginBottom: '24px' }}>forever</div>
                 {[
                   { ok: true, label: 'Track up to 3 prospects' },
@@ -1164,7 +1215,7 @@ export default function LandingPage() {
                     textDecoration: ok ? 'none' : 'line-through',
                   }}>
                     <span style={{ color: ok ? '#c13e2a' : '#C0B0A0', fontWeight: 700, fontSize: '15px', width: 16, display: 'inline-block' }}>
-                      {ok ? '✓' : '✗'}
+                      {ok ? '?' : '?'}
                     </span>
                     {label}
                   </div>
@@ -1204,14 +1255,14 @@ export default function LandingPage() {
                 </div>
                 <div style={{ fontFamily: 'var(--font-fraunces, serif)', fontSize: '22px', fontWeight: 700, color: '#1a1410', marginBottom: '8px' }}>Premium</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
-                  <del style={{ fontFamily: 'var(--font-instrument, serif)', fontSize: '22px', color: '#6b5e4d' }}>₹499</del>
-                  <span style={{ fontFamily: 'var(--font-instrument, serif)', fontSize: '44px', fontWeight: 700, color: '#c13e2a', lineHeight: 1 }}>₹299</span>
+                  <del style={{ fontFamily: 'var(--font-instrument, serif)', fontSize: '22px', color: '#6b5e4d' }}>?499</del>
+                  <span style={{ fontFamily: 'var(--font-instrument, serif)', fontSize: '44px', fontWeight: 700, color: '#c13e2a', lineHeight: 1 }}>?299</span>
                   <span style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', color: '#6b5e4d' }}>/ 3 months</span>
                 </div>
                 <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '12px', color: '#c13e2a', fontWeight: 600, marginBottom: '4px' }}>
                   Launch price for first 50 users
                 </div>
-                <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', color: '#6b5e4d', marginBottom: '16px' }}>or ₹1,299 / year</div>
+                <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', color: '#6b5e4d', marginBottom: '16px' }}>or ?1,299 / year</div>
                 <div style={{ marginBottom: 24 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 11, color: '#6b5e4d', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
                     <span>12 of 50 seats claimed</span>
@@ -1237,7 +1288,7 @@ export default function LandingPage() {
                     fontFamily: 'var(--font-dm-sans, sans-serif)',
                     fontSize: '14px', color: '#1a1410',
                   }}>
-                    <span style={{ color: '#c13e2a', fontWeight: 700, fontSize: '15px', width: 16, display: 'inline-block' }}>✓</span>
+                    <span style={{ color: '#c13e2a', fontWeight: 700, fontSize: '15px', width: 16, display: 'inline-block' }}>?</span>
                     {label}
                   </div>
                 ))}
@@ -1288,7 +1339,7 @@ export default function LandingPage() {
                   fontFamily: 'var(--font-fraunces, sans-serif)',
                   fontSize: '1rem', color: '#1a1410',
                 }}>
-                  <span style={{ color: '#c13e2a', fontWeight: 700, flexShrink: 0, fontSize: '1.1rem', lineHeight: 1.4 }}>✗</span>
+                  <span style={{ color: '#c13e2a', fontWeight: 700, flexShrink: 0, fontSize: '1.1rem', lineHeight: 1.4 }}>?</span>
                   {text}
                 </div>
               ))}
@@ -1322,7 +1373,7 @@ export default function LandingPage() {
               gap: 16,
             }}>
               {[
-                { Icon: IconLock, text: 'End-to-end private — only you see your data' },
+                { Icon: IconLock, text: 'End-to-end private � only you see your data' },
                 { Icon: IconNoAds, text: 'No ads, ever' },
                 { Icon: IconExport, text: 'Export your data anytime' },
                 { Icon: IconTrash, text: 'Delete everything in one click' },
@@ -1346,65 +1397,6 @@ export default function LandingPage() {
           </div>
         </FadeSection>
 
-        {/* 13. DEAR MUMMY LETTER */}
-        <FadeSection style={{ padding: '72px 24px', background: '#f5ede0' }}>
-          <div style={{ maxWidth: '640px', margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-              <SectionLabel>A LETTER</SectionLabel>
-            </div>
-            <div style={{
-              background: '#f5ede0', borderRadius: '16px', padding: '40px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-              border: '1px solid #d6c9b0',
-            }}>
-              <p style={{
-                fontFamily: 'var(--font-instrument, serif)',
-                fontSize: '1.3rem', fontWeight: 700, color: '#1a1410',
-                marginBottom: '20px',
-              }}>
-                Dear Mummy,
-              </p>
-              <div style={{
-                fontFamily: 'var(--font-instrument, serif)',
-                fontSize: '1.1rem', color: '#1a1410',
-                lineHeight: 2, fontStyle: 'italic',
-              }}>
-                <p style={{ marginBottom: '18px' }}>
-                  I know आपको रोज़ updates चाहिए. I know you're worried. I know अंकल की बेटी is already engaged.
-                </p>
-                <p style={{ marginBottom: '18px' }}>
-                  मैं ignore नहीं कर रही हूँ. I'm being careful. यह मेरी ज़िन्दगी का सबसे बड़ा decision है, and I want to make it right — not fast.
-                </p>
-                <p style={{ marginBottom: '18px' }}>
-                  मैंने RokaMaybe use करना शुरू किया है. Every prospect is tracked. Every conversation logged. Every kundli matched. इस weekend साथ बैठते हैं, I'll show you everything.
-                </p>
-                <p>
-                  Love,<br />Your daughter
-                </p>
-              </div>
-            </div>
-            <div style={{ textAlign: 'center', marginTop: '24px' }}>
-              <p style={{ fontFamily: 'var(--font-fraunces, sans-serif)', fontSize: '0.85rem', color: '#6b5e4d', marginBottom: '14px' }}>
-                Share this with your mom. She'll get it.
-              </p>
-              <a
-                href={`https://wa.me/?text=${waText}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '8px',
-                  fontFamily: 'var(--font-fraunces, sans-serif)',
-                  fontWeight: 600, fontSize: '0.9rem', color: '#fff',
-                  background: '#25D366', borderRadius: '10px',
-                  padding: '10px 20px', textDecoration: 'none',
-                }}
-              >
-                <WhatsAppIcon /> Share on WhatsApp
-              </a>
-            </div>
-          </div>
-        </FadeSection>
-
         {/* 14. FOR THE DAD ON WHATSAPP */}
         <FadeSection style={{ padding: '72px 24px', background: '#ffffff' }}>
           <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
@@ -1420,7 +1412,7 @@ export default function LandingPage() {
               fontFamily: 'var(--font-fraunces, sans-serif)',
               fontSize: '1rem', color: '#6b5e4d', lineHeight: 1.75, marginBottom: '28px',
             }}>
-              You've probably forwarded 20 biodatas on WhatsApp this month. Your child has probably seen half of them. RokaMaybe helps them organize everything you send — and when it's time to decide, you can sit together and compare properly. Ask them to try it.
+              You've probably forwarded 20 biodatas on WhatsApp this month. Your child has probably seen half of them. RokaMaybe helps them organize everything you send � and when it's time to decide, you can sit together and compare properly. Ask them to try it.
             </p>
             <button
               onClick={handleCopyLink}
@@ -1432,7 +1424,7 @@ export default function LandingPage() {
                 transition: 'all 0.2s',
               }}
             >
-              {linkCopied ? '✓ Link copied!' : 'Send them the link'}
+              {linkCopied ? '? Link copied!' : 'Send them the link'}
             </button>
           </div>
         </FadeSection>
@@ -1563,7 +1555,7 @@ export default function LandingPage() {
               fontFamily: 'var(--font-dm-sans, sans-serif)',
               fontSize: '13px', color: '#6b5e4d', marginTop: '16px',
             }}>
-              No credit card required · Set up in 2 minutes · Cancel anytime
+              No credit card required � Set up in 2 minutes � Cancel anytime
             </p>
           </div>
         </FadeSection>
@@ -1594,7 +1586,7 @@ export default function LandingPage() {
                   fontFamily: 'var(--font-dm-sans, sans-serif)',
                   fontSize: '12px', color: 'rgba(255,255,255,0.65)',
                 }}>
-                  Founder &amp; Engineer
+                  Founder
                 </p>
               </div>
 
@@ -1649,8 +1641,7 @@ export default function LandingPage() {
                 <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
                   {[
                     { label: 'Instagram', href: 'https://instagram.com/rokamaybe', svg: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg> },
-                    { label: 'LinkedIn', href: '#', svg: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 10v7"/><circle cx="8" cy="7" r="1" fill="currentColor"/><path d="M12 17v-4a2.5 2.5 0 0 1 5 0v4"/><path d="M12 10v7"/></svg> },
-                    { label: 'Twitter', href: '#', svg: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4l7 9-7 7h3l5.5-5.5L17 20h3l-7.3-9.4L19.5 4h-3l-4.8 4.8L8 4z"/></svg> },
+                    { label: 'LinkedIn', href: 'https://www.linkedin.com/company/rokamaybe/', svg: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 10v7"/><circle cx="8" cy="7" r="1" fill="currentColor"/><path d="M12 17v-4a2.5 2.5 0 0 1 5 0v4"/><path d="M12 10v7"/></svg> },
                   ].map(s => (
                     <a
                       key={s.label}
@@ -1672,7 +1663,7 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <a
-                  href="mailto:komal.singhania1222@gmail.com"
+                  href="mailto:namaste@rokamaybe.com"
                   style={{
                     fontFamily: 'var(--font-dm-sans, sans-serif)',
                     fontSize: '13px', color: '#f5ede0', textDecoration: 'none',
@@ -1681,7 +1672,7 @@ export default function LandingPage() {
                   onMouseEnter={(e) => { e.currentTarget.style.color = '#ffffff'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = '#f5ede0'; }}
                 >
-                  komal.singhania1222@gmail.com
+                  namaste@rokamaybe.com
                 </a>
               </div>
             </div>
@@ -1692,10 +1683,10 @@ export default function LandingPage() {
               justifyContent: 'space-between', gap: '8px',
             }}>
               <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>
-                Made with ❤️ in India · Built by Komal Singhania
+                Made with ?? in India � Built by Komal Singhania
               </p>
               <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>
-                © 2026 RokaMaybe. All rights reserved.
+                � 2026 RokaMaybe. All rights reserved.
               </p>
             </div>
           </div>
