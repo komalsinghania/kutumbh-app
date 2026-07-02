@@ -562,7 +562,7 @@ export default function DashboardPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginTop: 8, flexWrap: 'wrap' }}>
                     <h1 style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: isMobile ? '2rem' : '2.9rem', fontWeight: 600, color: '#1a1410', lineHeight: 1.04, letterSpacing: '-0.01em', margin: 0 }}>
-                      The Marriage Almanac
+                      The Rishta Report
                     </h1>
                     <div style={{ textAlign: 'right', fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontStyle: 'italic', color: '#6b5e4d', fontSize: '0.92rem', lineHeight: 1.3 }}>
                       <div>{almanacDate.weekday}</div>
