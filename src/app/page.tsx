@@ -693,7 +693,7 @@ const IconIndia = () => (
 
 const RED_FLAGS: { who: 'he' | 'she'; text: string }[] = [
   { who: 'he', text: "You can work after marriage. From home. Part-time. If there's time after cooking." },
-  { who: 'she', text: "I need a 3BHK minimum. Your parents can visit. Visit." },
+  { who: 'she', text: "I need a 3BHK minimum. Your parents can visit — not live." },
   { who: 'he', text: "What's your salary? Just asking so we know how much you'll contribute to the wedding." },
   { who: 'she', text: "What car do you drive? No reason. Just checking compatibility." },
   { who: 'he', text: "You'll obviously delete public Instagram after the roka, right?" },
@@ -834,7 +834,7 @@ export default function LandingPage() {
           <div className="lp-hero-inner">
             <div className="lp-hero-badge">
               <span className="lp-dot" />
-              Launch offer — Premium at ₹299 for the first 50 users
+              Launch offer — ₹499 once, lifetime access. First 100 users only
             </div>
 
             <h1 className="lp-hero-title">

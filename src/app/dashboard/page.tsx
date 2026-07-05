@@ -843,15 +843,20 @@ export default function DashboardPage() {
                       }}>
                         <div style={{ padding: '14px 16px', cursor: 'pointer' }}
                           onClick={() => mainTab === 'compare' ? toggleCompare(p.id) : router.push(`/prospects/${p.id}`)}>
-                          {idx < 3 && overall !== null && (
-                            <div style={{
-                              display: 'inline-flex', alignItems: 'center', gap: 4,
-                              fontSize: '0.58rem', fontWeight: 800, padding: '3px 8px', borderRadius: 20,
-                              background: idx === 0 ? 'rgba(184,137,43,0.12)' : idx === 1 ? 'rgba(193,62,42,0.08)' : 'rgba(107,94,77,0.08)',
-                              color: idx === 0 ? '#b8892b' : idx === 1 ? '#c13e2a' : '#6b5e4d',
-                              marginBottom: 8, letterSpacing: '0.08em', textTransform: 'uppercase',
-                            }}>
-                              {idx === 0 ? '★ Top Match' : idx === 1 ? '✦ 2nd' : '✦ 3rd'}
+                          {((idx < 3 && overall !== null) || isSelected) && (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
+                              {idx < 3 && overall !== null ? (
+                                <div style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                                  fontSize: '0.58rem', fontWeight: 800, padding: '3px 8px', borderRadius: 20,
+                                  background: idx === 0 ? 'rgba(184,137,43,0.12)' : idx === 1 ? 'rgba(193,62,42,0.08)' : 'rgba(107,94,77,0.08)',
+                                  color: idx === 0 ? '#b8892b' : idx === 1 ? '#c13e2a' : '#6b5e4d',
+                                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                                }}>
+                                  {idx === 0 ? '★ Top Match' : idx === 1 ? '✦ 2nd' : '✦ 3rd'}
+                                </div>
+                              ) : <span />}
+                              {isSelected && <SelectedBadge />}
                             </div>
                           )}
                           <ProspectCardInner prospect={p} isSelected={isSelected} />
@@ -908,6 +913,11 @@ export default function DashboardPage() {
                       }}>
                         <div style={{ padding: '14px 16px', cursor: 'pointer' }}
                           onClick={() => mainTab === 'compare' ? toggleCompare(p.id) : router.push(`/prospects/${p.id}`)}>
+                          {isSelected && (
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+                              <SelectedBadge />
+                            </div>
+                          )}
                           <ProspectCardInner prospect={p} isSelected={isSelected} />
                         </div>
                         <div style={{ padding: '10px 16px 14px', borderTop: '1px solid #f0ebe2', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1419,6 +1429,17 @@ function BoardProspectCard({ prospect: p, index, onTap }: { prospect: Prospect; 
 /* ══════════════════════════════════════════════════════════════════
    Prospect Card Inner (Matches tab)
 ══════════════════════════════════════════════════════════════════ */
+function SelectedBadge() {
+  return (
+    <span style={{
+      fontSize: '0.62rem', fontWeight: 800, color: 'white',
+      background: '#c13e2a', padding: '3px 9px', borderRadius: 20,
+      display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0,
+      whiteSpace: 'nowrap',
+    }}>✓ Selected</span>
+  );
+}
+
 function ProspectCardInner({ prospect: p, isSelected }: { prospect: Prospect; isSelected: boolean }) {
   const overall = calculateOverallScore(p.gunaScore, p.compatScore);
   const cardInitials = p.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
@@ -1446,12 +1467,6 @@ function ProspectCardInner({ prospect: p, isSelected }: { prospect: Prospect; is
             fontSize: '1rem', fontWeight: 700, color: '#1a1410',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{p.name}</h3>
-          {isSelected && (
-            <span style={{
-              fontSize: '0.65rem', fontWeight: 800, color: 'white',
-              background: '#c13e2a', padding: '2px 8px', borderRadius: 20,
-            }}>✓ Selected</span>
-          )}
         </div>
         <p style={{ fontSize: '0.73rem', color: '#7a6e62', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {[p.age && `${p.age}`, p.city, p.profession].filter(Boolean).join(' · ')}
