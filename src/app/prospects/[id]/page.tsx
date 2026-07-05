@@ -763,7 +763,10 @@ export default function ProspectDetailPage() {
                 value: prospect.gunaScore !== null && prospect.gunaScore !== undefined ? `${prospect.gunaScore}/36` : '—',
                 icon: '✦',
                 bg: 'rgba(255,255,255,0.12)',
-                valueBg: prospect.gunaScore != null && prospect.gunaScore < 18 ? 'rgba(139,42,42,0.18)' : 'rgba(255,255,255,0.92)',
+                // Keep a solid light value box even for low matches so the dark-red
+                // number stays legible against the red header (a translucent maroon
+                // box merged into the gradient). Red text still signals "low".
+                valueBg: 'rgba(255,255,255,0.92)',
                 valueColor: prospect.gunaScore != null && prospect.gunaScore < 18 ? '#8B2A2A' : '#4A3728',
                 warning: prospect.gunaScore != null && prospect.gunaScore < 18 ? "Doesn't Match" : null,
               },
@@ -797,7 +800,11 @@ export default function ProspectDetailPage() {
                   {label}
                 </div>
                 {warning && (
-                  <div style={{ fontSize: '0.56rem', fontWeight: 700, color: '#ff9999', letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 1 }}>
+                  <div style={{
+                    fontSize: '0.54rem', fontWeight: 800, color: '#8B2A2A',
+                    background: 'rgba(255,255,255,0.92)', padding: '1px 6px', borderRadius: 5,
+                    letterSpacing: '0.03em', textTransform: 'uppercase', marginTop: 3,
+                  }}>
                     {warning}
                   </div>
                 )}
