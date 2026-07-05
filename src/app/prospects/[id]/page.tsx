@@ -514,6 +514,18 @@ export default function ProspectDetailPage() {
     setActiveMeetingIdx(newIdx);
   };
 
+  const deleteMeeting = async (idx: number) => {
+    if (!user || !prospect) return;
+    const existing = meetingLocal.meetings ?? [];
+    const updated = existing.filter((_, i) => i !== idx).map((m, i) => ({ ...m, meetingNumber: i + 1 }));
+    const newActive = Math.min(activeMeetingIdx, Math.max(0, updated.length - 1));
+    const newData = { ...meetingLocal, meetings: updated, updatedAt: Date.now() };
+    setMeetingLocal(newData);
+    setActiveMeetingIdx(newActive);
+    await saveMeetingData(user.uid, id, prospect.name, newData);
+    toast.success('Meeting removed.');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5ede0' }}>
@@ -822,7 +834,7 @@ export default function ProspectDetailPage() {
             </span>
             <span style={{
               fontSize: '0.72rem', fontWeight: 700, color: '#c13e2a',
-              background: 'rgba(193,62,42,0.08)', padding: '3px 12px',
+              background: 'rgba(193,62,42,0.08)', padding: '10px 12px',
               borderRadius: 20, border: '1px solid rgba(193,62,42,0.22)',
             }}>
               {JOURNEY_LABELS[prospect.stage]}
@@ -2019,21 +2031,42 @@ export default function ProspectDetailPage() {
                       const isActive = activeMeetingIdx === i;
                       const isDone = !!(savedMeetings[i]?.savedAt);
                       return (
-                        <button key={i} type="button" onClick={() => setActiveMeetingIdx(i)}
-                          style={{
-                            padding: '7px 16px', borderRadius: 20, cursor: 'pointer',
-                            border: `1.5px solid ${isActive ? '#c13e2a' : '#e8dece'}`,
-                            background: isActive ? '#c13e2a' : 'white',
-                            color: isActive ? 'white' : '#6b5e4d',
-                            fontWeight: isActive ? 800 : 500,
-                            fontSize: '0.78rem',
-                            transition: 'all 0.18s cubic-bezier(0.34,1.56,0.64,1)',
-                            display: 'flex', alignItems: 'center', gap: 5,
-                            boxShadow: isActive ? '0 4px 12px rgba(193,62,42,0.3)' : 'none',
-                          }}>
-                          {MEETING_ORDINALS[i] ?? `${i + 1}th`}
-                          {isDone && <span style={{ fontSize: '0.65rem', background: isActive ? 'rgba(255,255,255,0.3)' : '#3db87a', color: 'white', borderRadius: '50%', width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</span>}
-                        </button>
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <button type="button" onClick={() => setActiveMeetingIdx(i)}
+                            style={{
+                              padding: '7px 14px', borderRadius: savedMeetings.length > 1 ? '20px 0 0 20px' : 20, cursor: 'pointer',
+                              border: `1.5px solid ${isActive ? '#c13e2a' : '#e8dece'}`,
+                              borderRight: savedMeetings.length > 1 ? 'none' : undefined,
+                              background: isActive ? '#c13e2a' : 'white',
+                              color: isActive ? 'white' : '#6b5e4d',
+                              fontWeight: isActive ? 800 : 500,
+                              fontSize: '0.78rem',
+                              transition: 'all 0.18s cubic-bezier(0.34,1.56,0.64,1)',
+                              display: 'flex', alignItems: 'center', gap: 5,
+                              boxShadow: isActive ? '0 4px 12px rgba(193,62,42,0.3)' : 'none',
+                            }}>
+                            {MEETING_ORDINALS[i] ?? `${i + 1}th`}
+                            {isDone && <span style={{ fontSize: '0.65rem', background: isActive ? 'rgba(255,255,255,0.3)' : '#3db87a', color: 'white', borderRadius: '50%', width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</span>}
+                          </button>
+                          {savedMeetings.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Remove ${MEETING_ORDINALS[i] ?? `${i + 1}th`} meeting?`)) deleteMeeting(i);
+                              }}
+                              title="Delete meeting"
+                              style={{
+                                padding: '7px 8px', borderRadius: '0 20px 20px 0', cursor: 'pointer',
+                                border: `1.5px solid ${isActive ? '#c13e2a' : '#e8dece'}`,
+                                background: isActive ? 'rgba(255,255,255,0.15)' : '#fff5f5',
+                                color: isActive ? 'white' : '#c13e2a',
+                                fontSize: '0.7rem', lineHeight: 1,
+                                transition: 'all 0.15s',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}
+                            >✕</button>
+                          )}
+                        </div>
                       );
                     })}
                   </div>

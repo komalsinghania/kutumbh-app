@@ -261,7 +261,7 @@ export default function ConversationTimeline({ conversations, onAdd, onUpdate, o
                   return (
                     <button
                       key={type}
-                      onClick={() => setCallType(isActive ? '' : type)}
+                      onClick={() => setCallType(type)}
                       style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                         gap: 6, padding: '10px 6px', borderRadius: 12, cursor: 'pointer',
@@ -297,7 +297,7 @@ export default function ConversationTimeline({ conversations, onAdd, onUpdate, o
                   return (
                     <button
                       key={d}
-                      onClick={() => setDuration(isActive ? '' : d)}
+                      onClick={() => setDuration(d)}
                       style={{
                         padding: '8px 16px', borderRadius: 24, cursor: 'pointer',
                         border: isActive ? '2px solid #c13e2a' : '1.5px solid #e0d8cc',
@@ -408,7 +408,7 @@ export default function ConversationTimeline({ conversations, onAdd, onUpdate, o
                   return (
                     <button
                       key={opt.emoji}
-                      onClick={() => setMood(isActive ? '' : opt.emoji)}
+                      onClick={() => setMood(opt.emoji)}
                       style={{
                         flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
                         gap: 5, padding: '10px 4px', borderRadius: 14, cursor: 'pointer',
@@ -443,7 +443,7 @@ export default function ConversationTimeline({ conversations, onAdd, onUpdate, o
                   return (
                     <button
                       key={v}
-                      onClick={() => setTheirVibe(isActive ? '' : v)}
+                      onClick={() => setTheirVibe(v)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 6,
                         padding: '8px 12px', borderRadius: 24, cursor: 'pointer',
@@ -479,7 +479,7 @@ export default function ConversationTimeline({ conversations, onAdd, onUpdate, o
                   return (
                     <button
                       key={opt}
-                      onClick={() => setFollowUp(isActive ? '' : opt)}
+                      onClick={() => setFollowUp(opt)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 7,
                         padding: '8px 13px', borderRadius: 24, cursor: 'pointer',

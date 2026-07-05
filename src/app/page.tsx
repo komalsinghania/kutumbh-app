@@ -1056,13 +1056,13 @@ export default function LandingPage() {
                 )}
                 <div style={{ background: bg, padding: '44px 0 40px', minWidth: 0, overflow: 'hidden' }}>
                   <div style={{ textAlign: 'center', marginBottom: '26px', padding: '0 20px' }}>
-                    <div style={{
+                    {/* <div style={{
                       width: '60px', height: '60px', borderRadius: '50%', margin: '0 auto 14px',
                       background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '26px', boxShadow: `0 10px 22px ${accent}33`,
                     }}>
                       {icon}
-                    </div>
+                    </div> */}
                     <div style={{
                       fontFamily: 'var(--font-instrument, serif)', fontStyle: 'italic', fontWeight: 700,
                       fontSize: 'clamp(24px, 3.2vw, 32px)', color: accent,

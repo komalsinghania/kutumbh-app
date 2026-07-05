@@ -156,6 +156,11 @@ export interface UserProfile {
   prefFamily: FamilyType;
   dealbreakers: string[];
   hobbies?: string[];
+  // Payment / subscription
+  isPaid?: boolean;
+  paidAt?: number;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
   createdAt: number;
   updatedAt: number;
 }

@@ -10,6 +10,7 @@ import {
 } from 'firebase/auth';
 import { track } from '@/lib/analytics';
 import toast from 'react-hot-toast';
+import PlanCard from '@/components/PlanCard';
 
 function PillSelect({ options, value, onSelect }: { options: string[]; value: string; onSelect: (v: string) => void }) {
   return (
@@ -327,6 +328,17 @@ export default function ProfilePage() {
           <button className="btn-primary w-full disabled:opacity-50" style={{ boxShadow: '0 4px 20px rgba(193,62,42,0.4)' }} onClick={handleSave} disabled={saving}>
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
+        </div>
+
+        {/* ── Plan / Subscription ── */}
+        <div>
+          <h3 className="section-label" style={{ marginBottom: 12 }}>Your Plan</h3>
+          <PlanCard
+            isPaid={profile?.isPaid}
+            paidAt={profile?.paidAt}
+            razorpayPaymentId={profile?.razorpayPaymentId}
+            onUpgradeSuccess={refreshProfile}
+          />
         </div>
 
         {/* ── Danger Zone ── */}

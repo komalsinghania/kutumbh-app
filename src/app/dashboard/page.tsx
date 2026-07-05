@@ -12,6 +12,8 @@ import {
 import { calculateAshtakoot } from '@/lib/kundli';
 import CompatBreakdown from '@/components/CompatBreakdown';
 import AshtakootBreakdown from '@/components/AshtakootBreakdown';
+import RazorpayButton from '@/components/RazorpayButton';
+import PlanCard from '@/components/PlanCard';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 
@@ -209,7 +211,7 @@ function CircleProgress({ value, size = 40, color = '#c13e2a' }: { value: number
 }
 
 export default function DashboardPage() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
   const router = useRouter();
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [mainTab, setMainTab] = useState<MainTab>('board');
@@ -316,7 +318,7 @@ export default function DashboardPage() {
     ['board',    'M3 3h7v7H3V3zm0 11h7v7H3v-7zm11-11h7v7h-7V3zm0 11h7v7h-7v-7z', 'Board',     null],
     ['matches',  'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z', 'Matches',   null],
     ['decision', 'M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z', 'Decisions', totalDecisions > 0 ? totalDecisions : null],
-    ['compare',  'M3 5h8v14H3V5zm10 0h8v14h-8V5z', 'Compare', compareIds.length > 0 ? compareIds.length : null],
+    ['compare',  'M3 5h8v14H3V5zm10 0h8v14h-8V5z', profile?.isPaid ? 'Compare ✦' : 'Compare 🔒', compareIds.length > 0 ? compareIds.length : null],
   ];
 
   return (
@@ -493,12 +495,12 @@ export default function DashboardPage() {
                   <span style={{ fontSize: '0.78rem', color: '#6b5e4d', fontWeight: 500 }}>{compareIds.length}/3 selected</span>
                   {compareIds.length >= 2 && (
                     <button style={{
-                      background: 'linear-gradient(135deg, #d44d36, #b83521)',
+                      background: profile?.isPaid ? 'linear-gradient(135deg, #d44d36, #b83521)' : '#d6c9b0',
                       color: '#fff', borderRadius: 8, padding: '8px 18px',
-                      fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', border: 'none',
-                      boxShadow: '0 4px 12px rgba(193,62,42,0.3)',
-                    }} onClick={() => router.push(`/compare?ids=${compareIds.join(',')}`)}>
-                      Compare Now
+                      fontSize: '0.8rem', fontWeight: 700, cursor: profile?.isPaid ? 'pointer' : 'not-allowed', border: 'none',
+                      boxShadow: profile?.isPaid ? '0 4px 12px rgba(193,62,42,0.3)' : 'none',
+                    }} onClick={() => profile?.isPaid && router.push(`/compare?ids=${compareIds.join(',')}`)}>
+                      {profile?.isPaid ? 'Compare Now' : '🔒 Compare Now'}
                     </button>
                   )}
                   {compareIds.length > 0 && (
@@ -794,9 +796,136 @@ export default function DashboardPage() {
 
             {mainTab === 'compare' && (
               <div style={{ padding: `0 ${isMobile ? 16 : 28}px`, marginBottom: 4 }}>
+                {/* ── Paywall for unpaid users ── */}
+                {!profile?.isPaid && (
+                  <div style={{ marginBottom: 16, borderRadius: 24, overflow: 'hidden', boxShadow: '0 20px 60px rgba(139,42,42,0.18), 0 4px 16px rgba(0,0,0,0.08)' }}>
+                    {/* Top gradient hero */}
+                    <div style={{
+                      background: 'linear-gradient(145deg, #1a0d08 0%, #3a1510 40%, #1c0a0a 100%)',
+                      padding: '32px 24px 0',
+                      position: 'relative', overflow: 'hidden',
+                    }}>
+                      {/* Decorative glow blobs */}
+                      <div style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(193,62,42,0.35) 0%, transparent 70%)', pointerEvents: 'none' }} />
+                      <div style={{ position: 'absolute', bottom: 0, left: -20, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, rgba(184,137,43,0.2) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+                      {/* Badge row */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, position: 'relative' }}>
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          background: 'rgba(193,62,42,0.25)', border: '1px solid rgba(193,62,42,0.4)',
+                          borderRadius: 20, padding: '5px 12px',
+                        }}>
+                          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff6b4a', boxShadow: '0 0 6px rgba(255,107,74,0.8)' }} />
+                          <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,200,180,0.9)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Roka Ready</span>
+                        </div>
+                        <div style={{
+                          fontFamily: 'var(--font-fraunces, Fraunces, serif)',
+                          fontSize: '1.6rem', fontWeight: 800, color: 'white', lineHeight: 1,
+                        }}>
+                          ₹499
+                          <span style={{ fontSize: '0.65rem', fontWeight: 500, color: 'rgba(255,255,255,0.4)', marginLeft: 6, fontFamily: 'inherit' }}>once</span>
+                        </div>
+                      </div>
+
+                      {/* Headline */}
+                      <div style={{ position: 'relative', marginBottom: 16 }}>
+                        <h3 style={{
+                          fontFamily: 'var(--font-fraunces, Fraunces, serif)',
+                          fontSize: '1.55rem', fontWeight: 800, color: 'white', lineHeight: 1.2, marginBottom: 8,
+                        }}>
+                          See the full picture.<br />
+                          <em style={{ color: '#ffb8a0' }}>Before your roka.</em>
+                        </h3>
+                        <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.55, maxWidth: 320 }}>
+                          Compare up to 3 prospects side by side — kundli score, compatibility, flags, and every dimension that matters.
+                        </p>
+                      </div>
+
+                      {/* Feature pills */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 28, position: 'relative' }}>
+                        {[
+                          { icon: '✦', label: 'Side-by-side Compare' },
+                          { icon: '♡', label: 'Compatibility score' },
+                          { icon: '☽', label: 'Kundli Milan' },
+                          { icon: '⚑', label: 'Red & green flags' },
+                        ].map(f => (
+                          <div key={f.label} style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
+                            borderRadius: 20, padding: '5px 12px', backdropFilter: 'blur(4px)',
+                          }}>
+                            <span style={{ fontSize: '0.65rem', color: '#ffb8a0' }}>{f.icon}</span>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(255,255,255,0.75)' }}>{f.label}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Bottom curve connector */}
+                      <div style={{ height: 24, background: 'white', borderRadius: '50% 50% 0 0 / 100% 100% 0 0', marginLeft: -24, marginRight: -24 }} />
+                    </div>
+
+                    {/* Bottom white section */}
+                    <div style={{ background: 'white', padding: '0 24px 26px' }}>
+                      {/* Social proof strip */}
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        background: '#faf7f3', border: '1px solid #ede8df',
+                        borderRadius: 14, padding: '10px 14px', marginBottom: 18,
+                      }}>
+                        <div style={{ display: 'flex' }}>
+                          {['#c13e2a', '#8B2A2A', '#b8892b'].map((c, i) => (
+                            <div key={i} style={{
+                              width: 26, height: 26, borderRadius: '50%',
+                              background: `linear-gradient(135deg, ${c}cc, ${c})`,
+                              border: '2px solid white', marginLeft: i ? -8 : 0,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '0.55rem', fontWeight: 800, color: 'white',
+                            }}>
+                              {['P', 'A', 'S'][i]}
+                            </div>
+                          ))}
+                        </div>
+                        <span style={{ fontSize: '0.75rem', color: '#6b5e4d', lineHeight: 1.4 }}>
+                          <strong style={{ color: '#1a1410' }}>No subscription.</strong> Pay once, use till your roka. No auto-renewal, ever.
+                        </span>
+                      </div>
+
+                      {/* Price breakdown */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                        <div>
+                          <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a89e92', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>You pay</div>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                            <span style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '2.2rem', fontWeight: 800, color: '#c13e2a', lineHeight: 1 }}>₹499</span>
+                            <span style={{ fontSize: '0.75rem', color: '#a89e92', textDecoration: 'line-through' }}>₹2,000+/mo</span>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a89e92', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}></div>
+                          {/* <div style={{
+                            background: 'rgba(45,107,79,0.1)', border: '1px solid rgba(45,107,79,0.25)',
+                            borderRadius: 20, padding: '4px 12px',
+                            fontSize: '0.75rem', fontWeight: 700, color: '#2D6B4F',
+                          }}>Save ₹23,501/yr</div> */}
+                        </div>
+                      </div>
+
+                      <RazorpayButton
+                        onSuccess={refreshProfile}
+                        label="Unlock Roka Ready — ₹499"
+                        style={{ width: '100%', borderRadius: 14, padding: '15px 20px', fontSize: '0.95rem', letterSpacing: '0.01em' }}
+                      />
+
+                      <p style={{ textAlign: 'center', fontSize: '0.68rem', color: '#c0b4a6', marginTop: 10 }}>
+                        🔒 Secured by Razorpay · UPI · Cards · Net Banking
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <div style={{
                   background: 'rgba(193,62,42,0.06)', border: '1px solid rgba(193,62,42,0.25)',
                   borderRadius: 12, padding: '10px 14px', fontSize: '0.78rem', color: '#6b5e4d',
+                  opacity: profile?.isPaid ? 1 : 0.5, pointerEvents: profile?.isPaid ? 'auto' : 'none',
                 }}>
                   Tap up to <strong style={{ color: '#c13e2a' }}>3 prospects</strong> to select them, then hit <strong style={{ color: '#c13e2a' }}>Compare Now</strong>.
                 </div>
@@ -807,12 +936,12 @@ export default function DashboardPage() {
                     <div style={{ flex: 1 }} />
                     {compareIds.length >= 2 && (
                       <button style={{
-                        background: 'linear-gradient(135deg, #d44d36, #b83521)',
+                        background: profile?.isPaid ? 'linear-gradient(135deg, #d44d36, #b83521)' : '#d6c9b0',
                         color: '#fff', borderRadius: 8, padding: '8px 18px',
-                        fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', border: 'none',
-                        boxShadow: '0 4px 12px rgba(193,62,42,0.3)',
-                      }} onClick={() => router.push(`/compare?ids=${compareIds.join(',')}`)}>
-                        Compare Now
+                        fontSize: '0.8rem', fontWeight: 700, cursor: profile?.isPaid ? 'pointer' : 'not-allowed', border: 'none',
+                        boxShadow: profile?.isPaid ? '0 4px 12px rgba(193,62,42,0.3)' : 'none',
+                      }} onClick={() => profile?.isPaid && router.push(`/compare?ids=${compareIds.join(',')}`)}>
+                        {profile?.isPaid ? 'Compare Now' : '🔒 Compare Now'}
                       </button>
                     )}
                     <button style={{
@@ -1164,6 +1293,14 @@ export default function DashboardPage() {
                 ))}
               </div>
             </div>
+
+            {/* Plan status */}
+            <PlanCard
+              isPaid={profile.isPaid}
+              paidAt={profile.paidAt}
+              razorpayPaymentId={profile.razorpayPaymentId}
+              onUpgradeSuccess={refreshProfile}
+            />
 
             <Link href="/profile" style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
