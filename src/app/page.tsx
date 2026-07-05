@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, Fragment } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider,
@@ -11,8 +12,9 @@ import { auth } from '@/lib/firebase';
 import toast from 'react-hot-toast';
 import { Logo } from '@/components/Logo';
 import { track } from '@/lib/analytics';
+import './landing.css';
 
-// -- Auth Modal -----------------------------------------------------------------
+// ── Auth Modal ──────────────────────────────────────────────────────────────
 
 function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [email, setEmail] = useState('');
@@ -20,15 +22,16 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
   const [isSignUp, setIsSignUp] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  
 
   // Handle redirect result on mount (fires after signInWithRedirect returns from Google)
   useEffect(() => {
     getRedirectResult(auth)
       .then((result) => { if (result?.user) { track('logged_in', { method: 'google' }); onSuccess(); } })
-      .catch((err: any) => {
-        if (err?.code) toast.error(`Sign-in error: ${err.code}`);
+      .catch((err: unknown) => {
+        const code = errCode(err);
+        if (code) toast.error(`Sign-in error: ${code}`);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleGoogle = async () => {
@@ -38,8 +41,8 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
       track('logged_in', { method: 'google' });
       onSuccess();
       return;
-    } catch (err: any) {
-      const code: string = err?.code ?? '';
+    } catch (err: unknown) {
+      const code = errCode(err);
       // Popup blocked or closed — fall back to redirect (common on mobile/Safari)
       if (
         code === 'auth/popup-blocked' ||
@@ -49,8 +52,8 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
         try {
           await signInWithRedirect(auth, new GoogleAuthProvider());
           return; // page redirects away — no finally needed
-        } catch (redirectErr: any) {
-          toast.error(redirectErr?.code ?? 'Google sign-in failed.');
+        } catch (redirectErr: unknown) {
+          toast.error(errCode(redirectErr) || 'Google sign-in failed.');
         }
       } else {
         toast.error(code ? `Sign-in failed: ${code}` : 'Google sign-in failed. Please try again.');
@@ -68,20 +71,20 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
       else await signInWithEmailAndPassword(auth, email, password);
       track(isSignUp ? 'signed_up' : 'logged_in', { method: 'email' });
       onSuccess();
-    } catch (err: any) {
-      toast.error(err.message || 'Authentication failed.');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Authentication failed.');
     } finally { setSubmitting(false); }
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      style={{ background: 'rgba(20,16,12,0.72)', backdropFilter: 'blur(6px)' }}
       onClick={onClose}
     >
       <div
         className="w-full max-w-sm bg-white rounded-3xl p-7 relative"
-        style={{ border: '1px solid #d6c9b0', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}
+        style={{ border: '1px solid #d6c9b0', boxShadow: '0 30px 80px rgba(0,0,0,0.35)', animation: 'lpRise 0.35s cubic-bezier(0.22,1,0.36,1) both' }}
         onClick={e => e.stopPropagation()}
       >
         <button
@@ -158,7 +161,12 @@ function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () 
   );
 }
 
-// -- Google Icon ----------------------------------------------------------------
+function errCode(err: unknown): string {
+  if (typeof err === 'object' && err !== null && 'code' in err) {
+    return String((err as { code: unknown }).code ?? '');
+  }
+  return '';
+}
 
 function GoogleIcon() {
   return (
@@ -171,133 +179,476 @@ function GoogleIcon() {
   );
 }
 
-// -- WhatsApp Icon -------------------------------------------------------------
+// ── Scroll reveal ────────────────────────────────────────────────────────────
 
-function WhatsAppIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-    </svg>
-  );
-}
-
-// -- Scroll-fade hook -----------------------------------------------------------
-
-function useFadeIn() {
-  const ref = useRef<HTMLElement>(null);
+function Reveal({
+  children, dir, delay = 0, className = '', as: Tag = 'div',
+}: {
+  children: React.ReactNode;
+  dir?: 'left' | 'right' | 'zoom';
+  delay?: number;
+  className?: string;
+  as?: 'div' | 'section' | 'h2' | 'p';
+}) {
+  const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
-      { threshold: 0.08 }
+      { threshold: 0.12 }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
-  return { ref, visible };
-}
-
-// -- Section wrapper ------------------------------------------------------------
-
-function FadeSection({
-  children, className, style, id,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-  id?: string;
-}) {
-  const { ref, visible } = useFadeIn();
   return (
-    <section
-      ref={ref as React.RefObject<HTMLElement>}
-      id={id}
-      className={className}
-      style={{
-        ...style,
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(28px)',
-        transition: 'opacity 0.65s ease, transform 0.65s ease',
-      }}
+    <Tag
+      ref={ref as React.Ref<never>}
+      className={`lp-reveal ${visible ? 'lp-visible' : ''} ${className}`}
+      data-dir={dir}
+      style={{ '--reveal-delay': `${delay}s` } as React.CSSProperties}
     >
       {children}
-    </section>
+    </Tag>
   );
 }
 
-// -- Section label -------------------------------------------------------------
+// ── Kinetic word rotator ─────────────────────────────────────────────────────
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+const ROTATOR_WORDS = ['organized.', 'kundli-matched.', 'red-flag-proof.', 'mummy-approved.', 'finally sane.'];
+
+function WordRotator() {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setIdx(i => (i + 1) % ROTATOR_WORDS.length), 2400);
+    return () => clearInterval(t);
+  }, []);
   return (
-    <p style={{
-      fontFamily: 'var(--font-fraunces, sans-serif)',
-      fontSize: '0.68rem',
-      fontWeight: 700,
-      letterSpacing: '0.22em',
-      textTransform: 'uppercase',
-      color: '#c13e2a',
-      marginBottom: '12px',
-    }}>
-      {children}
-    </p>
+    <span className="lp-word-rotator">
+      <span className="lp-word" key={idx}>{ROTATOR_WORDS[idx]}</span>
+      <span className="lp-word-underline" />
+    </span>
   );
 }
 
-// -- Feature card --------------------------------------------------------------
+// ── Falling marigold petals (deterministic → SSR-safe) ───────────────────────
 
-function FeatureCard({ icon, title, body, surface = 'paper' }: {
-  icon: React.ReactNode;
-  title: string;
-  body: string;
-  surface?: 'paper' | 'white';
-}) {
-  const [hovered, setHovered] = useState(false);
-  const bg = surface === 'white' ? '#faf4e8' : '#ffffff';
+const PETALS = [
+  { left: 4, dur: 15, delay: 0, color: '#e8c870', drift: 60, op: 0.55 },
+  { left: 12, dur: 19, delay: 4, color: '#c13e2a', drift: -40, op: 0.4 },
+  { left: 21, dur: 14, delay: 8, color: '#d8985a', drift: 50, op: 0.5 },
+  { left: 33, dur: 21, delay: 2, color: '#e8c870', drift: -60, op: 0.35 },
+  { left: 44, dur: 16, delay: 10, color: '#c13e2a', drift: 45, op: 0.45 },
+  { left: 55, dur: 18, delay: 6, color: '#d8985a', drift: -30, op: 0.5 },
+  { left: 64, dur: 13, delay: 12, color: '#e8c870', drift: 70, op: 0.55 },
+  { left: 74, dur: 20, delay: 1, color: '#c13e2a', drift: -55, op: 0.38 },
+  { left: 83, dur: 15, delay: 9, color: '#e8c870', drift: 40, op: 0.5 },
+  { left: 92, dur: 17, delay: 5, color: '#d8985a', drift: -45, op: 0.45 },
+];
+
+function Petals() {
   return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: bg,
-        border: '1px solid #d6c9b0',
-        borderRadius: '8px',
-        padding: '32px',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
-        boxShadow: hovered ? '0 10px 28px rgba(26,20,16,0.10)' : '0 1px 4px rgba(26,20,16,0.04)',
-      }}
-    >
-      <div style={{ color: '#c13e2a', marginBottom: 16, display: 'inline-flex' }}>
-        {icon}
-      </div>
+    <>
+      {PETALS.map((p, i) => (
+        <span
+          key={i}
+          className="lp-petal"
+          style={{
+            left: `${p.left}%`,
+            background: p.color,
+            '--petal-dur': `${p.dur}s`,
+            '--petal-delay': `${p.delay}s`,
+            '--petal-drift': `${p.drift}px`,
+            '--petal-op': p.op,
+          } as React.CSSProperties}
+        />
+      ))}
+    </>
+  );
+}
+
+// ── Rotating mandala backdrop ────────────────────────────────────────────────
+
+function Mandala() {
+  return (
+    <div className="lp-mandala" aria-hidden="true">
+      <svg viewBox="0 0 800 800" fill="none">
+        <g className="lp-mandala-outer">
+          <circle cx="400" cy="400" r="368" stroke="rgba(232,200,112,0.14)" strokeWidth="1" strokeDasharray="3 14" />
+          <circle cx="400" cy="400" r="330" stroke="rgba(193,62,42,0.16)" strokeWidth="1" strokeDasharray="1 10" />
+          {Array.from({ length: 24 }).map((_, i) => {
+            const a = (i * 15 * Math.PI) / 180;
+            const x1 = 400 + Math.cos(a) * 340, y1 = 400 + Math.sin(a) * 340;
+            const x2 = 400 + Math.cos(a) * 360, y2 = 400 + Math.sin(a) * 360;
+            return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(232,200,112,0.18)" strokeWidth="1.5" />;
+          })}
+        </g>
+        <g className="lp-mandala-inner">
+          <circle cx="400" cy="400" r="255" stroke="rgba(232,200,112,0.10)" strokeWidth="1" strokeDasharray="2 12" />
+          {Array.from({ length: 12 }).map((_, i) => {
+            const a = (i * 30 * Math.PI) / 180;
+            const x = 400 + Math.cos(a) * 255, y = 400 + Math.sin(a) * 255;
+            return <circle key={i} cx={x} cy={y} r="3" fill="rgba(193,62,42,0.28)" />;
+          })}
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+// ── 3D tilt on mouse move ────────────────────────────────────────────────────
+
+function TiltStage({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const onMove = useCallback((e: React.MouseEvent) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    el.style.transform = `rotateY(${px * 7}deg) rotateX(${py * -7}deg)`;
+  }, []);
+  const onLeave = useCallback(() => {
+    if (ref.current) ref.current.style.transform = 'rotateY(0deg) rotateX(0deg)';
+  }, []);
+  return (
+    <div className="lp-mock-tilt" ref={ref} onMouseMove={onMove} onMouseLeave={onLeave}>
+      {children}
+    </div>
+  );
+}
+
+// ── Dashboard mockup ─────────────────────────────────────────────────────────
+
+function DashboardMock() {
+  return (
+    <div className="lp-mock">
+      {/* Browser chrome */}
       <div style={{
-        fontFamily: 'var(--font-fraunces, serif)',
-        fontSize: '22px',
-        fontWeight: 600,
-        color: '#1a1410',
-        marginBottom: '10px',
-        lineHeight: 1.3,
+        background: '#ece3d2', padding: '11px 16px',
+        display: 'flex', alignItems: 'center', gap: 6,
+        borderBottom: '1px solid #d6c9b0',
       }}>
-        {title}
+        <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#ff5f57' }} />
+        <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#ffbd2e' }} />
+        <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#28c840' }} />
+        <span style={{
+          marginLeft: 12, flex: 1, maxWidth: 300,
+          background: '#f5ede0', borderRadius: 6, padding: '3px 12px',
+          fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 11, color: '#6b5e4d',
+        }}>rokamaybe.com/dashboard</span>
       </div>
-      <div style={{
-        fontFamily: 'var(--font-dm-sans, sans-serif)',
-        fontSize: '15px',
-        color: '#6b5e4d',
-        lineHeight: 1.65,
-      }}>
-        {body}
+      {/* Body — The Rishta Report */}
+      <div style={{ padding: '20px 24px 22px', background: '#f5ede0', textAlign: 'left' }}>
+        {/* Masthead */}
+        <div style={{
+          fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 9, fontWeight: 700,
+          letterSpacing: '0.2em', textTransform: 'uppercase', color: '#b8892b', marginBottom: 6,
+        }}>
+          Your weekly companion · No. 10
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{
+            fontFamily: 'var(--font-fraunces, serif)', fontVariationSettings: '"opsz" 144',
+            fontSize: 27, fontWeight: 650, letterSpacing: '-0.02em', color: '#1a1410', lineHeight: 1,
+          }}>
+            The Rishta Report
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-instrument, serif)', fontStyle: 'italic',
+            fontSize: 12, color: '#6b5e4d', textAlign: 'right', lineHeight: 1.35, whiteSpace: 'nowrap',
+          }}>
+            Sunday<br />5 July 2026
+          </div>
+        </div>
+        <div style={{ height: 2, background: '#1a1410', margin: '12px 0 0' }} />
+
+        {/* Stat columns */}
+        <div className="lp-report-stats">
+          {[
+            { label: 'In pipeline', value: 'Four', color: '#1a1410', labelColor: '#b8892b' },
+            { label: 'Best match', value: '67%', color: '#c13e2a', labelColor: '#2D6B4F' },
+            { label: 'Avg warmth', value: '53%', color: '#2D6B4F', labelColor: '#b8892b' },
+            { label: 'Needs you', value: 'Four calls', color: '#1a1410', labelColor: '#b8892b' },
+          ].map((s) => (
+            <div key={s.label} className="lp-report-stat">
+              <div style={{
+                fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 8.5, fontWeight: 700,
+                letterSpacing: '0.16em', textTransform: 'uppercase', color: s.labelColor, marginBottom: 5,
+              }}>
+                {s.label}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-fraunces, serif)', fontSize: 19, fontWeight: 700,
+                color: s.color, lineHeight: 1, whiteSpace: 'nowrap',
+              }}>
+                {s.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Lead + diary */}
+        <div style={{ display: 'flex', gap: 20, marginTop: 16, flexWrap: 'wrap' }}>
+          {/* Lead */}
+          <div style={{ flex: '1.5 1 300px', minWidth: 0 }}>
+            <div style={{
+              fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 8.5, fontWeight: 700,
+              letterSpacing: '0.18em', textTransform: 'uppercase', color: '#c13e2a', marginBottom: 10,
+            }}>
+              Lead — needs your attention
+            </div>
+            <div style={{ display: 'flex', gap: 14 }}>
+              <div style={{
+                width: 64, alignSelf: 'stretch', minHeight: 84, borderRadius: 4, flexShrink: 0,
+                background: '#ecd8cd',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'var(--font-fraunces, serif)', fontSize: 22, fontWeight: 600, color: '#c98876',
+              }}>
+                KT
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontFamily: 'var(--font-fraunces, serif)', fontSize: 17, fontWeight: 700, color: '#1a1410', lineHeight: 1.15 }}>
+                  Kushagra Tibrewal
+                </div>
+                <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 10.5, color: '#6b5e4d', marginTop: 3 }}>
+                  31 · Kolkata · Chief Manager – Wealth Management
+                </div>
+                <div style={{
+                  fontFamily: 'var(--font-instrument, serif)', fontStyle: 'italic',
+                  fontSize: 12.5, color: '#1a1410', lineHeight: 1.5, marginTop: 7,
+                }}>
+                  &ldquo;At the Call stage — fifth of eleven. You spoke two days ago;
+                  a follow-up is due to keep things warm.&rdquo;
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+                  <span style={{
+                    fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 11, fontWeight: 700,
+                    color: '#fff7ea', background: '#c13e2a', borderRadius: 6, padding: '7px 14px',
+                    boxShadow: '0 3px 10px rgba(193,62,42,0.3)', whiteSpace: 'nowrap',
+                  }}>
+                    Log Another Call
+                  </span>
+                  <span style={{
+                    fontFamily: 'var(--font-instrument, serif)', fontStyle: 'italic',
+                    fontSize: 11.5, color: '#b8892b', whiteSpace: 'nowrap',
+                  }}>
+                    — kundli 27 of 36 ✦ <b>61%</b>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Diary */}
+          <div style={{ flex: '1 1 210px', minWidth: 0 }}>
+            <div style={{
+              fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 8.5, fontWeight: 700,
+              letterSpacing: '0.18em', textTransform: 'uppercase', color: '#6b5e4d', marginBottom: 10,
+            }}>
+              Also in the diary
+            </div>
+            {[
+              { name: 'Sachin Agarwal', pct: '58%', meta: '32 · Hyderabad · Software engineer', note: 'On hold — paused 16 days ago.' },
+              { name: 'Ananya Rathi', pct: '54%', meta: '29 · Jaipur · Architect', note: 'New biodata — first look pending.' },
+            ].map((d, i) => (
+              <div key={d.name} style={{
+                paddingBottom: 9, marginBottom: 9,
+                borderBottom: i === 0 ? '1px solid #ddd0ba' : 'none',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ fontFamily: 'var(--font-fraunces, serif)', fontSize: 13.5, fontWeight: 700, color: '#1a1410' }}>
+                    {d.name}
+                  </span>
+                  <span style={{ fontFamily: 'var(--font-fraunces, serif)', fontSize: 12.5, fontWeight: 700, color: '#b8892b' }}>
+                    {d.pct}
+                  </span>
+                </div>
+                <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 10, color: '#6b5e4d', marginTop: 2 }}>
+                  {d.meta}
+                </div>
+                <div style={{
+                  fontFamily: 'var(--font-instrument, serif)', fontStyle: 'italic',
+                  fontSize: 11, color: '#8a7b66', marginTop: 3,
+                }}>
+                  {d.note}
+                </div>
+              </div>
+            ))}
+            <div style={{
+              background: '#fbf5e9', border: '1px solid #e4d8c2', borderRadius: 8,
+              padding: '9px 12px',
+            }}>
+              <div style={{ fontFamily: 'var(--font-instrument, serif)', fontStyle: 'italic', fontSize: 11.5, color: '#1a1410', marginBottom: 2 }}>
+                A note to self
+              </div>
+              <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 10, color: '#6b5e4d', lineHeight: 1.5 }}>
+                One prospect rests on hold — worth a review before the week is out.
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// -- Line icons (sindoor, 32px) ------------------------------------------------
+// ── Kundli gauge (animates when scrolled into view) ──────────────────────────
+
+function KundliGauge() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [on, setOn] = useState(false);
+  const [num, setNum] = useState(0);
+  const TARGET = 28.5;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setOn(true); obs.disconnect(); }
+    }, { threshold: 0.4 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!on) return;
+    const start = performance.now();
+    const dur = 1600;
+    let raf: number;
+    const step = (t: number) => {
+      const p = Math.min((t - start) / dur, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setNum(Math.round(TARGET * eased * 10) / 10);
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [on]);
+
+  const R = 74;
+  const C = 2 * Math.PI * R;
+  const frac = TARGET / 36;
+
+  return (
+    <div ref={ref} style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
+      <svg width="210" height="210" viewBox="0 0 210 210">
+        <circle cx="105" cy="105" r={R} stroke="rgba(245,237,224,0.10)" strokeWidth="13" fill="none" />
+        <circle
+          className="lp-gauge-arc"
+          cx="105" cy="105" r={R}
+          stroke="url(#lpGaugeGrad)" strokeWidth="13" fill="none"
+          strokeLinecap="round"
+          strokeDasharray={C}
+          strokeDashoffset={on ? C * (1 - frac) : C}
+          transform="rotate(-90 105 105)"
+        />
+        <defs>
+          <linearGradient id="lpGaugeGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#c13e2a" />
+            <stop offset="100%" stopColor="#e8c870" />
+          </linearGradient>
+        </defs>
+        <text x="105" y="102" textAnchor="middle" className="lp-gauge-num">{num.toFixed(1)}</text>
+        <text x="105" y="126" textAnchor="middle" className="lp-gauge-label">out of 36 gunas</text>
+      </svg>
+    </div>
+  );
+}
+
+// ── Stage pipeline (11 dots, 7 lit) ──────────────────────────────────────────
+
+function StagePipeline() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setOn(true); obs.disconnect(); }
+    }, { threshold: 0.5 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className={on ? 'lp-visible-stages' : ''}>
+      <div className="lp-stages">
+        {Array.from({ length: 11 }).map((_, i) => (
+          <div key={i} className={`lp-stage-dot ${i < 7 ? 'lp-stage-on' : ''}`}>
+            <span style={{ '--stage-delay': `${i * 0.09}s` } as React.CSSProperties} />
+          </div>
+        ))}
+      </div>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', marginTop: 10,
+        fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 11, color: '#a89a82', fontWeight: 600,
+      }}>
+        <span>New biodata</span>
+        <span style={{ color: '#c13e2a' }}>Stage 7 — families talking</span>
+        <span>Roka 💍</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Count-up stat ────────────────────────────────────────────────────────────
+
+function StatCounter({ target, suffix, decimals = 0, label }: {
+  target: number; suffix?: string; decimals?: number; label: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [num, setNum] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      obs.disconnect();
+      const start = performance.now();
+      const dur = 1500;
+      const step = (t: number) => {
+        const p = Math.min((t - start) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        setNum(target * eased);
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }, { threshold: 0.5 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [target]);
+  return (
+    <div ref={ref}>
+      <div className="lp-stat-value">
+        {num.toFixed(decimals)}<span className="lp-stat-accent">{suffix}</span>
+      </div>
+      <div className="lp-stat-label">{label}</div>
+    </div>
+  );
+}
+
+// ── Bento card with cursor-follow glow ───────────────────────────────────────
+
+function BentoCard({ span, dark, children }: {
+  span: 2 | 3 | 4 | 6; dark?: boolean; children: React.ReactNode;
+}) {
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    e.currentTarget.style.setProperty('--my', `${e.clientY - r.top}px`);
+  };
+  return (
+    <div className={`lp-bento-card lp-b-span${span} ${dark ? 'lp-bento-dark' : ''}`} onMouseMove={onMove}>
+      {children}
+    </div>
+  );
+}
+
+// ── Line icons ───────────────────────────────────────────────────────────────
 
 const iconProps = {
-  width: 32, height: 32, viewBox: '0 0 24 24',
+  width: 26, height: 26, viewBox: '0 0 24 24',
   fill: 'none', stroke: 'currentColor',
   strokeWidth: 1.75, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
 };
@@ -321,122 +672,95 @@ const IconCompare = () => (
   <svg {...iconProps}><rect x="3" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="7" height="16" rx="1"/><path d="M6.5 9h1M6.5 13h1M17.5 9h1M17.5 13h1"/></svg>
 );
 const IconLock = () => (
-  <svg {...iconProps}><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
 );
 const IconNoAds = () => (
-  <svg {...iconProps}><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/></svg>
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.5 5.5l13 13"/></svg>
 );
 const IconExport = () => (
-  <svg {...iconProps}><path d="M12 3v13"/><path d="M7 8l5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v13"/><path d="M7 8l5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
 );
 const IconTrash = () => (
-  <svg {...iconProps}><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/></svg>
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/></svg>
 );
 const IconIndia = () => (
-  <svg {...iconProps}><path d="M5 3v18"/><path d="M5 4h13l-3 4 3 4H5"/></svg>
-);
-const IconFlag = () => (
-  <svg {...iconProps}><path d="M5 3v18"/><path d="M5 4h12l-2 3 2 3H5"/></svg>
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3v18"/><path d="M5 4h13l-3 4 3 4H5"/></svg>
 );
 
-// -- Data ----------------------------------------------------------------------
+// ── Content data ─────────────────────────────────────────────────────────────
 
-const RED_FLAGS = {
-  he: [
-    "You can work after marriage. From home. Part-time. If there's time after cooking.",
-    "What's your salary? Just asking so we know how much you'll contribute to the wedding.",
-    "You'll obviously delete public Instagram after the roka, right?",
-    "I don't have anger issues. People just keep making me angry.",
-    "I don't believe in sharing household work. That's why we'll have a maid. For you to manage.",
-    "I'm okay with a working wife. As long as dinner is hot by 8.",
-  ],
-  she: [
-    "I need a 3BHK minimum. Your parents can visit. Visit.",
-    "What car do you drive? No reason. Just checking compatibility.",
-    "Can you get your promotion confirmed before the roka? Papa is asking.",
-    "My last rishta broke because he wouldn't stop talking to his sister. Weird, na?",
-    "I want a simple wedding. 800 guests, max.",
-    "My father will call your office to verify your package. Don't take it personally.",
-  ],
-};
+const RED_FLAGS: { who: 'he' | 'she'; text: string }[] = [
+  { who: 'he', text: "You can work after marriage. From home. Part-time. If there's time after cooking." },
+  { who: 'she', text: "I need a 3BHK minimum. Your parents can visit. Visit." },
+  { who: 'he', text: "What's your salary? Just asking so we know how much you'll contribute to the wedding." },
+  { who: 'she', text: "What car do you drive? No reason. Just checking compatibility." },
+  { who: 'he', text: "You'll obviously delete public Instagram after the roka, right?" },
+  { who: 'she', text: "Can you get your promotion confirmed before the roka? Papa is asking." },
+  { who: 'he', text: "I don't have anger issues. People just keep making me angry." },
+  { who: 'she', text: "My last rishta broke because he wouldn't stop talking to his sister. Weird, na?" },
+  { who: 'he', text: "I don't believe in sharing household work. That's why we'll have a maid. For you to manage." },
+  { who: 'she', text: "I want a simple wedding. 800 guests, max." },
+  { who: 'he', text: "I'm okay with a working wife. As long as dinner is hot by 8." },
+  { who: 'she', text: "My father will call your office to verify your package. Don't take it personally." },
+];
 
-const FAQS: { cat: 'PRODUCT' | 'PRIVACY' | 'BILLING' | 'FOR PARENTS'; q: string; a: string }[] = [
+const TICKER_1 = [
+  'AI biodata scanner', '36-guna kundli milan', '11-stage rishta pipeline',
+  'Red flag log', 'Decision matrix', 'Family scorecard', 'Call journal', 'Private by default',
+];
+const TICKER_2 = [
+  '"Beta, koi mila?"', '"Sharma ji ka ladka"', '"Haan mummy, dekh liya"',
+  '"Pandit ji says shubh"', '"Woh Bengaluru wala?"', '"Bas ek aur biodata"',
+];
+
+const CHAOS_CARDS: {
+  cls: string; tag: string; text: string;
+  pos: React.CSSProperties; rot: number; dur: number; delay: number;
+}[] = [
+  { cls: 'lp-chaos-wa', tag: 'WhatsApp · Bua ji', text: '📄 Rishabh_FINAL_biodata_v3 (2).pdf', pos: { top: 0, left: '2%' }, rot: -3, dur: 7, delay: 0 },
+  { cls: 'lp-chaos-wa', tag: 'WhatsApp · Mummy', text: 'Beta, call his mother today only. They are waiting 🙏', pos: { top: '10%', right: '4%' }, rot: 2.5, dur: 8, delay: 0.8 },
+  { cls: 'lp-chaos-note', tag: 'Sticky note · You', text: 'Aarav?? Arnav?? — the Bengaluru one 🤔', pos: { top: '38%', left: '18%' }, rot: -1.5, dur: 6.5, delay: 1.6 },
+  { cls: 'lp-chaos-wa', tag: 'WhatsApp · Pandit ji', text: '🖼️ kundli_photo_blurry_final.jpg', pos: { top: '46%', right: '16%' }, rot: 3.5, dur: 7.5, delay: 0.4 },
+  { cls: 'lp-chaos-flag', tag: 'Screenshot · ??', text: '"I don\'t have anger issues. People make me angry." — wait, WHO said this one?!', pos: { bottom: '4%', left: '6%' }, rot: 2, dur: 8.5, delay: 1.2 },
+  { cls: 'lp-chaos-note', tag: 'Calendar · Doom', text: 'Sunday 4 p.m. — family Zoom. Prepare answers.', pos: { bottom: 0, right: '6%' }, rot: -2.5, dur: 7, delay: 2 },
+];
+
+const FAQS: { q: string; a: string }[] = [
   {
-    cat: 'PRODUCT',
-    q: "Is this like a matrimonial app?",
+    q: 'Is this like a matrimonial app?',
     a: "No. RokaMaybe doesn't show you new matches or connect you with other users. It's a personal tracker for the prospects you're already meeting — whether they come from matrimonial sites, pandits, relatives, or family friends. Think of it as your private dashboard for your own search.",
   },
   {
-    cat: 'PRODUCT',
-    q: "Do I need to download an app?",
+    q: 'Do I need to download an app?',
     a: "Nope. RokaMaybe runs in your browser — phone or laptop, doesn't matter. On your phone, you can 'Add to Home Screen' so it feels exactly like a regular app.",
   },
   {
-    cat: 'PRODUCT',
-    q: "How does the biodata AI thing work?",
-    a: "You upload a biodata PDF, Word doc, or photo. AI reads it and fills in the form — name, age, family details, kundli info, all of it. Saves you a lot of typing. You can review and edit anything before saving.",
+    q: 'How does the biodata AI thing work?',
+    a: 'You upload a biodata PDF, Word doc, or photo. AI reads it and fills in the form — name, age, family details, kundli info, all of it. Saves you a lot of typing. You can review and edit anything before saving.',
   },
   {
-    cat: 'PRODUCT',
-    q: "Is the kundli matching reliable?",
-    a: "The calculations are based on real Vedic astronomy — we compute the Moon's position from the birth details and run the full 36-point Ashtakoot. It's accurate for reference. That said, astrology is a deep subject and we always recommend consulting a qualified pandit before making any final decisions. Think of RokaMaybe's kundli score as a starting point, not the final word.",
+    q: 'Is the kundli matching reliable?',
+    a: "The calculations are based on real Vedic astronomy — we compute the Moon's position from the birth details and run the full 36-point Ashtakoot. It's accurate for reference. That said, astrology is a deep subject and we always recommend consulting a qualified pandit before making any final decisions.",
   },
   {
-    cat: 'PRODUCT',
-    q: "Who built this?",
-    a: "Me — Komal. I built RokaMaybe because I was going through my own rishta search and couldn't find anything that actually helped. If you have feedback or run into issues, email me directly: namaste@rokamaybe.com",
-  },
-  {
-    cat: 'PRIVACY',
-    q: "Is my data actually safe?",
+    q: 'Is my data actually safe?',
     a: "Yes. Your data lives on secure encrypted servers, and only you can see it. We don't share profiles between users, we don't sell data, and we don't show your information to anyone. You can delete your account and all your data any time you want.",
   },
   {
-    cat: 'BILLING',
-    q: "Can I cancel Premium?",
-    a: "Of course. Cancel anytime — Premium stays active until the end of whatever period you paid for, then you go back to the free tier. You keep all your data.",
-  },
-  {
-    cat: 'FOR PARENTS',
-    q: "Can my parents use it with me?",
-    a: "Right now it's a single-user tracker. Shared family access (Mummy Mode) is coming soon. For now, many people just sign in from their laptop when parents want to review together.",
+    q: 'Who built this?',
+    a: 'Me — Komal. I built RokaMaybe because I was going through my own rishta search and couldn\'t find anything that actually helped. If you have feedback or run into issues, email me directly: namaste@rokamaybe.com',
   },
 ];
 
-// -- Main Page -----------------------------------------------------------------
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
   const router = useRouter();
   const [authLoading, setAuthLoading] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [bannerDismissed, setBannerDismissed] = useState(true);
   const [scrolled, setScrolled] = useState(false);
-  const [chaosChecked, setChaosChecked] = useState<boolean[]>([false, false, false]);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [linkCopied, setLinkCopied] = useState(false);
-  const [mummyEmail, setMummyEmail] = useState('');
-  const [mummySaved, setMummySaved] = useState(false);
-  const [shuffledFlagsHe] = useState(() => [...RED_FLAGS.he].sort(() => Math.random() - 0.5));
-  const [shuffledFlagsShe] = useState(() => [...RED_FLAGS.she].sort(() => Math.random() - 0.5));
-
-  useEffect(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('rm.banner.dismissed') : null;
-    setBannerDismissed(stored === '1');
-  }, []);
-
-  const dismissBanner = () => {
-    setBannerDismissed(true);
-    try { localStorage.setItem('rm.banner.dismissed', '1'); } catch {}
-  };
-
-  const handleMummyNotify = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!mummyEmail.trim()) return;
-    try { localStorage.setItem('rm.mummy.email', mummyEmail.trim()); } catch {}
-    setMummySaved(true);
-    toast.success("We'll email you the moment Mummy Mode launches.");
-  };
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, user => {
@@ -447,95 +771,30 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 40);
+    const handler = () => setScrolled(window.scrollY > 30);
+    handler();
     window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
   }, []);
 
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
-    } catch {
-      toast.error('Could not copy link');
-    }
+  const openAuth = (placement: string) => {
+    track('cta_clicked', { placement });
+    if (loggedIn) router.push('/dashboard');
+    else setShowModal(true);
   };
-
-  const waText = encodeURIComponent(
-    'I know ???? ???? updates ?????. I know you\'re worried. I know ???? ?? ???? is already engaged.\n\n??? ignore ???? ?? ??? ???. I\'m being careful. ?? ???? ???????? ?? ???? ???? decision ??, and I want to make it right — not fast.\n\n????? RokaMaybe use ???? ???? ???? ??. Every prospect is tracked. Every conversation logged. Every kundli matched. ?? weekend ??? ????? ???, I\'ll show you everything.\n\nTry it: ' + (typeof window !== 'undefined' ? window.location.href : 'https://rokamaybe.in')
-  );
-
-  const bannerH = bannerDismissed ? 0 : 36;
-  const navH = scrolled ? 56 : 64;
-  const navTop = bannerDismissed ? 0 : 36;
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f5ede0' }}>
-        <Logo style={{ fontSize: '2.5rem' }} />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#1a1410' }}>
+        <div style={{ animation: 'lpBlink 1.6s ease infinite' }}>
+          <Logo dark style={{ fontSize: '2.5rem' }} />
+        </div>
       </div>
     );
   }
 
   return (
     <>
-      {/* Global styles */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        html { scroll-behavior: smooth; }
-        @keyframes marqueeScroll {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
-        }
-        @keyframes marqueeScrollReverse {
-          from { transform: translateX(-50%); }
-          to { transform: translateX(0); }
-        }
-        @keyframes fadeSlideIn {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .marquee-track:hover .marquee-inner { animation-play-state: paused !important; }
-        .marquee-track {
-          -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-          mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-        }
-        .redflag-split-wrap {
-          position: relative;
-          display: grid;
-          grid-template-columns: 1fr auto 1fr;
-          align-items: stretch;
-          width: 100%;
-          box-shadow: 0 4px 24px rgba(26,20,16,0.08);
-        }
-        .redflag-vs-divider {
-          width: 1px;
-          background: repeating-linear-gradient(to bottom, rgba(26,20,16,0.18) 0 8px, transparent 8px 16px);
-          position: relative;
-        }
-        .redflag-vs {
-          position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-          width: 58px; height: 58px; border-radius: 50%;
-          background: #1a1410; color: #f5ede0;
-          display: flex; align-items: center; justify-content: center;
-          font-family: var(--font-instrument, serif); font-weight: 700; font-size: 14px;
-          letter-spacing: 0.02em;
-          box-shadow: 0 10px 24px rgba(26,20,16,0.35), 0 0 0 6px #f5ede0;
-          z-index: 3;
-        }
-        .flag-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
-        .flag-card:hover {
-          transform: rotate(0deg) scale(1.045) !important;
-          box-shadow: 0 18px 36px rgba(26,20,16,0.22) !important;
-          z-index: 5;
-        }
-        @media (max-width: 860px) {
-          .redflag-split-wrap { grid-template-columns: 1fr; }
-          .redflag-vs-divider { width: 100%; height: 1px; background: repeating-linear-gradient(to right, rgba(26,20,16,0.18) 0 8px, transparent 8px 16px); }
-          .redflag-vs-divider .redflag-vs { top: 0; }
-        }
-      `}} />
-
       {showModal && (
         <AuthModal
           onClose={() => setShowModal(false)}
@@ -543,1041 +802,410 @@ export default function LandingPage() {
         />
       )}
 
-      {/* 2. LAUNCH DISCOUNT BANNER */}
-      {!bannerDismissed && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-          height: '36px', background: '#1a1410',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '0 40px',
-        }}>
-          <p style={{
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: '13px', color: '#f5ede0', fontWeight: 500, textAlign: 'center',
-            lineHeight: 1.2, margin: 0, whiteSpace: 'nowrap',
-          }}>
-            🎉 Launch offer: First 50 users get Premium at <span style={{ color: '#b8892b', fontWeight: 700 }}>₹299</span> for 3 months. Limited seats.
-          </p>
-          <button
-            onClick={dismissBanner}
-            aria-label="Dismiss banner"
-            style={{
-              position: 'absolute', right: '12px',
-              width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#f5ede0', fontSize: '1.1rem', lineHeight: 1,
-              background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, borderRadius: 6,
-            }}
-          >×</button>
-        </div>
-      )}
-
-      {/* 1. STICKY NAVBAR */}
-      <nav
-        aria-label="Main navigation"
-        style={{
-          position: 'fixed', top: navTop, left: 0, right: 0, zIndex: 40,
-          height: `${navH}px`, display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', padding: `0 ${scrolled ? 20 : 24}px`,
-          background: '#c13e2a',
-          borderBottom: '1px solid rgba(255,255,255,0.15)',
-          boxShadow: scrolled ? '0 2px 14px rgba(0,0,0,0.12)' : 'none',
-          transition: 'height 0.25s ease, padding 0.25s ease, box-shadow 0.25s ease',
-        }}
-      >
-        <Logo dark style={{ fontSize: scrolled ? '1.25rem' : '1.45rem', transition: 'font-size 0.25s ease' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      {/* ── NAV ─────────────────────────────────────────────────────────── */}
+      <nav className={`lp-nav ${scrolled ? 'lp-nav-scrolled' : ''}`} aria-label="Main navigation">
+        <Logo dark={!scrolled} style={{ fontSize: '1.4rem' }} />
+        <div className="lp-nav-links">
+          <Link className="lp-nav-link" href="/features">Features</Link>
+          <Link className="lp-nav-link" href="/how-it-works">How it works</Link>
+          <Link className="lp-nav-link" href="/pricing">Pricing</Link>
+          <Link className="lp-nav-link" href="/blog">Blog</Link>
           {loggedIn ? (
-            <button
-              onClick={() => router.push('/dashboard')}
-              style={{
-                fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontSize: '14px', fontWeight: 700, color: '#c13e2a',
-                background: '#ffffff',
-                border: 'none', borderRadius: '8px', padding: '10px 18px',
-                cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,0,0,0.12)',
-                minHeight: 44,
-              }}
-            >
-              Go to Dashboard
-            </button>
+            <button className="lp-btn-nav" onClick={() => router.push('/dashboard')}>Go to Dashboard</button>
           ) : (
             <>
-              <button
-                onClick={() => setShowModal(true)}
-                style={{
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: '14px', fontWeight: 500, color: '#ffffff',
-                  background: 'transparent', border: 'none',
-                  borderRadius: '8px', padding: '10px 14px', cursor: 'pointer',
-                  minHeight: 44,
-                }}
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => setShowModal(true)}
-                style={{
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: '14px', fontWeight: 700, color: '#c13e2a',
-                  background: '#ffffff',
-                  border: 'none', borderRadius: '8px', padding: '10px 18px',
-                  cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,0,0,0.12)',
-                  minHeight: 44,
-                }}
-              >
-                Start Free
-              </button>
+              <button className="lp-btn-signin" onClick={() => openAuth('nav_signin')}>Sign In</button>
+              <button className="lp-btn-nav" onClick={() => openAuth('nav')}>Start Free</button>
             </>
           )}
         </div>
       </nav>
 
-      <main style={{ background: '#f5ede0', paddingTop: bannerH + navH }}>
+      <main style={{ background: '#f5ede0' }}>
 
-        {/* 3. HERO */}
-        <section style={{
-          maxWidth: '860px', margin: '0 auto',
-          padding: 'clamp(48px,8vw,80px) 24px clamp(40px,6vw,64px)',
-          textAlign: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-        }}>
-          {/* Radial sindoor glow */}
-          <div style={{
-            position: 'absolute', top: '18%', left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '600px', height: '400px',
-            maxWidth: '100%',
-            background: 'radial-gradient(ellipse at center, rgba(193,62,42,0.07) 0%, transparent 70%)',
-            pointerEvents: 'none',
-          }} />
-          {/* Logotype */}
-          <Logo style={{ fontSize: 'clamp(48px, 8vw, 100px)', display: 'block', marginBottom: '20px', lineHeight: 1.05 }} />
-          <p style={{
-            fontFamily: 'var(--font-instrument, serif)',
-            fontSize: 'clamp(18px, 2.4vw, 22px)',
-            color: '#6b5e4d', fontStyle: 'italic',
-            marginBottom: '20px',
-          }}>
-            Before every roka, there&apos;s a year of maybes.
-          </p>
-          <p style={{
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: '16px',
-            color: '#6b5e4d', lineHeight: 1.6,
-            maxWidth: '520px', margin: '0 auto 28px',
-          }}>
-            The calm, private dashboard for your rishta search. Track every prospect, kundli, and conversation in one place.
-          </p>
+        {/* ── HERO ─────────────────────────────────────────────────────── */}
+        <section className="lp-hero">
+          <Mandala />
+          <Petals />
+          <div className="lp-hero-grain" />
 
-          {/* Single primary CTA */}
-          <button
-            onClick={() => setShowModal(true)}
-            style={{
-              fontFamily: 'var(--font-dm-sans, sans-serif)',
-              fontWeight: 700, fontSize: '16px', color: '#c13e2a',
-              background: '#ffffff',
-              border: 'none', borderRadius: '12px', padding: '16px 36px',
-              cursor: 'pointer', boxShadow: '0 6px 22px rgba(193,62,42,0.22)',
-              letterSpacing: '0.01em',
-              minHeight: 52, outline: '2px solid #c13e2a',
-            }}
-          >
-            Start Free
-          </button>
-          <p style={{
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: '13px', color: '#6b5e4d', marginTop: '12px',
-          }}>
-            Takes 2 minutes to set up · Cancel anytime · Private by default
-          </p>
-
-          {/* Product mockup — browser chrome */}
-          <div style={{ marginTop: 48, position: 'relative' }}>
-            <div style={{
-              maxWidth: 720, margin: '0 auto',
-              background: '#ffffff',
-              border: '1px solid #d6c9b0',
-              borderRadius: 14,
-              boxShadow: '0 20px 60px rgba(26,20,16,0.12), 0 4px 14px rgba(26,20,16,0.06)',
-              overflow: 'hidden',
-              textAlign: 'left',
-            }}>
-              {/* Browser chrome */}
-              <div style={{
-                background: '#ece3d2', padding: '10px 14px',
-                display: 'flex', alignItems: 'center', gap: 6,
-                borderBottom: '1px solid #d6c9b0',
-              }}>
-                <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#ff5f57' }} />
-                <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#ffbd2e' }} />
-                <span style={{ width: 11, height: 11, borderRadius: '50%', background: '#28c840' }} />
-                <span style={{
-                  marginLeft: 12, flex: 1,
-                  background: '#f5ede0', borderRadius: 6, padding: '3px 10px',
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: 11, color: '#6b5e4d',
-                }}>rokamaybe.com/dashboard</span>
-              </div>
-              {/* App header in mockup */}
-              <div style={{
-                background: '#c13e2a', padding: '12px 18px',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}>
-                <Logo dark style={{ fontSize: 18 }} />
-                <div style={{
-                  width: 26, height: 26, borderRadius: '50%',
-                  background: '#ffffff', color: '#1a1410',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 11, fontWeight: 700,
-                }}>P</div>
-              </div>
-              {/* Stat cards */}
-              <div style={{ padding: 18, background: '#f5ede0' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 14 }}>
-                  {[
-                    { label: 'Prospects', value: '7', color: '#c13e2a' },
-                    { label: 'Active', value: '5', color: '#1a1410' },
-                    { label: 'Avg Match', value: '62%', color: '#2D6B4F' },
-                  ].map((s) => (
-                    <div key={s.label} style={{
-                      background: '#ffffff', borderRadius: 8, padding: '10px 8px',
-                      border: '1px solid #d6c9b0', borderTop: `3px solid ${s.color}`,
-                      textAlign: 'center',
-                    }}>
-                      <div style={{ fontFamily: 'var(--font-fraunces, serif)', fontSize: 20, fontWeight: 700, color: s.color, lineHeight: 1 }}>
-                        {s.value}
-                      </div>
-                      <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 10, color: '#6b5e4d', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                        {s.label}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {/* Prospect rows */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {[
-                    { name: 'Aarav M.', meta: '28 · Bengaluru · Joint family', score: '78%', stage: 'Kundli matched', stageColor: '#c13e2a' },
-                    { name: 'Rohan K.', meta: '30 · Mumbai · Nuclear', score: '64%', stage: 'Called', stageColor: '#1a1410' },
-                    { name: 'Sneha P.', meta: '27 · Pune · Joint family', score: '52%', stage: 'New biodata', stageColor: '#6b5e4d' },
-                  ].map((p) => (
-                    <div key={p.name} style={{
-                      background: '#ffffff', borderRadius: 8, padding: '10px 12px',
-                      border: '1px solid #d6c9b0',
-                      display: 'flex', alignItems: 'center', gap: 10,
-                    }}>
-                      <div style={{
-                        width: 32, height: 32, borderRadius: '50%',
-                        background: '#f5ede0', border: '1px solid #d6c9b0',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontFamily: 'var(--font-fraunces, serif)', fontSize: 13, fontWeight: 600, color: '#c13e2a',
-                      }}>{p.name[0]}</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: 'var(--font-fraunces, serif)', fontSize: 13, fontWeight: 600, color: '#1a1410' }}>
-                          {p.name}
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 11, color: '#6b5e4d' }}>
-                          {p.meta}
-                        </div>
-                      </div>
-                      <span style={{
-                        fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 10, fontWeight: 600,
-                        color: '#ffffff', background: p.stageColor,
-                        padding: '3px 8px', borderRadius: 99, whiteSpace: 'nowrap',
-                      }}>{p.stage}</span>
-                      <span style={{ fontFamily: 'var(--font-fraunces, serif)', fontSize: 14, fontWeight: 700, color: '#c13e2a', minWidth: 40, textAlign: 'right' }}>
-                        {p.score}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+          <div className="lp-hero-inner">
+            <div className="lp-hero-badge">
+              <span className="lp-dot" />
+              Launch offer — Premium at ₹299 for the first 50 users
             </div>
-            <p style={{
-              fontFamily: 'var(--font-dm-sans, sans-serif)',
-              fontSize: 12, color: '#6b5e4d', marginTop: 12,
-            }}>
-              A peek at your dashboard.
+
+            <h1 className="lp-hero-title">
+              Your rishta search,
+              <br />
+              <WordRotator />
+            </h1>
+
+            <p className="lp-hero-sub">
+              RokaMaybe is the private tracker for your arranged-marriage journey.
+              AI reads the biodatas, matches the kundlis, logs the calls, and remembers
+              every red flag — so when Mummy asks, you actually have answers.
             </p>
+
+            <div className="lp-hero-ctas">
+              <button className="lp-btn-primary" onClick={() => openAuth('hero')}>
+                Start Free — it&apos;s 2 minutes
+              </button>
+              <a className="lp-btn-ghost" href="#chaos">
+                See the chaos ↓
+              </a>
+            </div>
+
+            <p className="lp-hero-trust">
+              🔒 Private by default · No matches shown · No aunty notified
+            </p>
+
+            {/* Mockup + floating chips */}
+            <div className="lp-mock-stage">
+              <div className="lp-mock-glow" />
+
+              <span className="lp-chip" style={{ top: '-8%', left: '-9%', '--chip-rot': '-4deg', '--chip-dur': '6s' } as React.CSSProperties}>
+                <span className="lp-chip-num">27/36</span> Kundli — Shubh ✦
+              </span>
+              <span className="lp-chip" style={{ top: '-4%', right: '-8%', '--chip-rot': '3deg', '--chip-dur': '7s', '--chip-delay': '0.9s' } as React.CSSProperties}>
+                🚩 Red flag logged — &ldquo;cooks only Maggi&rdquo;
+              </span>
+              <span className="lp-chip" style={{ bottom: '16%', left: '-12%', '--chip-rot': '2deg', '--chip-dur': '6.5s', '--chip-delay': '1.6s' } as React.CSSProperties}>
+                Stage <span className="lp-chip-num">5</span>/11 · Follow-up call due
+              </span>
+              <span className="lp-chip" style={{ bottom: '-5%', right: '-10%', '--chip-rot': '-2.5deg', '--chip-dur': '7.5s', '--chip-delay': '0.4s' } as React.CSSProperties}>
+                📎 Mummy forwarded 3 new biodatas
+              </span>
+
+              <TiltStage>
+                <DashboardMock />
+              </TiltStage>
+            </div>
           </div>
         </section>
 
-        {/* 4. CHAOS QUIZ */}
-        <FadeSection style={{ padding: '48px 24px 60px', background: '#ffffff' }}>
-          <div style={{
-            maxWidth: '600px', margin: '0 auto',
-            background: '#fff', border: '1px solid #d6c9b0',
-            borderRadius: '16px', padding: '32px',
-            boxShadow: '0 2px 16px rgba(0,0,0,0.05)',
-          }}>
-            <SectionLabel>QUICK CHECK</SectionLabel>
-            <h2 style={{
-              fontFamily: 'var(--font-instrument, serif)',
-              fontSize: 'clamp(1.5rem, 4vw, 2.1rem)',
-              color: '#1a1410', fontWeight: 600, marginBottom: '24px',
-            }}>
-              How much chaos are you in?
-            </h2>
-            {[
-              "Tracking 5+ prospects across different platforms",
-              "Forgotten at least one person's name in the last month",
-              "Had the same kundli conversation with 3 different pandits",
-            ].map((text, i) => (
-              <label
-                key={i}
-                style={{
-                  display: 'flex', alignItems: 'flex-start', gap: '14px',
-                  padding: '14px 0', cursor: 'pointer',
-                  borderBottom: i < 2 ? '1px solid #d6c9b0' : 'none',
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={chaosChecked[i]}
-                  onChange={() => setChaosChecked(prev => {
-                    const n = [...prev]; n[i] = !n[i]; return n;
-                  })}
-                  style={{
-                    width: '20px', height: '20px', marginTop: '2px',
-                    accentColor: '#c13e2a', cursor: 'pointer', flexShrink: 0,
-                  }}
-                />
-                <span style={{
-                  fontFamily: 'var(--font-fraunces, sans-serif)',
-                  fontSize: '1rem', color: '#1a1410', lineHeight: 1.45,
-                }}>
-                  {text}
+        {/* ── TICKER ───────────────────────────────────────────────────── */}
+        <div className="lp-ticker-wrap">
+          <div className="lp-ticker">
+            <div className="lp-ticker-track" style={{ '--ticker-dur': '28s' } as React.CSSProperties}>
+              {[...TICKER_1, ...TICKER_1].map((t, i) => (
+                <span className="lp-ticker-item" key={i}>
+                  <span className="lp-ticker-star">✦</span>{t}
                 </span>
-              </label>
-            ))}
-            {chaosChecked.some(Boolean) && (
-              <p style={{
-                fontFamily: 'var(--font-instrument, serif)',
-                fontSize: '1.2rem', color: '#c13e2a', fontStyle: 'italic',
-                marginTop: '20px',
-                animation: 'fadeSlideIn 0.4s ease',
-              }}>
-                Checked even one? You need RokaMaybe.
+              ))}
+            </div>
+          </div>
+          <div className="lp-ticker lp-ticker-alt">
+            <div className="lp-ticker-track" style={{ '--ticker-dur': '34s' } as React.CSSProperties}>
+              {[...TICKER_2, ...TICKER_2, ...TICKER_2].map((t, i) => (
+                <span className="lp-ticker-item" key={i}>
+                  <span className="lp-ticker-star">✦</span>{t}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── CHAOS ────────────────────────────────────────────────────── */}
+        <section className="lp-section" id="chaos">
+          <div className="lp-container">
+            <Reveal>
+              <p className="lp-eyebrow">The current situation</p>
+              <h2 className="lp-h2">
+                Sunday, 4 p.m. Mummy has questions.
+                <br />You have <em>screenshots.</em>
+              </h2>
+              <p className="lp-lede">
+                Twenty-seven biodatas across WhatsApp, three matrimonial apps, one pandit&apos;s
+                blurry kundli photo, and a cousin who &ldquo;knows someone nice&rdquo;.
+                This is not a search. This is chaos with a deadline.
               </p>
-            )}
-          </div>
-        </FadeSection>
-
-        {/* Our story now lives on the dedicated About page (/about). */}
-
-        {/* 7. FEATURES GRID */}
-        <FadeSection style={{ padding: '72px 24px', background: '#faf4e8' }}>
-          <div style={{ maxWidth: '940px', margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-              <SectionLabel>WHAT YOU GET</SectionLabel>
-              <h2 style={{
-                fontFamily: 'var(--font-instrument, serif)',
-                fontSize: 'clamp(32px, 5vw, 42px)',
-                color: '#1a1410', fontWeight: 600,
-              }}>
-                Everything your rishta search needs.
-              </h2>
-            </div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(268px, 1fr))',
-              gap: '20px', marginBottom: '20px',
-            }}>
-              <FeatureCard
-                icon={<IconDoc />}
-                title="AI reads biodatas for you"
-                body="Drop a PDF, Word doc, or screenshot. In 30 seconds, every field is filled — name, age, family, kundli details, the works."
-              />
-              <FeatureCard
-                icon={<IconSparkle />}
-                title="Real kundli matching, not a gimmick"
-                body="Full 36-point Ashtakoot Milan from actual birth details. Nadi, Bhakut, Gana dosha — all flagged automatically. Always consult a pandit for final guidance."
-              />
-              <FeatureCard
-                icon={<IconTarget />}
-                title="11 stages from 'new biodata' to 'mutually interested'"
-                body="Know exactly where each conversation stands. Never again answer 'haan haan unko call karungi' when you've been saying that for three weeks."
-              />
-              <FeatureCard
-                icon={<IconPhone />}
-                title="Log every call like a journal"
-                body="Who you talked to, what you discussed, how you felt after. So next Sunday when your mom asks, you actually have answers."
-              />
-              <FeatureCard
-                icon={<IconFamily />}
-                title="Rate the family separately"
-                body="Sometimes the person is lovely and the family is a red flag factory. Eight dimensions, five stars each. You'll know."
-              />
-              <FeatureCard
-                icon={<IconCompare />}
-                title="Decision Matrix for when it's time to decide"
-                body="Compare 2 or 3 prospects side by side on 18 things. The best kundli isn't always the right one. See the full picture."
-              />
-            </div>
-            {/* Mummy Mode email capture */}
-            <div style={{
-              background: '#ffffff',
-              border: '1.5px dashed #c13e2a',
-              borderRadius: '12px', padding: '24px',
-              display: 'flex', flexDirection: 'column', gap: 14,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <span style={{ color: '#c13e2a', flexShrink: 0, display: 'inline-flex' }}><IconSparkle /></span>
-                <div>
-                  <div style={{
-                    fontFamily: 'var(--font-fraunces, serif)',
-                    fontSize: '20px', fontWeight: 600, color: '#1a1410', marginBottom: '4px',
-                  }}>
-                    Mummy Mode — coming soon
-                  </div>
-                  <div style={{
-                    fontFamily: 'var(--font-dm-sans, sans-serif)',
-                    fontSize: '14px', color: '#6b5e4d',
-                  }}>
-                    A parent-friendly view with bigger fonts, Hindi labels, and simpler flow.
-                  </div>
-                </div>
-              </div>
-              {mummySaved ? (
-                <p style={{
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: 13, color: '#2D6B4F', fontWeight: 600,
-                }}>
-                  ? You&apos;re on the list. We&apos;ll email you at launch.
-                </p>
-              ) : (
-                <form onSubmit={handleMummyNotify} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <input
-                    type="email"
-                    required
-                    value={mummyEmail}
-                    onChange={(e) => setMummyEmail(e.target.value)}
-                    placeholder="Email address"
-                    style={{ flex: 1, minWidth: 200, fontSize: 14 }}
-                  />
-                  <button
-                    type="submit"
+            </Reveal>
+            <Reveal delay={0.15}>
+              <div className="lp-chaos-board">
+                {CHAOS_CARDS.map((c, i) => (
+                  <div
+                    key={i}
+                    className={`lp-chaos-card ${c.cls}`}
                     style={{
-                      fontFamily: 'var(--font-dm-sans, sans-serif)',
-                      fontWeight: 700, fontSize: 14, color: '#f5ede0',
-                      background: '#c13e2a', border: 'none', borderRadius: 10,
-                      padding: '0 20px', cursor: 'pointer', minHeight: 44,
-                    }}
+                      ...c.pos,
+                      '--chip-rot': `${c.rot}deg`,
+                      '--chip-dur': `${c.dur}s`,
+                      '--chip-delay': `${c.delay}s`,
+                    } as React.CSSProperties}
                   >
-                    Notify Me
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        </FadeSection>
-
-        {/* 8. HOW IT WORKS */}
-        <FadeSection id="how-it-works" style={{ padding: '60px 24px', background: '#fff' }}>
-          <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-            <SectionLabel>GETTING STARTED</SectionLabel>
-            <h2 style={{
-              fontFamily: 'var(--font-instrument, serif)',
-              fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
-              color: '#1a1410', fontWeight: 600, marginBottom: '48px',
-            }}>
-              Three steps. Fifteen minutes.
-            </h2>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '32px', marginBottom: '40px',
-            }}>
-              {[
-                { num: '1', title: 'Sign up', body: 'Google or email, takes 30 seconds.' },
-                { num: '2', title: 'Quick preference setup (2 minutes)', body: 'Pick from pills — city, age range, diet, income, family type. Done.' },
-                { num: '3', title: 'Start adding prospects', body: 'One by one, or bulk upload biodatas (PDF, Word, or photo).' },
-              ].map(({ num, title, body }) => (
-                <div key={num}>
-                  <div style={{
-                    fontFamily: 'var(--font-instrument, serif)',
-                    fontSize: '3.5rem', fontWeight: 700, color: '#c13e2a',
-                    lineHeight: 1, marginBottom: '14px',
-                  }}>
-                    {num}
-                  </div>
-                  <div style={{
-                    fontFamily: 'var(--font-instrument, serif)',
-                    fontSize: '1.2rem', fontWeight: 600, color: '#1a1410', marginBottom: '8px',
-                  }}>
-                    {title}
-                  </div>
-                  <div style={{
-                    fontFamily: 'var(--font-fraunces, sans-serif)',
-                    fontSize: '0.9rem', color: '#6b5e4d',
-                  }}>
-                    {body}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p style={{
-              fontFamily: 'var(--font-instrument, serif)',
-              fontSize: '1.15rem', fontStyle: 'italic', color: '#6b5e4d',
-            }}>
-              That's it. You'll wonder how you managed without it.
-            </p>
-          </div>
-        </FadeSection>
-
-        {/* 9. RED FLAG WALL */}
-        <FadeSection style={{ padding: '72px 0', overflow: 'hidden', background: '#f5ede0' }}>
-          <div style={{
-            maxWidth: '800px', margin: '0 auto 36px',
-            padding: '0 24px', textAlign: 'center',
-          }}>
-            <SectionLabel>FROM THE FIELD</SectionLabel>
-            <h2 style={{
-              fontFamily: 'var(--font-instrument, serif)',
-              fontSize: 'clamp(32px, 5vw, 42px)',
-              color: '#c13e2a', fontWeight: 600, marginBottom: '8px',
-            }}>
-              The Red Flag Hall of Fame.
-            </h2>
-            <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: '#6b5e4d' }}>
-              Shared with permission. Collected from first calls, second meetings, and one very memorable kundli discussion.
-            </p>
-          </div>
-          <div className="redflag-split-wrap">
-            {[
-              { key: 'he', label: 'He Said', icon: '🙋‍♂️', accent: '#3b5c85', bg: 'linear-gradient(165deg, #eef3f9, #e0eaf3)', flags: shuffledFlagsHe, anim: 'marqueeScroll 46s linear infinite' },
-              { key: 'she', label: 'She Said', icon: '🙋‍♀️', accent: '#a8395a', bg: 'linear-gradient(165deg, #fdeef2, #f8dee5)', flags: shuffledFlagsShe, anim: 'marqueeScrollReverse 46s linear infinite' },
-            ].map(({ key, label, icon, accent, bg, flags, anim }, idx) => (
-              <Fragment key={key}>
-                {idx === 1 && (
-                  <div className="redflag-vs-divider">
-                    <span className="redflag-vs">VS</span>
-                  </div>
-                )}
-                <div style={{ background: bg, padding: '44px 0 40px', minWidth: 0, overflow: 'hidden' }}>
-                  <div style={{ textAlign: 'center', marginBottom: '26px', padding: '0 20px' }}>
-                    <div style={{
-                      width: '60px', height: '60px', borderRadius: '50%', margin: '0 auto 14px',
-                      background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '26px', boxShadow: `0 10px 22px ${accent}33`,
-                    }}>
-                      {icon}
-                    </div>
-                    <div style={{
-                      fontFamily: 'var(--font-instrument, serif)', fontStyle: 'italic', fontWeight: 700,
-                      fontSize: 'clamp(24px, 3.2vw, 32px)', color: accent,
-                    }}>
-                      {label}
-                    </div>
-                    <div style={{ width: '40px', height: '3px', background: accent, borderRadius: '2px', margin: '12px auto 0' }} />
-                  </div>
-                  <div className="marquee-track" style={{ overflow: 'hidden', position: 'relative', padding: '10px 0' }}>
-                    <div
-                      className="marquee-inner"
-                      style={{
-                        display: 'flex',
-                        gap: '18px',
-                        width: 'max-content',
-                        animation: anim,
-                        paddingLeft: '20px',
-                        alignItems: 'center',
-                      }}
-                    >
-                      {[...flags, ...flags].map((flag, i) => {
-                        const rots = [-1.5, 1, -1, 1.5, -0.5, 0.5];
-                        const widths = [240, 260, 230, 250, 245, 255];
-                        return (
-                          <div
-                            key={i}
-                            className="flag-card"
-                            style={{
-                              width: `${widths[i % widths.length]}px`, flexShrink: 0,
-                              background: '#ffffff',
-                              borderRadius: '14px',
-                              borderLeft: `4px solid ${accent}`,
-                              padding: '20px 18px 15px',
-                              boxShadow: '0 10px 22px rgba(26,20,16,0.08)',
-                              transform: `rotate(${rots[i % rots.length]}deg)`,
-                            }}
-                          >
-                            <span style={{
-                              fontFamily: 'var(--font-instrument, serif)',
-                              fontSize: 32, color: accent, opacity: 0.35, lineHeight: 1, fontStyle: 'italic',
-                            }}>&ldquo;</span>
-                            <p style={{
-                              fontFamily: 'var(--font-dm-sans, sans-serif)',
-                              fontSize: '13.5px', color: '#1a1410', lineHeight: 1.6, marginTop: '2px',
-                            }}>
-                              {flag}
-                            </p>
-                            <div style={{
-                              marginTop: '14px', paddingTop: '10px', borderTop: '1px solid rgba(26,20,16,0.08)',
-                              fontFamily: 'var(--font-dm-sans, sans-serif)',
-                              fontSize: 10, color: '#a89a82', letterSpacing: '0.05em',
-                            }}>
-                              Shared with permission
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </Fragment>
-            ))}
-          </div>
-          <p style={{
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: '13px', color: '#6b5e4d',
-            textAlign: 'center', marginTop: '28px', padding: '0 24px',
-          }}>
-            Have your own red flag story? Log it inside RokaMaybe.
-          </p>
-        </FadeSection>
-
-        {/* 10. FOUNDER TESTIMONIAL */}
-        <FadeSection style={{ padding: '60px 24px', textAlign: 'center', background: '#fff' }}>
-          <div style={{ maxWidth: '640px', margin: '0 auto' }}>
-            {/* TODO: Replace placeholder with actual photo at /public/komal.jpg once uploaded */}
-            <div style={{
-              width: '120px', height: '120px', borderRadius: '50%',
-              background: '#d6c9b0', margin: '0 auto 24px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <span style={{
-                fontFamily: 'var(--font-instrument, serif)',
-                fontSize: '2rem', color: '#c13e2a', fontWeight: 600,
-              }}>
-                KS
-              </span>
-            </div>
-            <blockquote style={{
-              fontFamily: 'var(--font-instrument, serif)',
-              fontSize: 'clamp(1.1rem, 3vw, 1.3rem)',
-              color: '#1a1410', fontStyle: 'italic',
-              lineHeight: 1.75, marginBottom: '16px',
-            }}>
-              "I started this project because I was going through my own search and was losing my mind tracking everything. RokaMaybe was my sanity tool before it was an app. Now it's yours too."
-            </blockquote>
-            <p style={{
-              fontFamily: 'var(--font-fraunces, sans-serif)',
-              fontSize: '0.9rem', color: '#c13e2a', fontWeight: 600,
-            }}>
-              — Komal Singhania, Founder
-            </p>
-          </div>
-        </FadeSection>
-
-        {/* 11. PRICING */}
-        {/* <FadeSection style={{ padding: '72px 24px', background: '#faf4e8' }}>
-          <div style={{ maxWidth: '820px', margin: '0 auto', textAlign: 'center' }}>
-            <SectionLabel>PRICING</SectionLabel>
-            <h2 style={{
-              fontFamily: 'var(--font-instrument, serif)',
-              fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
-              color: '#1a1410', fontWeight: 600, marginBottom: '40px',
-            }}>
-              Start free. Upgrade when you need more.
-            </h2>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '24px', marginBottom: '20px',
-            }}>
-              <div style={{
-                background: '#ffffff', border: '1px solid #d6c9b0',
-                borderRadius: '12px', padding: '32px', textAlign: 'left',
-              }}>
-                <div style={{ fontFamily: 'var(--font-fraunces, serif)', fontSize: '22px', fontWeight: 700, color: '#1a1410', marginBottom: '8px' }}>Free</div>
-                <div style={{ fontFamily: 'var(--font-instrument, serif)', fontSize: '44px', fontWeight: 700, color: '#1a1410', lineHeight: 1 }}>?0</div>
-                <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', color: '#6b5e4d', marginBottom: '24px' }}>forever</div>
-                {[
-                  { ok: true, label: 'Track up to 3 prospects' },
-                  { ok: true, label: 'Basic kundli calculation' },
-                  { ok: true, label: 'Conversation tracker' },
-                  { ok: false, label: 'AI biodata extraction' },
-                  { ok: false, label: 'Full Ashtakoot report' },
-                  { ok: false, label: 'Decision matrix' },
-                ].map(({ ok, label }, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: '12px',
-                    marginBottom: '10px',
-                    fontFamily: 'var(--font-dm-sans, sans-serif)',
-                    fontSize: '14px', color: ok ? '#1a1410' : '#b0a390',
-                    textDecoration: ok ? 'none' : 'line-through',
-                  }}>
-                    <span style={{ color: ok ? '#c13e2a' : '#C0B0A0', fontWeight: 700, fontSize: '15px', width: 16, display: 'inline-block' }}>
-                      {ok ? '?' : '?'}
-                    </span>
-                    {label}
+                    <span className="lp-chaos-tag">{c.tag}</span>
+                    {c.text}
                   </div>
                 ))}
-                <button
-                  onClick={() => setShowModal(true)}
-                  style={{
-                    marginTop: '20px', width: '100%',
-                    fontFamily: 'var(--font-dm-sans, sans-serif)',
-                    fontWeight: 600, fontSize: '14px', color: '#c13e2a',
-                    background: 'transparent', border: '1.5px solid #c13e2a',
-                    borderRadius: '10px', padding: '12px', cursor: 'pointer',
-                    minHeight: 44,
-                  }}
-                >
-                  Get Started Free
-                </button>
               </div>
+            </Reveal>
+          </div>
+        </section>
 
-              <div style={{
-                background: '#ffffff', border: '1px solid #d6c9b0',
-                borderTop: '3px solid #c13e2a',
-                borderRadius: '12px', padding: '36px 32px', textAlign: 'left',
-                position: 'relative', boxShadow: '0 18px 44px rgba(193,62,42,0.18)',
-                transform: 'translateY(-4px)',
-              }}>
-                <div style={{
-                  position: 'absolute', top: '-14px', left: '50%',
-                  transform: 'translateX(-50%)',
-                  background: '#c13e2a',
-                  color: '#ffffff', fontSize: '11px', fontWeight: 700,
-                  letterSpacing: '0.18em', padding: '5px 14px', borderRadius: '999px',
-                  fontFamily: 'var(--font-dm-sans, sans-serif)', whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 14px rgba(193,62,42,0.3)',
-                }}>
-                  RECOMMENDED
-                </div>
-                <div style={{ fontFamily: 'var(--font-fraunces, serif)', fontSize: '22px', fontWeight: 700, color: '#1a1410', marginBottom: '8px' }}>Premium</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
-                  <del style={{ fontFamily: 'var(--font-instrument, serif)', fontSize: '22px', color: '#6b5e4d' }}>?499</del>
-                  <span style={{ fontFamily: 'var(--font-instrument, serif)', fontSize: '44px', fontWeight: 700, color: '#c13e2a', lineHeight: 1 }}>₹299</span>
-                  <span style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', color: '#6b5e4d' }}>/ 3 months</span>
-                </div>
-                <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '12px', color: '#c13e2a', fontWeight: 600, marginBottom: '4px' }}>
-                  Launch price for first 50 users
-                </div>
-                <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', color: '#6b5e4d', marginBottom: '16px' }}>or ?1,299 / year</div>
-                <div style={{ marginBottom: 24 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 11, color: '#6b5e4d', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
-                    <span>12 of 50 seats claimed</span>
-                    <span style={{ color: '#c13e2a' }}>38 left</span>
+        {/* ── FEATURES BENTO ───────────────────────────────────────────── */}
+        <section className="lp-section" id="features" style={{ paddingTop: 0 }}>
+          <div className="lp-container">
+            <Reveal>
+              <p className="lp-eyebrow">The fix</p>
+              <h2 className="lp-h2">One dashboard. <em>Zero</em> lost rishtas.</h2>
+              <p className="lp-lede">
+                Everything you&apos;re juggling in your head, your gallery, and four family
+                group chats — structured, scored, and searchable.
+              </p>
+            </Reveal>
+
+            <div className="lp-bento">
+              <Reveal className="lp-b-span4" delay={0}>
+                <BentoCard span={6} dark>
+                  <span className="lp-bento-icon"><IconSparkle /></span>
+                  <div className="lp-bento-title">Real 36-guna Kundli Milan. Not a gimmick.</div>
+                  <div className="lp-bento-body">
+                    Full Ashtakoot matching computed from actual birth details using Vedic
+                    astronomy — Nadi, Bhakut, and Gana doshas flagged automatically.
+                    (Still consult your pandit for the final word. We insist.)
                   </div>
-                  <div style={{ height: 6, background: '#ece3d2', borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{ width: '24%', height: '100%', background: 'linear-gradient(90deg,#c13e2a,#e8c870)' }} />
+                  <KundliGauge />
+                </BentoCard>
+              </Reveal>
+
+              <Reveal className="lp-b-span2" delay={0.1}>
+                <BentoCard span={6}>
+                  <span className="lp-bento-icon"><IconDoc /></span>
+                  <div className="lp-bento-title">AI reads biodatas so you don&apos;t have to</div>
+                  <div className="lp-bento-body">
+                    Drop a PDF, Word doc, or a photo from WhatsApp. In 30 seconds every
+                    field is filled — name, age, family, kundli details, the works.
                   </div>
-                </div>
+                </BentoCard>
+              </Reveal>
+
+              <Reveal className="lp-b-span3" delay={0}>
+                <BentoCard span={6}>
+                  <span className="lp-bento-icon"><IconTarget /></span>
+                  <div className="lp-bento-title">11 stages, zero &ldquo;umm, let me check&rdquo;</div>
+                  <div className="lp-bento-body">
+                    From &ldquo;new biodata&rdquo; to &ldquo;mutually interested&rdquo; — know exactly
+                    where every conversation stands.
+                  </div>
+                  <StagePipeline />
+                </BentoCard>
+              </Reveal>
+
+              <Reveal className="lp-b-span3" delay={0.1}>
+                <BentoCard span={6}>
+                  <span className="lp-bento-icon"><IconPhone /></span>
+                  <div className="lp-bento-title">A journal for every call</div>
+                  <div className="lp-bento-body">
+                    Who you talked to, what was said, how you felt after. Next Sunday,
+                    you&apos;ll have receipts.
+                  </div>
+                </BentoCard>
+              </Reveal>
+
+              <Reveal className="lp-b-span3" delay={0.2}>
+                <BentoCard span={6}>
+                  <span className="lp-bento-icon"><IconFamily /></span>
+                  <div className="lp-bento-title">Rate the family separately</div>
+                  <div className="lp-bento-body">
+                    Sometimes the person is lovely and the family is a red-flag factory.
+                    Eight dimensions, five stars each. You&apos;ll know.
+                  </div>
+                </BentoCard>
+              </Reveal>
+
+              <Reveal className="lp-b-span3" delay={0.3}>
+                <BentoCard span={6}>
+                  <span className="lp-bento-icon"><IconCompare /></span>
+                  <div className="lp-bento-title">Decision Matrix, for D-day</div>
+                  <div className="lp-bento-body">
+                    Compare up to 3 prospects side by side on 18 dimensions. The best
+                    kundli isn&apos;t always the right answer.
+                  </div>
+                </BentoCard>
+              </Reveal>
+            </div>
+          </div>
+        </section>
+
+        {/* ── STATS ────────────────────────────────────────────────────── */}
+        <section className="lp-stats">
+          <div className="lp-stats-grid">
+            <Reveal delay={0}><StatCounter target={36} label="Guna points checked" /></Reveal>
+            <Reveal delay={0.1}><StatCounter target={11} label="Rishta stages tracked" /></Reveal>
+            <Reveal delay={0.2}><StatCounter target={30} suffix="s" label="To scan a biodata" /></Reveal>
+            <Reveal delay={0.3}><StatCounter target={0} label="Ads. Forever." /></Reveal>
+          </div>
+        </section>
+
+        {/* ── HOW IT WORKS ─────────────────────────────────────────────── */}
+        <section className="lp-section" id="how-it-works">
+          <div className="lp-container">
+            <Reveal>
+              <p className="lp-eyebrow">Getting started</p>
+              <h2 className="lp-h2">Three steps. <em>Fifteen</em> minutes.</h2>
+            </Reveal>
+            <div className="lp-steps">
+              {[
+                { n: '1', t: 'Sign up', b: 'Google or email — 30 seconds. No credit card, no interview, no aunty verification round.' },
+                { n: '2', t: 'Set your preferences', b: 'Two minutes of tapping pills — city, age range, diet, income, family type. Done.' },
+                { n: '3', t: 'Add prospects', b: 'One by one, or bulk-upload biodatas (PDF, Word, photo) and let the AI do the typing.' },
+              ].map((s, i) => (
+                <Reveal key={s.n} delay={i * 0.12}>
+                  <div className="lp-step">
+                    <span className="lp-step-num">{s.n}</span>
+                    <div className="lp-step-title">{s.t}</div>
+                    <div className="lp-step-body">{s.b}</div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── RED FLAG WALL ────────────────────────────────────────────── */}
+        <section className="lp-flags">
+          <div className="lp-container" style={{ padding: '0 24px', textAlign: 'center' }}>
+            <Reveal>
+              <p className="lp-eyebrow" style={{ justifyContent: 'center' }}>From the field</p>
+              <h2 className="lp-h2">The Red Flag <em>Hall of Fame.</em></h2>
+              <p className="lp-lede" style={{ margin: '0 auto' }}>
+                Real quotes from first calls and second meetings. Shared with permission.
+                Logged forever. This is why the red flag log exists.
+              </p>
+            </Reveal>
+          </div>
+          <div className="lp-flag-row">
+            <div className="lp-flag-track" style={{ '--flag-dur': '52s' } as React.CSSProperties}>
+              {[...RED_FLAGS, ...RED_FLAGS].filter((_, i) => i % 2 === 0).map((f, i) => (
+                <FlagCard key={i} f={f} i={i} />
+              ))}
+            </div>
+          </div>
+          <div className="lp-flag-row">
+            <div className="lp-flag-track" style={{ '--flag-dur': '46s' } as React.CSSProperties}>
+              {[...RED_FLAGS, ...RED_FLAGS].filter((_, i) => i % 2 === 1).map((f, i) => (
+                <FlagCard key={i} f={f} i={i + 3} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── PRIVACY ──────────────────────────────────────────────────── */}
+        <section className="lp-section">
+          <div className="lp-container">
+            <Reveal>
+              <p className="lp-eyebrow">Trust &amp; privacy</p>
+              <h2 className="lp-h2">Not a matrimonial app. <em>Never</em> will be.</h2>
+              <p className="lp-lede">
+                No matches shown. No profiles shared. No data sold. RokaMaybe is your
+                private war room — nobody else gets in, not even us.
+              </p>
+            </Reveal>
+            <Reveal delay={0.15}>
+              <div className="lp-privacy-chips">
                 {[
-                  'Everything in Free',
-                  'Unlimited prospects',
-                  'AI biodata extraction',
-                  'Full Ashtakoot kundli report',
-                  'Family scorecard (8 dimensions)',
-                  'Meeting planner with checklists',
-                  'Decision matrix',
-                  'Activity timeline',
-                ].map((label, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: '12px',
-                    marginBottom: '10px',
-                    fontFamily: 'var(--font-dm-sans, sans-serif)',
-                    fontSize: '14px', color: '#1a1410',
-                  }}>
-                    <span style={{ color: '#c13e2a', fontWeight: 700, fontSize: '15px', width: 16, display: 'inline-block' }}>?</span>
-                    {label}
-                  </div>
+                  { Icon: IconLock, text: 'End-to-end private' },
+                  { Icon: IconNoAds, text: 'No ads, ever' },
+                  { Icon: IconExport, text: 'Export anytime' },
+                  { Icon: IconTrash, text: 'Delete in one click' },
+                  { Icon: IconIndia, text: 'Made in India, data in India' },
+                ].map(({ Icon, text }) => (
+                  <span className="lp-privacy-chip" key={text}><Icon />{text}</span>
                 ))}
-                <button
-                  onClick={() => setShowModal(true)}
-                  style={{
-                    marginTop: '20px', width: '100%',
-                    fontFamily: 'var(--font-dm-sans, sans-serif)',
-                    fontWeight: 700, fontSize: '14px', color: '#ffffff',
-                    background: '#c13e2a',
-                    border: 'none', borderRadius: '10px', padding: '14px',
-                    cursor: 'pointer', boxShadow: '0 6px 16px rgba(193,62,42,0.28)',
-                    minHeight: 48,
-                  }}
-                >
-                  Upgrade to Premium
-                </button>
               </div>
-            </div>
-            <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', color: '#6b5e4d' }}>
-              Cancel anytime. Your data is always yours.
-            </p>
+            </Reveal>
           </div>
-        </FadeSection> */}
+        </section>
 
-        {/* 12. ANTI-FEATURES */}
-        <FadeSection style={{ padding: '72px 24px', background: '#ffffff' }}>
-          <div style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
-            <SectionLabel>REAL TALK</SectionLabel>
-            <h2 style={{
-              fontFamily: 'var(--font-instrument, serif)',
-              fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
-              color: '#1a1410', fontWeight: 600, marginBottom: '32px',
-            }}>
-              What RokaMaybe doesn't do.
-            </h2>
-            <div style={{ textAlign: 'left', display: 'inline-block' }}>
-              {[
-                "We don't show you new matches. (Not a matrimonial site.)",
-                "We don't let anyone see your data. (Not a social platform.)",
-                "We don't run ads or sell your profile. (Not that kind of business.)",
-                "We don't promise you'll find someone. (Nobody can.)",
-                "We don't replace your pandit. (Always consult one for kundli decisions.)",
-              ].map((text, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'flex-start', gap: '14px',
-                  marginBottom: '18px',
-                  fontFamily: 'var(--font-fraunces, sans-serif)',
-                  fontSize: '1rem', color: '#1a1410',
-                }}>
-                  <span style={{ color: '#c13e2a', fontWeight: 700, flexShrink: 0, fontSize: '1.1rem', lineHeight: 1.4 }}>?</span>
-                  {text}
-                </div>
-              ))}
-            </div>
-            <p style={{
-              fontFamily: 'var(--font-instrument, serif)',
-              fontSize: '1.3rem', fontStyle: 'italic', color: '#c13e2a',
-              marginTop: '28px',
-            }}>
-              "We just organize your search. That's it. That's the whole thing."
-            </p>
-          </div>
-        </FadeSection>
+        {/* ── FAQ ──────────────────────────────────────────────────────── */}
+        <section className="lp-section" style={{ paddingTop: 0 }}>
+          <div className="lp-container" style={{ maxWidth: 780 }}>
+            <Reveal>
+              <p className="lp-eyebrow">Common questions</p>
+              <h2 className="lp-h2">Questions? <em>Obviously.</em></h2>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <div style={{ marginTop: 34 }}>
+                {FAQS.map((faq, i) => {
+                  const open = openFaq === i;
+                  return (
+                    <div className={`lp-faq-item ${open ? 'lp-open' : ''}`} key={i}>
+                      <button className="lp-faq-q" onClick={() => setOpenFaq(open ? null : i)} aria-expanded={open}>
+                        {faq.q}
+                        <span className="lp-faq-plus">+</span>
+                      </button>
+                      <div className="lp-faq-a"><p>{faq.a}</p></div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Reveal>
 
-        {/* 12b. TRUST & PRIVACY */}
-        <FadeSection style={{ padding: '72px 24px', background: '#faf4e8' }}>
-          <div style={{ maxWidth: 980, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: 36 }}>
-              <SectionLabel>TRUST &amp; PRIVACY</SectionLabel>
-              <h2 style={{
-                fontFamily: 'var(--font-instrument, serif)',
-                fontSize: 'clamp(30px, 4.5vw, 38px)',
-                color: '#1a1410', fontWeight: 600,
+            <Reveal delay={0.15}>
+              <blockquote style={{
+                margin: '56px auto 0', textAlign: 'center', maxWidth: 620,
               }}>
-                Your data is yours. We mean it.
-              </h2>
-            </div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-              gap: 16,
-            }}>
-              {[
-                { Icon: IconLock, text: 'End-to-end private — only you see your data' },
-                { Icon: IconNoAds, text: 'No ads, ever' },
-                { Icon: IconExport, text: 'Export your data anytime' },
-                { Icon: IconTrash, text: 'Delete everything in one click' },
-                { Icon: IconIndia, text: 'Made in India, data stored in India' },
-              ].map(({ Icon, text }, i) => (
-                <div key={i} style={{
-                  background: '#ffffff', border: '1px solid #d6c9b0',
-                  borderRadius: 10, padding: '22px 18px',
-                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12,
+                <p style={{
+                  fontFamily: 'var(--font-instrument, serif)', fontStyle: 'italic',
+                  fontSize: 'clamp(19px, 2.6vw, 24px)', lineHeight: 1.6, color: '#1a1410', margin: 0,
                 }}>
-                  <span style={{ color: '#c13e2a', display: 'inline-flex' }}><Icon /></span>
-                  <p style={{
-                    fontFamily: 'var(--font-dm-sans, sans-serif)',
-                    fontSize: 14, color: '#1a1410', lineHeight: 1.5, fontWeight: 500, margin: 0,
-                  }}>
-                    {text}
-                  </p>
-                </div>
-              ))}
-            </div>
+                  &ldquo;RokaMaybe was my sanity tool before it was an app.
+                  Now it&apos;s yours too.&rdquo;
+                </p>
+                <footer style={{
+                  fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 14,
+                  fontWeight: 700, color: '#c13e2a', marginTop: 14,
+                }}>
+                  — Komal Singhania, Founder
+                </footer>
+              </blockquote>
+            </Reveal>
           </div>
-        </FadeSection>
+        </section>
 
-        {/* 14. FOR THE DAD ON WHATSAPP */}
-        <FadeSection style={{ padding: '72px 24px', background: '#ffffff' }}>
-          <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-            <SectionLabel>FOR PARENTS</SectionLabel>
-            <h2 style={{
-              fontFamily: 'var(--font-instrument, serif)',
-              fontSize: 'clamp(1.6rem, 4vw, 2.2rem)',
-              color: '#1a1410', fontWeight: 600, marginBottom: '20px',
-            }}>
-              Helping your child's rishta search?
+        {/* ── FINAL CTA ────────────────────────────────────────────────── */}
+        <section className="lp-final">
+          <span className="lp-final-ring" />
+          <span className="lp-final-ring" />
+          <span className="lp-final-ring" />
+          <Reveal>
+            <h2 className="lp-final-title">
+              The shaadi is a <em>maybe.</em>
+              <br />Your sanity shouldn&apos;t be.
             </h2>
-            <p style={{
-              fontFamily: 'var(--font-fraunces, sans-serif)',
-              fontSize: '1rem', color: '#6b5e4d', lineHeight: 1.75, marginBottom: '28px',
-            }}>
-              You've probably forwarded 20 biodatas on WhatsApp this month. Your child has probably seen half of them. RokaMaybe helps them organize everything you send — and when it's time to decide, you can sit together and compare properly. Ask them to try it.
+            <p className="lp-final-sub">
+              Free forever for the basics. Set up before your chai gets cold.
             </p>
-            <button
-              onClick={handleCopyLink}
-              style={{
-                fontFamily: 'var(--font-fraunces, sans-serif)',
-                fontWeight: 600, fontSize: '0.9rem', color: '#c13e2a',
-                background: 'transparent', border: '1.5px solid #c13e2a',
-                borderRadius: '10px', padding: '12px 24px', cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              {linkCopied ? '? Link copied!' : 'Send them the link'}
+            <button className="lp-btn-final" onClick={() => openAuth('final')}>
+              Start Free — Find Your Maybe
             </button>
-          </div>
-        </FadeSection>
-
-        {/* 15. FAQ */}
-        <FadeSection style={{ padding: '72px 24px', background: '#ffffff' }}>
-          <div style={{ maxWidth: '740px', margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-              <SectionLabel>COMMON QUESTIONS</SectionLabel>
-              <h2 style={{
-                fontFamily: 'var(--font-instrument, serif)',
-                fontSize: 'clamp(32px, 5vw, 42px)',
-                color: '#1a1410', fontWeight: 600,
-              }}>
-                A few things people ask.
-              </h2>
-            </div>
-            {(['PRODUCT', 'PRIVACY', 'BILLING', 'FOR PARENTS'] as const).map((category) => {
-              const items = FAQS.map((faq, i) => ({ ...faq, globalIdx: i })).filter(f => f.cat === category);
-              if (items.length === 0) return null;
-              return (
-                <div key={category} style={{ marginBottom: 28 }}>
-                  <p style={{
-                    fontFamily: 'var(--font-dm-sans, sans-serif)',
-                    fontSize: 11, fontWeight: 700, letterSpacing: '0.16em',
-                    color: '#c13e2a', textTransform: 'uppercase',
-                    marginBottom: 12,
-                  }}>
-                    {category}
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {items.map((faq) => {
-                      const open = openFaq === faq.globalIdx;
-                      return (
-                        <div
-                          key={faq.globalIdx}
-                          style={{
-                            background: '#faf4e8',
-                            border: '1px solid #d6c9b0',
-                            borderRadius: 10,
-                            overflow: 'hidden',
-                            transition: 'box-shadow 0.2s ease',
-                            boxShadow: open ? '0 4px 14px rgba(26,20,16,0.06)' : 'none',
-                          }}
-                        >
-                          <button
-                            onClick={() => setOpenFaq(open ? null : faq.globalIdx)}
-                            aria-expanded={open}
-                            style={{
-                              width: '100%', display: 'flex',
-                              justifyContent: 'space-between', alignItems: 'center',
-                              padding: '18px 20px', background: 'transparent',
-                              border: 'none', cursor: 'pointer', textAlign: 'left', gap: '16px',
-                              minHeight: 56,
-                            }}
-                          >
-                            <span style={{
-                              fontFamily: 'var(--font-fraunces, serif)',
-                              fontSize: '17px', fontWeight: 600,
-                              color: '#1a1410', lineHeight: 1.35,
-                            }}>
-                              {faq.q}
-                            </span>
-                            <span style={{
-                              color: '#c13e2a', fontSize: '22px', flexShrink: 0,
-                              transition: 'transform 0.25s ease',
-                              transform: open ? 'rotate(45deg)' : 'rotate(0deg)',
-                              display: 'block', lineHeight: 1,
-                              fontWeight: 300,
-                            }}>
-                              +
-                            </span>
-                          </button>
-                          <div style={{
-                            maxHeight: open ? 400 : 0,
-                            overflow: 'hidden',
-                            transition: 'max-height 0.3s ease',
-                          }}>
-                            <p style={{
-                              fontFamily: 'var(--font-dm-sans, sans-serif)',
-                              fontSize: '14px', color: '#6b5e4d',
-                              lineHeight: 1.7, padding: '0 20px 20px',
-                              margin: 0,
-                            }}>
-                              {faq.a}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </FadeSection>
-
-        {/* 16. FINAL CTA */}
-        <FadeSection style={{ padding: '88px 24px', background: '#f5ede0', textAlign: 'center' }}>
-          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-            <h2 style={{
-              fontFamily: 'var(--font-instrument, serif)',
-              fontSize: 'clamp(2rem, 5vw, 3rem)',
-              color: '#1a1410', fontWeight: 600, marginBottom: '16px',
-            }}>
-              Ready to stop losing your mind?
-            </h2>
-            <p style={{
-              fontFamily: 'var(--font-fraunces, sans-serif)',
-              fontSize: '1rem', color: '#6b5e4d', marginBottom: '32px',
-            }}>
-              Free forever for the basics. Takes 30 seconds to start.
+            <p className="lp-final-note">
+              No credit card · No matches shown · No aunty notified
             </p>
-            <button
-              onClick={() => setShowModal(true)}
-              style={{
-                fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontWeight: 700, fontSize: '17px', color: '#ffffff',
-                background: '#c13e2a',
-                border: 'none', borderRadius: '12px', padding: '18px 44px',
-                cursor: 'pointer', boxShadow: '0 6px 22px rgba(193,62,42,0.3)',
-                letterSpacing: '0.01em', minHeight: 56,
-              }}
-            >
-              Start Free
-            </button>
-            <p style={{
-              fontFamily: 'var(--font-dm-sans, sans-serif)',
-              fontSize: '13px', color: '#6b5e4d', marginTop: '16px',
-            }}>
-              No credit card required · Set up in 2 minutes · Cancel anytime
-            </p>
-          </div>
-        </FadeSection>
+          </Reveal>
+        </section>
 
-        {/* 17. FOOTER */}
-        <footer style={{ background: '#c13e2a', padding: '64px 24px 32px' }}>
-          <div style={{ maxWidth: '1040px', margin: '0 auto' }}>
+        {/* ── FOOTER ───────────────────────────────────────────────────── */}
+        <footer className="lp-footer">
+          <div style={{ maxWidth: 1040, margin: '0 auto' }}>
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
-              gap: '40px', marginBottom: '40px',
+              gap: 40, marginBottom: 44,
             }}>
               <div>
-                <Logo dark style={{ fontSize: '1.5rem', display: 'block', marginBottom: '10px' }} />
+                <Logo dark style={{ fontSize: '1.5rem', display: 'block', marginBottom: 10 }} />
                 <p style={{
                   fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: '14px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, marginBottom: 14,
+                  fontSize: 14, color: 'rgba(245,237,224,0.6)', lineHeight: 1.6, marginBottom: 14,
                 }}>
                   Your rishta search, organized.
                 </p>
-                <p style={{
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: '13px', color: '#ffffff', fontWeight: 600, marginBottom: 4,
-                }}>
+                <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 13, color: '#f5ede0', fontWeight: 600, marginBottom: 4 }}>
                   Built by Komal Singhania
                 </p>
-                <p style={{
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: '12px', color: 'rgba(255,255,255,0.65)',
-                }}>
+                <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 12, color: 'rgba(245,237,224,0.45)' }}>
                   Founder
                 </p>
               </div>
@@ -1601,24 +1229,23 @@ export default function LandingPage() {
                   <div style={{
                     fontFamily: 'var(--font-dm-sans, sans-serif)',
                     fontSize: 11, fontWeight: 700, letterSpacing: '0.16em',
-                    color: '#e8c870', marginBottom: '14px', textTransform: 'uppercase',
+                    color: '#e8c870', marginBottom: 14, textTransform: 'uppercase',
                   }}>
                     {group.title}
                   </div>
                   {group.links.map(link => (
-                    <div key={link.label} style={{ marginBottom: '10px' }}>
-                      <a
+                    <div key={link.label} style={{ marginBottom: 10 }}>
+                      <Link
                         href={link.href}
                         style={{
                           fontFamily: 'var(--font-dm-sans, sans-serif)',
-                          fontSize: '14px', color: '#f5ede0', textDecoration: 'none',
-                          transition: 'color 0.15s ease',
+                          fontSize: 14, color: 'rgba(245,237,224,0.75)', textDecoration: 'none',
                         }}
                         onMouseEnter={(e) => { e.currentTarget.style.color = '#ffffff'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = '#f5ede0'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(245,237,224,0.75)'; }}
                       >
                         {link.label}
-                      </a>
+                      </Link>
                     </div>
                   ))}
                 </div>
@@ -1628,7 +1255,7 @@ export default function LandingPage() {
                 <div style={{
                   fontFamily: 'var(--font-dm-sans, sans-serif)',
                   fontSize: 11, fontWeight: 700, letterSpacing: '0.16em',
-                  color: '#e8c870', marginBottom: '14px', textTransform: 'uppercase',
+                  color: '#e8c870', marginBottom: 14, textTransform: 'uppercase',
                 }}>
                   Connect
                 </div>
@@ -1640,17 +1267,17 @@ export default function LandingPage() {
                     <a
                       key={s.label}
                       href={s.href}
-                      target={s.href.startsWith('http') ? '_blank' : undefined}
-                      rel={s.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       aria-label={s.label}
                       style={{
-                        width: 36, height: 36, borderRadius: 8,
-                        border: '1px solid rgba(255,255,255,0.35)',
+                        width: 36, height: 36, borderRadius: 10,
+                        border: '1px solid rgba(245,237,224,0.25)',
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        color: '#f5ede0', transition: 'background 0.15s ease, color 0.15s ease',
+                        color: 'rgba(245,237,224,0.8)', transition: 'all 0.2s ease',
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.color = '#c13e2a'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#f5ede0'; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = '#e8c870'; e.currentTarget.style.color = '#1a1410'; e.currentTarget.style.borderColor = '#e8c870'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(245,237,224,0.8)'; e.currentTarget.style.borderColor = 'rgba(245,237,224,0.25)'; }}
                     >
                       {s.svg}
                     </a>
@@ -1660,26 +1287,25 @@ export default function LandingPage() {
                   href="mailto:namaste@rokamaybe.com"
                   style={{
                     fontFamily: 'var(--font-dm-sans, sans-serif)',
-                    fontSize: '13px', color: '#f5ede0', textDecoration: 'none',
-                    transition: 'color 0.15s ease', wordBreak: 'break-all',
+                    fontSize: 13, color: 'rgba(245,237,224,0.75)', textDecoration: 'none', wordBreak: 'break-all',
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = '#ffffff'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = '#f5ede0'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(245,237,224,0.75)'; }}
                 >
                   namaste@rokamaybe.com
                 </a>
               </div>
             </div>
             <div style={{
-              borderTop: '1px solid rgba(255,255,255,0.2)',
-              paddingTop: '22px',
+              borderTop: '1px solid rgba(245,237,224,0.12)',
+              paddingTop: 22,
               display: 'flex', flexWrap: 'wrap',
-              justifyContent: 'space-between', gap: '8px',
+              justifyContent: 'space-between', gap: 8,
             }}>
-              <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>
+              <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 13, color: 'rgba(245,237,224,0.4)' }}>
                 Made with ❤️ in India · Built by Komal Singhania
               </p>
-              <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', color: 'rgba(255,255,255,0.55)' }}>
+              <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 13, color: 'rgba(245,237,224,0.4)' }}>
                 © 2026 RokaMaybe. All rights reserved.
               </p>
             </div>
@@ -1687,5 +1313,22 @@ export default function LandingPage() {
         </footer>
       </main>
     </>
+  );
+}
+
+// ── Red flag card ────────────────────────────────────────────────────────────
+
+const FLAG_ROTS = [-1.5, 1, -0.8, 1.4, -0.5, 0.7];
+
+function FlagCard({ f, i }: { f: { who: 'he' | 'she'; text: string }; i: number }) {
+  return (
+    <div className="lp-flag-card" style={{ '--chip-rot': `${FLAG_ROTS[i % FLAG_ROTS.length]}deg` } as React.CSSProperties}>
+      <span className={`lp-flag-who ${f.who === 'he' ? 'lp-he' : 'lp-she'}`}>
+        <span className="lp-flag-emoji">{f.who === 'he' ? '🙋‍♂️' : '🙋‍♀️'}</span>
+        {f.who === 'he' ? 'He said' : 'She said'}
+      </span>
+      <p className="lp-flag-quote">&ldquo;{f.text}&rdquo;</p>
+      <div className="lp-flag-foot">Shared with permission · Logged in RokaMaybe</div>
+    </div>
   );
 }
