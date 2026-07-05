@@ -841,9 +841,11 @@ export default function ProspectDetailPage() {
             </span>
           </div>
 
-          {/* Scrollable stage pills */}
-          <div className="scrollbar-none" style={{ overflowX: 'auto', padding: '12px 14px 14px', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', minWidth: 'max-content' }}>
+          {/* Scrollable stage pills — flex-start + margin:auto centers when it fits
+              and falls back to left-aligned/scrollable when it overflows (mobile),
+              so the first pill never gets clipped off the left edge. */}
+          <div className="scrollbar-none" style={{ overflowX: 'auto', padding: '12px 14px 14px', display: 'flex', justifyContent: 'flex-start' }}>
+            <div style={{ display: 'flex', alignItems: 'center', minWidth: 'max-content', margin: '0 auto' }}>
               {([...JOURNEY_STAGES, 'decision'] as string[]).map((stage, idx) => {
                 const isDecisionPill = stage === 'decision';
                 const isDone = currentIdx > idx;
