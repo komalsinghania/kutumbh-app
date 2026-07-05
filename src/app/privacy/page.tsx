@@ -1,10 +1,15 @@
 import type { Metadata } from 'next';
 import LegalLayout from '@/components/LegalLayout';
 import { LEGAL } from '@/lib/legal';
+import { pageOpenGraph } from '@/lib/og';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — RokaMaybe',
   description: 'How RokaMaybe collects, uses, stores, and protects your personal data.',
+  openGraph: pageOpenGraph(
+    'Privacy Policy — RokaMaybe',
+    'How RokaMaybe collects, uses, stores, and protects your personal data.',
+  ),
 };
 
 export default function PrivacyPage() {

@@ -1,11 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { pageOpenGraph } from '@/lib/og';
 import './page.css';
 
 export const metadata: Metadata = {
   title: 'About — RokaMaybe',
   description:
     'Why RokaMaybe exists: one place for every biodata, call, kundli, and decision in your rishta search. Built by someone who was living the chaos.',
+  openGraph: pageOpenGraph(
+    'About RokaMaybe',
+    'Why RokaMaybe exists: one place for every biodata, call, kundli, and decision in your rishta search. Built by someone who was living the chaos.',
+  ),
 };
 
 const HERO_SUB =
