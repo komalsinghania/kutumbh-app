@@ -406,20 +406,20 @@ function DashboardMock() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: 'var(--font-fraunces, serif)', fontSize: 22, fontWeight: 600, color: '#c98876',
               }}>
-                KT
+                AM
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--font-fraunces, serif)', fontSize: 17, fontWeight: 700, color: '#1a1410', lineHeight: 1.15 }}>
-                  Kushagra Tibrewal
+                  Aarav Mehta
                 </div>
                 <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 10.5, color: '#6b5e4d', marginTop: 3 }}>
-                  31 · Kolkata · Chief Manager – Wealth Management
+                  30 · Mumbai · Product Manager at a fintech
                 </div>
                 <div style={{
                   fontFamily: 'var(--font-instrument, serif)', fontStyle: 'italic',
                   fontSize: 12.5, color: '#1a1410', lineHeight: 1.5, marginTop: 7,
                 }}>
-                  &ldquo;At the Call stage — fifth of eleven. You spoke two days ago;
+                  &ldquo;At the Call stage — step 2 of 5. You spoke two days ago;
                   a follow-up is due to keep things warm.&rdquo;
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
@@ -450,8 +450,8 @@ function DashboardMock() {
               Also in the diary
             </div>
             {[
-              { name: 'Sachin Agarwal', pct: '58%', meta: '32 · Hyderabad · Software engineer', note: 'On hold — paused 16 days ago.' },
-              { name: 'Ananya Rathi', pct: '54%', meta: '29 · Jaipur · Architect', note: 'New biodata — first look pending.' },
+              { name: 'Rohan Kapoor', pct: '58%', meta: '32 · Pune · Chartered Accountant', note: 'On hold — paused 16 days ago.' },
+              { name: 'Kabir Iyer', pct: '54%', meta: '29 · Bengaluru · UX Designer', note: 'New biodata — first look pending.' },
             ].map((d, i) => (
               <div key={d.name} style={{
                 paddingBottom: 9, marginBottom: 9,
@@ -557,7 +557,9 @@ function KundliGauge() {
   );
 }
 
-// ── Stage pipeline (11 dots, 7 lit) ──────────────────────────────────────────
+// ── Stage pipeline (5-step journey: New → Call → Meet → Met → Decision) ──────
+
+const JOURNEY_STEPS = ['New', 'Call', 'Meet', 'Met', 'Decision'];
 
 function StagePipeline() {
   const ref = useRef<HTMLDivElement>(null);
@@ -574,8 +576,8 @@ function StagePipeline() {
   return (
     <div ref={ref} className={on ? 'lp-visible-stages' : ''}>
       <div className="lp-stages">
-        {Array.from({ length: 11 }).map((_, i) => (
-          <div key={i} className={`lp-stage-dot ${i < 7 ? 'lp-stage-on' : ''}`}>
+        {JOURNEY_STEPS.map((_, i) => (
+          <div key={i} className={`lp-stage-dot ${i < 2 ? 'lp-stage-on' : ''}`}>
             <span style={{ '--stage-delay': `${i * 0.09}s` } as React.CSSProperties} />
           </div>
         ))}
@@ -584,9 +586,9 @@ function StagePipeline() {
         display: 'flex', justifyContent: 'space-between', marginTop: 10,
         fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 11, color: '#a89a82', fontWeight: 600,
       }}>
-        <span>New biodata</span>
-        <span style={{ color: '#c13e2a' }}>Stage 7 — families talking</span>
-        <span>Roka 💍</span>
+        <span>New</span>
+        <span style={{ color: '#c13e2a' }}>Step 2 — Call</span>
+        <span>Decision</span>
       </div>
     </div>
   );
@@ -691,7 +693,7 @@ const IconIndia = () => (
 
 const RED_FLAGS: { who: 'he' | 'she'; text: string }[] = [
   { who: 'he', text: "You can work after marriage. From home. Part-time. If there's time after cooking." },
-  { who: 'she', text: "I need a 3BHK minimum. Your parents can visit. Visit." },
+  { who: 'she', text: "I need a 3BHK minimum. Your parents can visit — not live." },
   { who: 'he', text: "What's your salary? Just asking so we know how much you'll contribute to the wedding." },
   { who: 'she', text: "What car do you drive? No reason. Just checking compatibility." },
   { who: 'he', text: "You'll obviously delete public Instagram after the roka, right?" },
@@ -705,7 +707,7 @@ const RED_FLAGS: { who: 'he' | 'she'; text: string }[] = [
 ];
 
 const TICKER_1 = [
-  'AI biodata scanner', '36-guna kundli milan', '11-stage rishta pipeline',
+  'AI biodata scanner', '36-guna kundli milan', '5-step rishta journey',
   'Red flag log', 'Decision matrix', 'Family scorecard', 'Call journal', 'Private by default',
 ];
 const TICKER_2 = [
@@ -832,7 +834,7 @@ export default function LandingPage() {
           <div className="lp-hero-inner">
             <div className="lp-hero-badge">
               <span className="lp-dot" />
-              Launch offer — Premium at ₹299 for the first 50 users
+              Launch offer — ₹499 once, lifetime access. First 100 users only
             </div>
 
             <h1 className="lp-hero-title">
@@ -871,7 +873,7 @@ export default function LandingPage() {
                 🚩 Red flag logged — &ldquo;cooks only Maggi&rdquo;
               </span>
               <span className="lp-chip" style={{ bottom: '16%', left: '-12%', '--chip-rot': '2deg', '--chip-dur': '6.5s', '--chip-delay': '1.6s' } as React.CSSProperties}>
-                Stage <span className="lp-chip-num">5</span>/11 · Follow-up call due
+                Step <span className="lp-chip-num">2</span>/5 · Follow-up call due
               </span>
               <span className="lp-chip" style={{ bottom: '-5%', right: '-10%', '--chip-rot': '-2.5deg', '--chip-dur': '7.5s', '--chip-delay': '0.4s' } as React.CSSProperties}>
                 📎 Mummy forwarded 3 new biodatas
@@ -983,10 +985,10 @@ export default function LandingPage() {
               <Reveal className="lp-b-span3" delay={0}>
                 <BentoCard span={6}>
                   <span className="lp-bento-icon"><IconTarget /></span>
-                  <div className="lp-bento-title">11 stages, zero &ldquo;umm, let me check&rdquo;</div>
+                  <div className="lp-bento-title">A 5-step journey, zero &ldquo;umm, let me check&rdquo;</div>
                   <div className="lp-bento-body">
-                    From &ldquo;new biodata&rdquo; to &ldquo;mutually interested&rdquo; — know exactly
-                    where every conversation stands.
+                    From &ldquo;new lead&rdquo; to &ldquo;decision&rdquo; — one clear journey bar
+                    tells you exactly where every conversation stands.
                   </div>
                   <StagePipeline />
                 </BentoCard>
@@ -1032,7 +1034,7 @@ export default function LandingPage() {
         <section className="lp-stats">
           <div className="lp-stats-grid">
             <Reveal delay={0}><StatCounter target={36} label="Guna points checked" /></Reveal>
-            <Reveal delay={0.1}><StatCounter target={11} label="Rishta stages tracked" /></Reveal>
+            <Reveal delay={0.1}><StatCounter target={5} label="Steps to a decision" /></Reveal>
             <Reveal delay={0.2}><StatCounter target={30} suffix="s" label="To scan a biodata" /></Reveal>
             <Reveal delay={0.3}><StatCounter target={0} label="Ads. Forever." /></Reveal>
           </div>
