@@ -1,10 +1,15 @@
 import type { Metadata } from 'next';
 import LegalLayout from '@/components/LegalLayout';
 import { LEGAL } from '@/lib/legal';
+import { pageOpenGraph } from '@/lib/og';
 
 export const metadata: Metadata = {
   title: 'Terms & Conditions — RokaMaybe',
   description: 'The terms governing your use of the RokaMaybe service.',
+  openGraph: pageOpenGraph(
+    'Terms & Conditions — RokaMaybe',
+    'The terms governing your use of the RokaMaybe service.',
+  ),
 };
 
 export default function TermsPage() {

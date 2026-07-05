@@ -32,6 +32,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://rokamaybe.com'),
   title: 'RokaMaybe — Your Arranged Marriage Tracker',
   description: 'The calm, private dashboard for your rishta search. Track every prospect, kundli, and conversation in one place.',
   icons: {
@@ -44,14 +45,12 @@ export const metadata: Metadata = {
     description: 'The calm, private dashboard for your rishta search. Track every prospect, kundli, and conversation in one place.',
     url: 'https://rokamaybe.com',
     siteName: 'RokaMaybe',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'RokaMaybe' }],
+    locale: 'en_US',
     type: 'website',
   },
   twitter: {
+    // Text falls back to og:title / og:description, so each page stays specific.
     card: 'summary_large_image',
-    title: 'RokaMaybe — Your Arranged Marriage Tracker',
-    description: 'The calm, private dashboard for your rishta search. Track every prospect, kundli, and conversation in one place.',
-    images: ['/og-image.png'],
   },
 };
 

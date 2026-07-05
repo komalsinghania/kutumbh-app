@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageOpenGraph } from '@/lib/og';
 import BlogLayout from '@/components/BlogLayout';
 import BlogList from '@/components/BlogList';
 import { BLOG_POSTS_SORTED } from '@/lib/blogs';
@@ -7,6 +8,10 @@ export const metadata: Metadata = {
   title: 'Blog — RokaMaybe',
   description:
     'Honest, practical writing on the rishta search — staying organized, spotting red flags, and making a calm decision.',
+  openGraph: pageOpenGraph(
+    'Blog — RokaMaybe',
+    'Honest, practical writing on the rishta search — staying organized, spotting red flags, and making a calm decision.',
+  ),
 };
 
 export default function BlogIndexPage() {

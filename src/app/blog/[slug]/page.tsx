@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import BlogLayout from '@/components/BlogLayout';
 import ReadingProgress from '@/components/ReadingProgress';
+import { pageOpenGraph } from '@/lib/og';
 import {
   BLOG_POSTS,
   BLOG_AUTHOR,
@@ -29,7 +30,7 @@ export async function generateMetadata({
   return {
     title: `${post.title} — RokaMaybe`,
     description: post.excerpt,
-    openGraph: { title: post.title, description: post.excerpt, type: 'article' },
+    openGraph: pageOpenGraph(post.title, post.excerpt, 'article'),
   };
 }
 
