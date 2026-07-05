@@ -406,14 +406,14 @@ function DashboardMock() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: 'var(--font-fraunces, serif)', fontSize: 22, fontWeight: 600, color: '#c98876',
               }}>
-                KT
+                AM
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--font-fraunces, serif)', fontSize: 17, fontWeight: 700, color: '#1a1410', lineHeight: 1.15 }}>
-                  Kushagra Tibrewal
+                  Aarav Mehta
                 </div>
                 <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 10.5, color: '#6b5e4d', marginTop: 3 }}>
-                  31 · Kolkata · Chief Manager – Wealth Management
+                  30 · Mumbai · Product Manager at a fintech
                 </div>
                 <div style={{
                   fontFamily: 'var(--font-instrument, serif)', fontStyle: 'italic',
@@ -450,8 +450,8 @@ function DashboardMock() {
               Also in the diary
             </div>
             {[
-              { name: 'Sachin Agarwal', pct: '58%', meta: '32 · Hyderabad · Software engineer', note: 'On hold — paused 16 days ago.' },
-              { name: 'Ananya Rathi', pct: '54%', meta: '29 · Jaipur · Architect', note: 'New biodata — first look pending.' },
+              { name: 'Rohan Kapoor', pct: '58%', meta: '32 · Pune · Chartered Accountant', note: 'On hold — paused 16 days ago.' },
+              { name: 'Kabir Iyer', pct: '54%', meta: '29 · Bengaluru · UX Designer', note: 'New biodata — first look pending.' },
             ].map((d, i) => (
               <div key={d.name} style={{
                 paddingBottom: 9, marginBottom: 9,
