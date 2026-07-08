@@ -945,6 +945,10 @@ html {
 .lp-flags {
   background:
     radial-gradient(900px 400px at 50% 0%, rgba(193, 62, 42, 0.18), transparent 65%),
+    /* pink glow from the right — behind the "He said" row */
+    radial-gradient(760px 520px at 100% 42%, rgba(255, 143, 184, 0.17), transparent 62%),
+    /* blue glow from the left — behind the "She said" row */
+    radial-gradient(760px 520px at 0% 80%, rgba(111, 157, 255, 0.20), transparent 62%),
     #1a1410;
   padding: clamp(72px, 10vw, 110px) 0;
   overflow: hidden;
