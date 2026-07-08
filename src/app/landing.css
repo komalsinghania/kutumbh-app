@@ -129,6 +129,11 @@ html {
   border-bottom-color: rgba(26, 20, 16, 0.08);
   box-shadow: 0 8px 32px rgba(26, 20, 16, 0.10);
 }
+/* Inner pages (features / how-it-works / pricing / blog / about): the shared
+   header sits in flow and sticks, rather than floating over a dark hero. */
+.lp-nav.lp-nav-doc {
+  position: sticky;
+}
 .lp-nav-links {
   display: flex;
   align-items: center;
@@ -156,9 +161,11 @@ html {
   transition: transform 0.25s ease;
 }
 .lp-nav-link:hover { color: #ffffff; }
-.lp-nav-link:hover::after { transform: scaleX(1); }
+.lp-nav-link:hover::after,
+.lp-nav-link.lp-nav-link-active::after { transform: scaleX(1); }
 .lp-nav-scrolled .lp-nav-link { color: #4a3f31; }
-.lp-nav-scrolled .lp-nav-link:hover { color: #1a1410; }
+.lp-nav-scrolled .lp-nav-link:hover,
+.lp-nav-scrolled .lp-nav-link.lp-nav-link-active { color: #1a1410; }
 .lp-nav-scrolled .lp-nav-link::after { background: #c13e2a; }
 @media (max-width: 820px) {
   .lp-nav-links .lp-nav-link { display: none; }

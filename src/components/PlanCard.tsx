@@ -56,7 +56,7 @@ export default function PlanCard({ isPaid, paidAt, razorpayPaymentId, onUpgradeS
                   fontSize: '1.4rem', fontWeight: 800,
                   color: isPaid ? '#a8f0c8' : '#f5ede0',
                 }}>
-                  {isPaid ? 'Roka Ready' : 'Maybe'}
+                  {isPaid ? 'Roka Ready' : 'Free Plan'}
                 </span>
                 <span style={{
                   fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.12em',
@@ -161,7 +161,7 @@ export default function PlanCard({ isPaid, paidAt, razorpayPaymentId, onUpgradeS
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z" stroke="#c13e2a" strokeWidth="1.5" strokeLinejoin="round"/></svg>
             </div>
             <div>
-              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1a1410' }}>Upgrade to Roka Ready</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1a1410' }}>Lifetime Access</div>
               <div style={{ fontSize: '0.72rem', color: '#a89e92', marginTop: 2 }}>One payment · no subscription · no auto-renewal</div>
             </div>
             <div style={{ marginLeft: 'auto', textAlign: 'right', flexShrink: 0 }}>

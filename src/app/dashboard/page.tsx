@@ -1524,8 +1524,17 @@ function BoardProspectCard({ prospect: p, index, onTap }: { prospect: Prospect; 
   const cardInitials = p.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
   const progress = stageProgress(p.stage);
   const stageIdx = stageOrderIndex(p.stage);
-  const quickAction = STAGE_QUICK_ACTION[p.stage];
   const oc = overall !== null ? scoreColor(overall) : '#c13e2a';
+
+  // Next-step button: map current stage to the simplified 5-step journey label
+  const NEXT_STEP_LABEL: Partial<Record<ProspectStage, string>> = {
+    new: 'Call', photo_exchanged: 'Call', kundli_sent: 'Call', kundli_matched: 'Call',
+    call_done: 'Meet', family_call: 'Meet',
+    meeting_fixed: 'Met',
+    met: 'Decision',
+    on_hold: 'Resume', rejected: 'View Summary',
+  };
+  const nextStepLabel = NEXT_STEP_LABEL[p.stage] ?? null;
 
   const decisionBadge = p.stage === 'interested'
     ? { label: 'Interested', color: '#2D6B4F', bg: 'rgba(45,107,79,0.1)' }
@@ -1661,17 +1670,33 @@ function BoardProspectCard({ prospect: p, index, onTap }: { prospect: Prospect; 
           {p.lastActivityAt && (
             <span style={{ fontSize: '0.66rem', color: '#b8aaa0', marginLeft: 'auto' }}>{timeAgo(p.lastActivityAt)}</span>
           )}
-          {quickAction && (
-            <span style={{
-              marginLeft: 'auto',
-              fontSize: '0.68rem', fontStyle: 'italic',
-              fontFamily: 'var(--font-fraunces, Fraunces, serif)',
-              color: '#c13e2a', fontWeight: 600,
-              padding: '4px 12px', border: '1px solid rgba(193,62,42,0.35)',
-              borderRadius: 20, background: 'rgba(193,62,42,0.04)',
-            }}>{quickAction}</span>
-          )}
         </div>
+
+        {/* Next Step button */}
+        {nextStepLabel && (
+          <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+            <span
+              role="button"
+              onClick={e => { e.stopPropagation(); onTap(); }}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '6px 14px', borderRadius: 20,
+                fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer',
+                fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontStyle: 'italic',
+                color: 'white', border: '1.5px solid #c13e2a',
+                background: 'linear-gradient(135deg, #c13e2a, #a8301f)',
+                boxShadow: '0 2px 8px rgba(193,62,42,0.25)',
+                whiteSpace: 'nowrap',
+                transition: 'opacity 0.15s ease',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.85'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+            >
+              {nextStepLabel}
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </span>
+          </div>
+        )}
       </div>
     </button>
   );

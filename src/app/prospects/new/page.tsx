@@ -20,18 +20,21 @@ const SOURCES: ProspectSource[] = [
   'Matrimonial Website', 'Relative', 'Family Friend', 'Pandit ji', 'Community Event', 'Other',
 ];
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
   return (
     <div>
-      <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#c13e2a' }}>{label}</label>
-      {children}
+      <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: error ? '#c13e2a' : '#c13e2a' }}>{label}</label>
+      <div style={error ? { borderRadius: 12, outline: '2px solid #c13e2a', outlineOffset: 1 } : {}}>
+        {children}
+      </div>
+      {error && <p className="text-xs mt-1 font-medium" style={{ color: '#c13e2a' }}>{error}</p>}
     </div>
   );
 }
 
-function PillSelect({ options, value, onSelect }: { options: string[]; value: string; onSelect: (v: string) => void }) {
+function PillSelect({ options, value, onSelect, error }: { options: string[]; value: string; onSelect: (v: string) => void; error?: boolean }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2" style={error && !value ? { padding: 8, borderRadius: 12, background: 'rgba(193,62,42,0.04)', outline: '2px solid #c13e2a', outlineOffset: 1 } : {}}>
       {options.map(opt => (
         <button key={opt} type="button" onClick={() => onSelect(opt)}
           className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${value === opt ? 'pill-active' : ''}`}
@@ -115,6 +118,9 @@ export default function NewProspectPage() {
   const [kundliCalcDone, setKundliCalcDone] = useState(false);
   const [showPasteText, setShowPasteText] = useState(false);
   const [pasteText, setPasteText] = useState('');
+  const [errors, setErrors] = useState<{ name?: string; source?: string }>({});
+  const nameRef = useRef<HTMLDivElement>(null);
+  const sourceRef = useRef<HTMLDivElement>(null);
 
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
 
@@ -283,10 +289,19 @@ export default function NewProspectPage() {
 
   const handleSave = async () => {
     if (!user || !profile) return;
-    if (!form.name || !form.source) {
-      toast.error('Name and source are required.');
+    const newErrors: { name?: string; source?: string } = {};
+    if (!form.name.trim()) newErrors.name = 'Name is required';
+    if (!form.source) newErrors.source = 'Please select a source';
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      if (newErrors.name) {
+        nameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (newErrors.source) {
+        sourceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
+    setErrors({});
     setSaving(true);
     try {
       const gunaScore =
@@ -479,9 +494,17 @@ export default function NewProspectPage() {
       <div className="max-w-2xl mx-auto px-4 pt-5 space-y-5">
         <div className="card p-5 space-y-4">
           <h3 className="section-label">Basic Info</h3>
-          <Field label="Full Name *">
-            <input type="text" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Name" />
-          </Field>
+          <div ref={nameRef}>
+            <Field label="Full Name *" error={errors.name}>
+              <input
+                type="text"
+                value={form.name}
+                onChange={e => { set('name', e.target.value); if (errors.name) setErrors(v => ({ ...v, name: undefined })); }}
+                placeholder="Name"
+                style={errors.name ? { borderColor: '#c13e2a', background: 'rgba(193,62,42,0.04)' } : {}}
+              />
+            </Field>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Age">
               <input type="number" value={form.age} onChange={e => set('age', e.target.value)} placeholder="Age" />
@@ -660,13 +683,16 @@ export default function NewProspectPage() {
 
         <div className="card p-5 space-y-4">
           <h3 className="section-label">Tracking</h3>
-          <Field label="Source *">
-            <PillSelect
-              options={SOURCES}
-              value={form.source}
-              onSelect={v => set('source', v)}
-            />
-          </Field>
+          <div ref={sourceRef}>
+            <Field label="Source *" error={errors.source}>
+              <PillSelect
+                options={SOURCES}
+                value={form.source}
+                onSelect={v => { set('source', v); if (errors.source) setErrors(ev => ({ ...ev, source: undefined })); }}
+                error={!!errors.source}
+              />
+            </Field>
+          </div>
           <Field label="Stage">
             <select
               value={form.stage}

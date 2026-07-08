@@ -7,7 +7,6 @@ import { Prospect, STAGE_LABELS, NAKSHATRAS } from '@/types';
 import { calculateOverallScore } from '@/lib/scoring';
 import { calculateAshtakoot } from '@/lib/kundli';
 import { hasCompareAccess } from '@/lib/trial';
-import StarRating from '@/components/StarRating';
 import { Logo } from '@/components/Logo';
 
 function daysSince(createdAt: number): number {
@@ -135,7 +134,7 @@ type GridRow = { label: string; cell: (p: Prospect) => React.ReactNode; best?: (
 
 // Reusable label-vs-contenders grid used by the Signals & Details sections.
 function CompareGrid({ prospects, rows }: { prospects: Prospect[]; rows: GridRow[] }) {
-  const cols = `minmax(84px, 0.8fr) repeat(${prospects.length}, 1fr)`;
+  const cols = `minmax(80px, 0.75fr) repeat(${prospects.length}, minmax(0, 1fr))`;
   return (
     <div>
       {rows.map((row, ri) => (
@@ -148,7 +147,7 @@ function CompareGrid({ prospects, rows }: { prospects: Prospect[]; rows: GridRow
               <div key={p.id} style={{
                 padding: '7px 8px', textAlign: 'center', fontSize: '0.78rem', fontWeight: 600,
                 color: '#1a1410', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                gap: 4, minWidth: 0,
+                gap: 4, minWidth: 0, overflow: 'hidden',
               }}>
                 {best && <span style={{ color: '#2D6B4F', fontSize: '0.62rem' }}>★</span>}
                 <span style={{ overflowWrap: 'anywhere' }}>{row.cell(p)}</span>
@@ -310,7 +309,7 @@ export function ComparisonView({ prospects, profile, onBack }: {
     },
     {
       label: 'Green Flags',
-      cell: p => (p.greenFlagCount ?? 0) > 0 ? <Chip tone="green">💚 +{p.greenFlagCount}</Chip> : <span style={{ color: '#b7ab99' }}>—</span>,
+      cell: p => (p.greenFlagCount ?? 0) > 0 ? <Chip tone="green"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 1 }}><path d="M2 1v10M2 1h7l-2 3 2 3H2" stroke="#2D6B4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="rgba(45,107,79,0.18)"/></svg> +{p.greenFlagCount}</Chip> : <span style={{ color: '#b7ab99' }}>—</span>,
       best: p => (p.greenFlagCount ?? 0) > 0 && (p.greenFlagCount ?? 0) === bestGreen,
     },
     {
@@ -319,18 +318,8 @@ export function ComparisonView({ prospects, profile, onBack }: {
       best: p => (p.redFlagCount ?? 0) === leastRed,
     },
     {
-      label: 'Family Score',
-      cell: p => p.familyScore ? (
-        <span className="flex items-center gap-1 justify-center">
-          <StarRating value={Math.round(p.familyScore)} size="sm" color="#c13e2a" />
-          <span className="text-xs" style={{ color: '#6b5e4d' }}>{p.familyScore}</span>
-        </span>
-      ) : <span style={{ color: '#b7ab99' }}>—</span>,
-      best: p => !!p.familyScore && p.familyScore === bestFamily,
-    },
-    {
       label: 'Conversations',
-      cell: p => (p.conversationCount ?? 0) > 0 ? <>💬 {p.conversationCount}</> : <span style={{ color: '#b7ab99' }}>—</span>,
+      cell: p => (p.conversationCount ?? 0) > 0 ? <>{p.conversationCount}</> : <span style={{ color: '#b7ab99' }}>—</span>,
       best: p => (p.conversationCount ?? 0) > 0 && (p.conversationCount ?? 0) === bestConv,
     },
     {
@@ -398,7 +387,6 @@ export function ComparisonView({ prospects, profile, onBack }: {
               background: 'linear-gradient(90deg, #1a0d08 0%, #3a1510 55%, #241009 100%)',
               padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 8,
             }}>
-              <span style={{ fontSize: '0.8rem', lineHeight: 1 }}>{leaderTied ? '⚖️' : '👑'}</span>
               <p style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
                 {leaderTied
                   ? <>Neck and neck at <strong style={{ color: '#ffb8a0' }}>{overalls[leaderIdx]}%</strong></>
@@ -431,9 +419,9 @@ export function ComparisonView({ prospects, profile, onBack }: {
                     }}>{initials(p.name)}</div>
                     {isLeader && (
                       <span style={{
-                        position: 'absolute', top: -7, right: -7, fontSize: '0.78rem',
-                        filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.25))', transform: 'rotate(18deg)',
-                      }}>👑</span>
+                        position: 'absolute', top: -7, right: -7, fontSize: '0.55rem',
+                        fontWeight: 800, color: '#b8892b', letterSpacing: 0,
+                      }}>#1</span>
                     )}
                   </div>
                   <div>
