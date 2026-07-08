@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { pageOpenGraph } from '@/lib/og';
+import SiteHeader from '@/components/SiteHeader';
 import './page.css';
 
 export const metadata: Metadata = {
@@ -51,27 +52,7 @@ const LINKS = [
 export default function AboutPage() {
   return (
     <div className="mkt-about">
-      <nav>
-        <div className="nav-in">
-          <Link className="wm" href="/">
-            Roka<span className="maybe">Maybe</span>
-          </Link>
-          <div className="nav-links">
-            <Link href="/features">Features</Link>
-            <Link href="/how-it-works">How it works</Link>
-            <Link href="/pricing">Pricing</Link>
-            <Link href="/mummy-mode" className="hide-m">
-              Mummy Mode
-            </Link>
-            <Link href="/about" className="active">
-              About
-            </Link>
-            <Link href="/" className="nav-cta">
-              Start free
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <SiteHeader />
 
       {/* HERO */}
       <header className="hero">

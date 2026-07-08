@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { pageOpenGraph } from '@/lib/og';
 import './page.css';
 import content from './content';
-import { withAboutLink } from '@/lib/marketing-nav';
+import { withAboutLink, stripNav } from '@/lib/marketing-nav';
+import SiteHeader from '@/components/SiteHeader';
 
 export const metadata: Metadata = {
   title: 'Mummy Mode — RokaMaybe',
@@ -15,5 +16,10 @@ export const metadata: Metadata = {
 };
 
 export default function MummyModePage() {
-  return <div className="mkt-mummy" dangerouslySetInnerHTML={{ __html: withAboutLink(content) }} />;
+  return (
+    <>
+      <SiteHeader />
+      <div className="mkt-mummy" dangerouslySetInnerHTML={{ __html: withAboutLink(stripNav(content)) }} />
+    </>
+  );
 }

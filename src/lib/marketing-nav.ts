@@ -2,6 +2,13 @@
 // nav + footer as pre-generated static HTML. Rather than regenerate those files to
 // add the later "About" page, we splice an About link into the nav and footer at
 // render time — right after the "Mummy Mode" link in each.
+// The static marketing HTML ships with its own <nav> baked in. The site now
+// renders a single shared <SiteHeader/> on every page, so strip that leading
+// nav block out before injecting the rest of the markup.
+export function stripNav(html: string): string {
+  return html.replace(/^\s*<nav[\s\S]*?<\/nav>\s*/i, '');
+}
+
 export function withAboutLink(html: string): string {
   return html
     .replace(
