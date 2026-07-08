@@ -161,6 +161,8 @@ export interface UserProfile {
   paidAt?: number;
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
+  // Compare trial — set (once) the first time the user opens Compare
+  trialStartedAt?: number;
   createdAt: number;
   updatedAt: number;
 }

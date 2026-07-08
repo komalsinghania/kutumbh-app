@@ -4,8 +4,10 @@ import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/lib/auth-context';
-import { subscribeToProspects } from '@/lib/firestore';
+import { subscribeToProspects, saveUserProfile } from '@/lib/firestore';
 import { Prospect, ProspectStage } from '@/types';
+import { hasCompareAccess, isTrialActive, isTrialExpired, trialDaysLeft, trialEndsAt } from '@/lib/trial';
+import TrialStartedModal from '@/components/TrialStartedModal';
 import {
   calculateOverallScore, getCompatBreakdown, getAshtakootBreakdown, calculateCompatScore, getDealbreakersCheck,
 } from '@/lib/scoring';
@@ -221,12 +223,36 @@ export default function DashboardPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
+  const [showTrialModal, setShowTrialModal] = useState(false);
 
   const toggleExpand = (id: string) =>
     setExpanded(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const toggleCompare = (id: string) =>
     setCompareIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : prev.length < 3 ? [...prev, id] : prev);
+
+  // Begin the 7-day Compare trial. Called only when the user explicitly clicks
+  // "Start Free Trial" — never automatically on opening the tab.
+  const [startingTrial, setStartingTrial] = useState(false);
+  const startTrial = async () => {
+    if (!user || !profile || profile.isPaid || profile.trialStartedAt || startingTrial) return;
+    setStartingTrial(true);
+    try {
+      await saveUserProfile(user.uid, { trialStartedAt: Date.now() });
+      await refreshProfile();
+      setShowTrialModal(true);
+    } catch (e) {
+      console.error('[trial] failed to start trial', e);
+    } finally {
+      setStartingTrial(false);
+    }
+  };
+
+  // Shared handler for both the desktop sidebar and mobile bottom nav.
+  const selectTab = (tab: MainTab) => {
+    if (tab === 'compare' && mainTab !== 'compare') setCompareIds([]);
+    setMainTab(tab);
+  };
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -313,12 +339,19 @@ export default function DashboardPage() {
   const initials = (name: string) => name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const firstName = profile.name.split(' ')[0];
 
+  // Compare access + trial state (derived from the profile).
+  const compareAccess = hasCompareAccess(profile);
+  const trialActive = !profile.isPaid && isTrialActive(profile);
+  const trialExpired = !profile.isPaid && isTrialExpired(profile);
+  const trialNotStarted = !profile.isPaid && !profile.trialStartedAt;
+  const daysLeft = trialDaysLeft(profile);
+
   /* ── Sidebar nav items ─── */
   const NAV_ITEMS: [MainTab, string, string, number | null][] = [
     ['board',    'M3 3h7v7H3V3zm0 11h7v7H3v-7zm11-11h7v7h-7V3zm0 11h7v7h-7v-7z', 'Board',     null],
     ['matches',  'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z', 'Matches',   null],
     ['decision', 'M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z', 'Decisions', totalDecisions > 0 ? totalDecisions : null],
-    ['compare',  'M3 5h8v14H3V5zm10 0h8v14h-8V5z', profile?.isPaid ? 'Compare ✦' : 'Compare 🔒', compareIds.length > 0 ? compareIds.length : null],
+    ['compare',  'M3 5h8v14H3V5zm10 0h8v14h-8V5z', compareAccess ? 'Compare ✦' : 'Compare 🔒', compareIds.length > 0 ? compareIds.length : null],
   ];
 
   return (
@@ -367,7 +400,7 @@ export default function DashboardPage() {
             {NAV_ITEMS.map(([tab, iconPath, label, badge]) => {
               const isActive = mainTab === tab;
               return (
-                <button key={tab} onClick={() => { if (tab === 'compare' && mainTab !== 'compare') setCompareIds([]); setMainTab(tab); }} className="w-full"
+                <button key={tab} onClick={() => selectTab(tab)} className="w-full"
                   style={{
                     display: 'flex', alignItems: 'center', gap: 11,
                     padding: '11px 14px', borderRadius: 10, marginBottom: 3,
@@ -495,12 +528,12 @@ export default function DashboardPage() {
                   <span style={{ fontSize: '0.78rem', color: '#6b5e4d', fontWeight: 500 }}>{compareIds.length}/3 selected</span>
                   {compareIds.length >= 2 && (
                     <button style={{
-                      background: profile?.isPaid ? 'linear-gradient(135deg, #d44d36, #b83521)' : '#d6c9b0',
+                      background: compareAccess ? 'linear-gradient(135deg, #d44d36, #b83521)' : '#d6c9b0',
                       color: '#fff', borderRadius: 8, padding: '8px 18px',
-                      fontSize: '0.8rem', fontWeight: 700, cursor: profile?.isPaid ? 'pointer' : 'not-allowed', border: 'none',
-                      boxShadow: profile?.isPaid ? '0 4px 12px rgba(193,62,42,0.3)' : 'none',
-                    }} onClick={() => profile?.isPaid && router.push(`/compare?ids=${compareIds.join(',')}`)}>
-                      {profile?.isPaid ? 'Compare Now' : '🔒 Compare Now'}
+                      fontSize: '0.8rem', fontWeight: 700, cursor: compareAccess ? 'pointer' : 'not-allowed', border: 'none',
+                      boxShadow: compareAccess ? '0 4px 12px rgba(193,62,42,0.3)' : 'none',
+                    }} onClick={() => compareAccess && router.push(`/compare?ids=${compareIds.join(',')}`)}>
+                      {compareAccess ? 'Compare Now' : '🔒 Compare Now'}
                     </button>
                   )}
                   {compareIds.length > 0 && (
@@ -796,9 +829,82 @@ export default function DashboardPage() {
 
             {mainTab === 'compare' && (
               <div style={{ padding: `0 ${isMobile ? 16 : 28}px`, marginBottom: 4 }}>
-                {/* ── Paywall for unpaid users ── */}
-                {!profile?.isPaid && (
+                {/* ── Trial offer (unpaid, not yet started) ── */}
+                {trialNotStarted && (
+                  <div style={{
+                    marginBottom: 16, borderRadius: 24, overflow: 'hidden',
+                    background: 'linear-gradient(145deg, #1a0d08 0%, #3a1510 45%, #1c0a0a 100%)',
+                    boxShadow: '0 20px 60px rgba(139,42,42,0.18), 0 4px 16px rgba(0,0,0,0.08)',
+                    position: 'relative',
+                  }}>
+                    <div style={{ position: 'absolute', top: -40, right: -30, width: 170, height: 170, borderRadius: '50%', background: 'radial-gradient(circle, rgba(193,62,42,0.35) 0%, transparent 70%)', pointerEvents: 'none' }} />
+                    <div style={{ padding: '28px 24px', position: 'relative', textAlign: 'center' }}>
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: 'rgba(193,62,42,0.25)', border: '1px solid rgba(193,62,42,0.4)',
+                        borderRadius: 20, padding: '5px 12px', marginBottom: 16,
+                      }}>
+                        <span style={{ fontSize: '0.9rem' }}>🎁</span>
+                        <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,200,180,0.9)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>7 Days Free</span>
+                      </div>
+                      <h3 style={{
+                        fontFamily: 'var(--font-fraunces, Fraunces, serif)',
+                        fontSize: '1.5rem', fontWeight: 800, color: 'white', lineHeight: 1.25, marginBottom: 10,
+                      }}>
+                        Try Compare free<br /><em style={{ color: '#ffb8a0' }}>for 7 days.</em>
+                      </h3>
+                      <p style={{ fontSize: '0.84rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.55, maxWidth: 340, margin: '0 auto 22px' }}>
+                        Compare up to 3 prospects side by side — kundli score, compatibility, and every flag that matters. No card needed to start.
+                      </p>
+                      <button
+                        onClick={startTrial}
+                        disabled={startingTrial}
+                        style={{
+                          width: '100%', maxWidth: 320, border: 'none', cursor: startingTrial ? 'wait' : 'pointer',
+                          padding: '15px 20px', borderRadius: 14,
+                          background: startingTrial ? '#8a5040' : 'linear-gradient(135deg, #d44d36 0%, #b83521 100%)',
+                          color: 'white', fontWeight: 700, fontSize: '0.95rem',
+                          boxShadow: '0 6px 20px rgba(193,62,42,0.4)', letterSpacing: '0.01em',
+                        }}
+                      >
+                        {startingTrial ? 'Starting…' : 'Start Free Trial'}
+                      </button>
+                      <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.4)', marginTop: 12 }}>
+                        Then ₹499 once — no subscription, no auto-renewal.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {/* ── Active-trial banner ── */}
+                {trialActive && (
+                  <div style={{
+                    marginBottom: 16, borderRadius: 16, padding: '14px 18px',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    background: 'linear-gradient(135deg, rgba(45,107,79,0.1), rgba(184,137,43,0.1))',
+                    border: '1px solid rgba(45,107,79,0.3)',
+                  }}>
+                    <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>🎁</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: '0.86rem', fontWeight: 700, color: '#1a1410' }}>
+                        Free trial active — {daysLeft} day{daysLeft === 1 ? '' : 's'} left
+                      </p>
+                      <p style={{ fontSize: '0.72rem', color: '#6b5e4d', marginTop: 2 }}>
+                        Compare stays unlocked until {trialEndsAt(profile) ? new Date(trialEndsAt(profile)!).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''}. Unlock forever any time.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {/* ── Paywall once the trial has ended ── */}
+                {trialExpired && (
                   <div style={{ marginBottom: 16, borderRadius: 24, overflow: 'hidden', boxShadow: '0 20px 60px rgba(139,42,42,0.18), 0 4px 16px rgba(0,0,0,0.08)' }}>
+                    <div style={{
+                      background: '#3a1510', padding: '10px 24px', textAlign: 'center',
+                      borderBottom: '1px solid rgba(255,255,255,0.08)',
+                    }}>
+                      <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#ffb8a0', letterSpacing: '0.04em' }}>
+                        ⏳ Your 7-day free trial has ended
+                      </span>
+                    </div>
                     {/* Top gradient hero */}
                     <div style={{
                       background: 'linear-gradient(145deg, #1a0d08 0%, #3a1510 40%, #1c0a0a 100%)',
@@ -925,7 +1031,7 @@ export default function DashboardPage() {
                 <div style={{
                   background: 'rgba(193,62,42,0.06)', border: '1px solid rgba(193,62,42,0.25)',
                   borderRadius: 12, padding: '10px 14px', fontSize: '0.78rem', color: '#6b5e4d',
-                  opacity: profile?.isPaid ? 1 : 0.5, pointerEvents: profile?.isPaid ? 'auto' : 'none',
+                  opacity: compareAccess ? 1 : 0.5, pointerEvents: compareAccess ? 'auto' : 'none',
                 }}>
                   Tap up to <strong style={{ color: '#c13e2a' }}>3 prospects</strong> to select them, then hit <strong style={{ color: '#c13e2a' }}>Compare Now</strong>.
                 </div>
@@ -936,12 +1042,12 @@ export default function DashboardPage() {
                     <div style={{ flex: 1 }} />
                     {compareIds.length >= 2 && (
                       <button style={{
-                        background: profile?.isPaid ? 'linear-gradient(135deg, #d44d36, #b83521)' : '#d6c9b0',
+                        background: compareAccess ? 'linear-gradient(135deg, #d44d36, #b83521)' : '#d6c9b0',
                         color: '#fff', borderRadius: 8, padding: '8px 18px',
-                        fontSize: '0.8rem', fontWeight: 700, cursor: profile?.isPaid ? 'pointer' : 'not-allowed', border: 'none',
-                        boxShadow: profile?.isPaid ? '0 4px 12px rgba(193,62,42,0.3)' : 'none',
-                      }} onClick={() => profile?.isPaid && router.push(`/compare?ids=${compareIds.join(',')}`)}>
-                        {profile?.isPaid ? 'Compare Now' : '🔒 Compare Now'}
+                        fontSize: '0.8rem', fontWeight: 700, cursor: compareAccess ? 'pointer' : 'not-allowed', border: 'none',
+                        boxShadow: compareAccess ? '0 4px 12px rgba(193,62,42,0.3)' : 'none',
+                      }} onClick={() => compareAccess && router.push(`/compare?ids=${compareIds.join(',')}`)}>
+                        {compareAccess ? 'Compare Now' : '🔒 Compare Now'}
                       </button>
                     )}
                     <button style={{
@@ -1367,7 +1473,7 @@ export default function DashboardPage() {
             ] as [MainTab, string, string][]).map(([tab, iconPath, label]) => {
               const isActive = mainTab === tab;
               return (
-                <button key={tab} onClick={() => { if (tab === 'compare' && mainTab !== 'compare') setCompareIds([]); setMainTab(tab); }}
+                <button key={tab} onClick={() => selectTab(tab)}
                   style={{
                     flex: 1, display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center',
@@ -1398,6 +1504,14 @@ export default function DashboardPage() {
           </nav>
         )}
       </div>{/* end main column */}
+
+      {showTrialModal && (
+        <TrialStartedModal
+          daysLeft={daysLeft}
+          endsAt={trialEndsAt(profile)}
+          onClose={() => setShowTrialModal(false)}
+        />
+      )}
     </div>
   );
 }

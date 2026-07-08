@@ -6,7 +6,7 @@
 export const LEGAL = {
   appName: 'RokaMaybe',
   entity: '[Your Registered Legal Entity / Proprietor Name]',
-  contactEmail: 'privacy@rokamaybe.app',          // ← change to a real inbox you monitor
+  contactEmail: 'namaste@rokamaybe.com',
   grievanceOfficer: '[Name of Grievance Officer]', // required under India DPDP Act, 2023
   lastUpdated: '27 June 2026',
   governingLaw: 'India',
