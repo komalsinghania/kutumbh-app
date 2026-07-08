@@ -640,82 +640,173 @@ html {
   }
 }
 
-/* ── Bento features ────────────────────────────────────────────────────── */
+/* ── Features index (editorial split: sticky left rail + numbered list) ── */
 
-.lp-bento {
+.lp-feat-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 18px;
-  margin-top: 44px;
+  grid-template-columns: 0.95fr 1.05fr;
+  gap: 72px;
+  align-items: start;
 }
-.lp-bento-card {
+.lp-feat-left {
+  position: sticky;
+  top: 92px;
+}
+
+/* Headliner card (№ 01, dark, holds the kundli gauge) */
+.lp-feat-hero {
   position: relative;
   overflow: hidden;
-  background: #fffdf8;
-  border: 1px solid #e4d8c2;
-  border-radius: 20px;
-  padding: 30px 28px;
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 0.3s ease, border-color 0.3s ease;
+  margin-top: 34px;
+  border-radius: 24px;
+  padding: 28px 28px 16px;
+  background: linear-gradient(150deg, #241208 0%, #1a0f08 55%, #2a130a 100%);
+  border: 1px solid rgba(232, 200, 112, 0.22);
+  box-shadow: 0 30px 70px rgba(26, 20, 16, 0.30);
 }
-.lp-bento-card::after {
-  content: '';
+.lp-feat-hero-glow {
   position: absolute;
-  inset: 0;
-  border-radius: 20px;
-  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%),
-              rgba(193, 62, 42, 0.07), transparent 45%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  top: -70px;
+  right: -50px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(193, 62, 42, 0.38), transparent 65%);
   pointer-events: none;
 }
-.lp-bento-card:hover {
-  transform: translateY(-6px);
-  border-color: #d8b46a;
-  box-shadow: 0 26px 60px rgba(26, 20, 16, 0.14);
+.lp-feat-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  position: relative;
 }
-.lp-bento-card:hover::after { opacity: 1; }
-.lp-bento-card:hover .lp-bento-icon { animation: lpWiggle 0.5s ease; }
-
-.lp-b-span3 { grid-column: span 3; }
-.lp-b-span2 { grid-column: span 2; }
-.lp-b-span4 { grid-column: span 4; }
-.lp-b-span6 { grid-column: span 6; }
-@media (max-width: 900px) {
-  .lp-b-span3, .lp-b-span2, .lp-b-span4 { grid-column: span 6; }
+.lp-feat-hero-num {
+  font-family: var(--font-fraunces, serif);
+  font-style: italic;
+  font-size: 15px;
+  color: #e8c870;
+  letter-spacing: 0.04em;
 }
-
-.lp-bento-icon {
+.lp-feat-hero-tag {
   display: inline-flex;
-  color: #c13e2a;
-  background: rgba(193, 62, 42, 0.08);
-  border-radius: 12px;
-  padding: 10px;
-  margin-bottom: 18px;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-dm-sans, sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(245, 237, 224, 0.55);
+  border: 1px solid rgba(245, 237, 224, 0.16);
+  border-radius: 20px;
+  padding: 5px 12px;
 }
-.lp-bento-title {
+.lp-feat-hero-tag svg { width: 13px; height: 13px; color: #e8c870; }
+.lp-feat-hero-title {
+  font-family: var(--font-fraunces, serif);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #f5ede0;
+  line-height: 1.25;
+  margin-bottom: 10px;
+  position: relative;
+}
+.lp-feat-hero-body {
+  font-family: var(--font-dm-sans, sans-serif);
+  font-size: 14px;
+  line-height: 1.65;
+  color: rgba(245, 237, 224, 0.60);
+  position: relative;
+}
+
+/* Numbered index rows */
+.lp-feat-list {
+  border-top: 1px solid #dfd2b8;
+  margin-top: 10px;
+}
+.lp-feat-row {
+  display: grid;
+  grid-template-columns: 56px 1fr 40px;
+  gap: 10px;
+  align-items: start;
+  padding: 30px 10px 30px 4px;
+  border-bottom: 1px solid #dfd2b8;
+  position: relative;
+  transition: background 0.3s ease;
+}
+.lp-feat-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -1px;
+  height: 1px;
+  width: 0;
+  background: #c13e2a;
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lp-feat-row:hover::before { width: 100%; }
+.lp-feat-row:hover {
+  background: linear-gradient(90deg, rgba(193, 62, 42, 0.045), transparent 75%);
+}
+.lp-feat-num {
+  font-family: var(--font-fraunces, serif);
+  font-style: italic;
+  font-size: 16px;
+  font-weight: 600;
+  color: #c9a86a;
+  padding-top: 4px;
+  transition: color 0.25s ease;
+}
+.lp-feat-row:hover .lp-feat-num { color: #c13e2a; }
+.lp-feat-title {
   font-family: var(--font-fraunces, serif);
   font-size: 21px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: #1a1410;
-  margin-bottom: 9px;
   line-height: 1.25;
+  margin-bottom: 8px;
+  transition: color 0.25s ease;
 }
-.lp-bento-body {
+.lp-feat-row:hover .lp-feat-title { color: #c13e2a; }
+.lp-feat-body {
   font-family: var(--font-dm-sans, sans-serif);
   font-size: 14.5px;
   line-height: 1.65;
   color: #6b5e4d;
+  max-width: 48ch;
 }
-.lp-bento-dark {
-  background: #1a1410;
-  border-color: #33281e;
+
+/* Right-edge mark: ghosted icon that swaps into an arrow on hover */
+.lp-feat-mark {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  margin-top: 2px;
 }
-.lp-bento-dark .lp-bento-title { color: #f5ede0; }
-.lp-bento-dark .lp-bento-body { color: rgba(245, 237, 224, 0.62); }
-.lp-bento-dark .lp-bento-icon { color: #e8c870; background: rgba(232, 200, 112, 0.10); }
-.lp-bento-dark:hover { border-color: rgba(232, 200, 112, 0.5); box-shadow: 0 26px 60px rgba(0, 0, 0, 0.4); }
+.lp-feat-mark-icon,
+.lp-feat-mark-arrow {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lp-feat-mark-icon { color: #cbbc9e; }
+.lp-feat-mark-arrow { color: #c13e2a; opacity: 0; transform: translateX(-10px); }
+.lp-feat-row:hover .lp-feat-mark-icon { opacity: 0; transform: translateX(10px); }
+.lp-feat-row:hover .lp-feat-mark-arrow { opacity: 1; transform: none; }
+
+@media (max-width: 900px) {
+  .lp-feat-grid { grid-template-columns: 1fr; gap: 12px; }
+  .lp-feat-left { position: static; }
+  .lp-feat-list { margin-top: 34px; }
+  .lp-feat-row { padding: 24px 4px; grid-template-columns: 44px 1fr 34px; }
+  .lp-feat-title { font-size: 19px; }
+}
 
 /* Kundli gauge */
 .lp-gauge-num {

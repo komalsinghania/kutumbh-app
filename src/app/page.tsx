@@ -632,21 +632,6 @@ function StatCounter({ target, suffix, decimals = 0, label }: {
 
 // ── Bento card with cursor-follow glow ───────────────────────────────────────
 
-function BentoCard({ span, dark, children }: {
-  span: 2 | 3 | 4 | 6; dark?: boolean; children: React.ReactNode;
-}) {
-  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty('--mx', `${e.clientX - r.left}px`);
-    e.currentTarget.style.setProperty('--my', `${e.clientY - r.top}px`);
-  };
-  return (
-    <div className={`lp-bento-card lp-b-span${span} ${dark ? 'lp-bento-dark' : ''}`} onMouseMove={onMove}>
-      {children}
-    </div>
-  );
-}
-
 // ── Line icons ───────────────────────────────────────────────────────────────
 
 const iconProps = {
@@ -945,87 +930,87 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── FEATURES BENTO ───────────────────────────────────────────── */}
+        {/* ── FEATURES INDEX ───────────────────────────────────────────── */}
         <section className="lp-section" id="features" style={{ paddingTop: 0 }}>
           <div className="lp-container">
-            <Reveal>
-              <p className="lp-eyebrow">The fix</p>
-              <h2 className="lp-h2">One dashboard. <em>Zero</em> lost rishtas.</h2>
-              <p className="lp-lede">
-                Everything you&apos;re juggling in your head, your gallery, and four family
-                group chats — structured, scored, and searchable.
-              </p>
-            </Reveal>
+            <div className="lp-feat-grid">
 
-            <div className="lp-bento">
-              <Reveal className="lp-b-span4" delay={0}>
-                <BentoCard span={6} dark>
-                  <span className="lp-bento-icon"><IconSparkle /></span>
-                  <div className="lp-bento-title">Real 36-guna Kundli Milan. Not a gimmick.</div>
-                  <div className="lp-bento-body">
-                    Full Ashtakoot matching computed from actual birth details using Vedic
-                    astronomy — Nadi, Bhakut, and Gana doshas flagged automatically.
-                    (Still consult your pandit for the final word. We insist.)
+              {/* Left rail: headline + the headliner feature */}
+              <div className="lp-feat-left">
+                <Reveal>
+                  <p className="lp-eyebrow">The fix</p>
+                  <h2 className="lp-h2">One dashboard. <em>Zero</em> lost rishtas.</h2>
+                  <p className="lp-lede">
+                    Everything you&apos;re juggling in your head, your gallery, and four family
+                    group chats — structured, scored, and searchable.
+                  </p>
+                </Reveal>
+                <Reveal delay={0.1}>
+                  <div className="lp-feat-hero">
+                    <div className="lp-feat-hero-glow" />
+                    <div className="lp-feat-hero-top">
+                      <span className="lp-feat-hero-num">№ 01</span>
+                      <span className="lp-feat-hero-tag"><IconSparkle /> Vedic astronomy</span>
+                    </div>
+                    <h3 className="lp-feat-hero-title">Real 36-guna Kundli Milan. Not a gimmick.</h3>
+                    <p className="lp-feat-hero-body">
+                      Full Ashtakoot matching computed from actual birth details — Nadi,
+                      Bhakut, and Gana doshas flagged automatically. (Still consult your
+                      pandit for the final word. We insist.)
+                    </p>
+                    <KundliGauge />
                   </div>
-                  <KundliGauge />
-                </BentoCard>
-              </Reveal>
+                </Reveal>
+              </div>
 
-              <Reveal className="lp-b-span2" delay={0.1}>
-                <BentoCard span={6}>
-                  <span className="lp-bento-icon"><IconDoc /></span>
-                  <div className="lp-bento-title">AI reads biodatas so you don&apos;t have to</div>
-                  <div className="lp-bento-body">
-                    Drop a PDF, Word doc, or a photo from WhatsApp. In 30 seconds every
-                    field is filled — name, age, family, kundli details, the works.
-                  </div>
-                </BentoCard>
-              </Reveal>
-
-              <Reveal className="lp-b-span3" delay={0}>
-                <BentoCard span={6}>
-                  <span className="lp-bento-icon"><IconTarget /></span>
-                  <div className="lp-bento-title">A 5-step journey, zero &ldquo;umm, let me check&rdquo;</div>
-                  <div className="lp-bento-body">
-                    From &ldquo;new lead&rdquo; to &ldquo;decision&rdquo; — one clear journey bar
-                    tells you exactly where every conversation stands.
-                  </div>
-                  <StagePipeline />
-                </BentoCard>
-              </Reveal>
-
-              <Reveal className="lp-b-span3" delay={0.1}>
-                <BentoCard span={6}>
-                  <span className="lp-bento-icon"><IconPhone /></span>
-                  <div className="lp-bento-title">A journal for every call</div>
-                  <div className="lp-bento-body">
-                    Who you talked to, what was said, how you felt after. Next Sunday,
-                    you&apos;ll have receipts.
-                  </div>
-                </BentoCard>
-              </Reveal>
-
-              <Reveal className="lp-b-span3" delay={0.2}>
-                <BentoCard span={6}>
-                  <span className="lp-bento-icon"><IconFamily /></span>
-                  <div className="lp-bento-title">Rate the family separately</div>
-                  <div className="lp-bento-body">
-                    Sometimes the person is lovely and the family is a red-flag factory.
-                    Eight dimensions, five stars each. You&apos;ll know.
-                  </div>
-                </BentoCard>
-              </Reveal>
-
-              <Reveal className="lp-b-span3" delay={0.3}>
-                <BentoCard span={6}>
-                  <span className="lp-bento-icon"><IconCompare /></span>
-                  <div className="lp-bento-title">Decision Matrix, for D-day</div>
-                  <div className="lp-bento-body">
-                    Compare up to 3 prospects side by side on 18 dimensions. The best
-                    kundli isn&apos;t always the right answer.
-                  </div>
-                </BentoCard>
-              </Reveal>
+              {/* Right rail: the feature index */}
+              <div className="lp-feat-list">
+                {[
+                  {
+                    n: '02', icon: <IconDoc />, title: <>AI reads biodatas so you don&apos;t have to</>,
+                    body: <>Drop a PDF, Word doc, or a photo from WhatsApp. In 30 seconds every
+                      field is filled — name, age, family, kundli details, the works.</>,
+                  },
+                  {
+                    n: '03', icon: <IconTarget />, title: <>A 5-step journey, zero &ldquo;umm, let me check&rdquo;</>,
+                    body: <>From &ldquo;new lead&rdquo; to &ldquo;decision&rdquo; — one clear journey bar
+                      tells you exactly where every conversation stands.</>,
+                    widget: <div style={{ marginTop: 18, maxWidth: 380 }}><StagePipeline /></div>,
+                  },
+                  {
+                    n: '04', icon: <IconPhone />, title: <>A journal for every call</>,
+                    body: <>Who you talked to, what was said, how you felt after. Next Sunday,
+                      you&apos;ll have receipts.</>,
+                  },
+                  {
+                    n: '05', icon: <IconFamily />, title: <>Rate the family separately</>,
+                    body: <>Sometimes the person is lovely and the family is a red-flag factory.
+                      Eight dimensions, five stars each. You&apos;ll know.</>,
+                  },
+                  {
+                    n: '06', icon: <IconCompare />, title: <>Decision Matrix, for D-day</>,
+                    body: <>Compare up to 3 prospects side by side on 18 dimensions. The best
+                      kundli isn&apos;t always the right answer.</>,
+                  },
+                ].map((f, i) => (
+                  <Reveal key={f.n} delay={i * 0.07}>
+                    <div className="lp-feat-row">
+                      <span className="lp-feat-num">{f.n}</span>
+                      <div>
+                        <h3 className="lp-feat-title">{f.title}</h3>
+                        <p className="lp-feat-body">{f.body}</p>
+                        {f.widget}
+                      </div>
+                      <span className="lp-feat-mark">
+                        <span className="lp-feat-mark-icon">{f.icon}</span>
+                        <span className="lp-feat-mark-arrow">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </span>
+                      </span>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
             </div>
           </div>
         </section>
