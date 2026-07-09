@@ -163,6 +163,9 @@ export interface UserProfile {
   razorpayPaymentId?: string;
   // Compare trial — set (once) the first time the user opens Compare
   trialStartedAt?: number;
+  // Version of the scoring engine that produced this user's stored prospect
+  // scores. When it lags SCORING_VERSION, scores are recomputed once on load.
+  scoringVersion?: number;
   createdAt: number;
   updatedAt: number;
 }

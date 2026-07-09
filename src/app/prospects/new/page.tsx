@@ -306,7 +306,10 @@ export default function NewProspectPage() {
     try {
       const gunaScore =
         profile.nakshatra >= 0 && form.nakshatra >= 0
-          ? calculateGunaScore(profile.nakshatra, form.nakshatra)
+          ? calculateGunaScore(
+              profile.nakshatra, form.nakshatra,
+              profile.rashiIndex, form.rashiIndex >= 0 ? form.rashiIndex : undefined,
+            )
           : null;
 
       const prospectForCompat = {

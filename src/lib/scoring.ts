@@ -1,28 +1,7 @@
-import { UserProfile, Prospect, NAKSHATRAS } from '@/types';
+import { UserProfile, Prospect } from '@/types';
+import { calculateAshtakoot } from './kundli';
 
 // ─── Lookup tables ────────────────────────────────────────────────────────────
-
-const GANA_MAP: Record<number, string> = {
-  0: 'Deva', 1: 'Manushya', 2: 'Deva', 3: 'Manushya', 4: 'Deva', 5: 'Rakshasa',
-  6: 'Deva', 7: 'Deva', 8: 'Rakshasa', 9: 'Rakshasa', 10: 'Manushya', 11: 'Manushya',
-  12: 'Deva', 13: 'Rakshasa', 14: 'Deva', 15: 'Rakshasa', 16: 'Deva', 17: 'Rakshasa',
-  18: 'Rakshasa', 19: 'Manushya', 20: 'Manushya', 21: 'Deva', 22: 'Deva', 23: 'Rakshasa',
-  24: 'Manushya', 25: 'Manushya', 26: 'Deva',
-};
-
-const NADI_MAP: Record<number, string> = {
-  0: 'Aadi', 1: 'Madhya', 2: 'Antya', 3: 'Antya', 4: 'Madhya', 5: 'Aadi',
-  6: 'Aadi', 7: 'Madhya', 8: 'Antya', 9: 'Antya', 10: 'Madhya', 11: 'Aadi',
-  12: 'Aadi', 13: 'Madhya', 14: 'Antya', 15: 'Antya', 16: 'Madhya', 17: 'Aadi',
-  18: 'Aadi', 19: 'Madhya', 20: 'Antya', 21: 'Antya', 22: 'Madhya', 23: 'Aadi',
-  24: 'Aadi', 25: 'Madhya', 26: 'Antya',
-};
-
-const VARNA_MAP: Record<number, number> = {
-  0: 3, 1: 0, 2: 1, 3: 3, 4: 3, 5: 2, 6: 3, 7: 3, 8: 0, 9: 0, 10: 3, 11: 1,
-  12: 3, 13: 1, 14: 3, 15: 3, 16: 0, 17: 0, 18: 0, 19: 3, 20: 1, 21: 3, 22: 0,
-  23: 2, 24: 2, 25: 1, 26: 3,
-};
 
 const INCOME_ORDER: Record<string, number> = {
   '< 5 LPA': 0, '5-10': 1, '10-20': 2, '20-35': 3, '35-50': 4, '50+': 5,
@@ -59,130 +38,26 @@ export interface KootScore {
 
 // ─── Ashtakoot breakdown ──────────────────────────────────────────────────────
 
-export function getAshtakootBreakdown(userNakshatra: number, prospectNakshatra: number): KootScore[] {
-  const u = userNakshatra;
-  const p = prospectNakshatra;
-  const uName = NAKSHATRAS[u];
-  const pName = NAKSHATRAS[p];
-  const diff = Math.abs(u - p);
-
-  // 1. Varna (1 pt)
-  const varnaScore = VARNA_MAP[p] >= VARNA_MAP[u] ? 1 : 0;
-  const varnaLabels = ['Shudra', 'Vaishya', 'Kshatriya', 'Brahmin'];
-
-  // 2. Vashya (2 pts)
-  const vashyaScore = diff <= 2 || diff >= 25 ? 2 : diff <= 6 ? 1 : 0;
-
-  // 3. Tara (3 pts)
-  const taraVal = ((p - u + 27) % 27) % 9;
-  const taraScore = [1, 3, 5, 7].includes(taraVal) ? 3 : taraVal === 0 ? 1.5 : 0;
-  const taraFriendly = [1, 3, 5, 7].includes(taraVal) ? 'Favourable' : taraVal === 0 ? 'Neutral' : 'Unfavourable';
-
-  // 4. Yoni (4 pts)
-  const yoniScore = diff === 0 ? 4 : diff <= 2 ? 3 : diff <= 6 ? 2 : 0;
-
-  // 5. Graha Maitri (5 pts)
-  const gmScore = diff <= 3 ? 5 : diff <= 6 ? 3 : 1;
-
-  // 6. Gana (6 pts)
-  const uGana = GANA_MAP[u];
-  const pGana = GANA_MAP[p];
-  let ganaScore = 0;
-  let ganaDetail = '';
-  if (uGana === pGana) { ganaScore = 6; ganaDetail = 'Same Gana — ideal match'; }
-  else if (uGana === 'Deva' && pGana === 'Manushya') { ganaScore = 5; ganaDetail = 'Deva + Manushya — compatible'; }
-  else if (uGana === 'Manushya' && pGana === 'Deva') { ganaScore = 1; ganaDetail = 'Manushya + Deva — weak match'; }
-  else { ganaScore = 0; ganaDetail = `${uGana} + ${pGana} — incompatible`; }
-
-  // 7. Bhakut (7 pts)
-  const bhakutPos = ((p - u + 27) % 27) + 1;
-  const bhakutBad = [6, 8, 9, 12].includes(bhakutPos);
-  const bhakutScore = bhakutBad ? 0 : 7;
-  const bhakutDetail = bhakutBad
-    ? `Position ${bhakutPos} — inauspicious Bhakut dosha`
-    : `Position ${bhakutPos} — auspicious`;
-
-  // 8. Nadi (8 pts)
-  const uNadi = NADI_MAP[u];
-  const pNadi = NADI_MAP[p];
-  const nadiScore = uNadi !== pNadi ? 8 : 0;
-  const nadiDetail = uNadi !== pNadi ? `${uNadi} + ${pNadi} — different Nadi (good)` : `Both ${uNadi} Nadi — Nadi dosha`;
-
-  const status = (pts: number, max: number): MatchStatus =>
-    pts === max ? 'full' : pts > 0 ? 'partial' : 'miss';
-
-  return [
-    {
-      name: 'Varna',
-      meaning: 'Spiritual compatibility',
-      pts: varnaScore, maxPts: 1,
-      status: status(varnaScore, 1),
-      userVal: varnaLabels[VARNA_MAP[u]],
-      prospectVal: varnaLabels[VARNA_MAP[p]],
-      detail: varnaScore === 1 ? "Prospect's Varna is equal or higher" : "Prospect's Varna is lower",
-    },
-    {
-      name: 'Vashya',
-      meaning: 'Mutual attraction',
-      pts: vashyaScore, maxPts: 2,
-      status: status(vashyaScore, 2),
-      userVal: uName, prospectVal: pName,
-      detail: vashyaScore === 2 ? 'Strong mutual attraction' : vashyaScore === 1 ? 'Moderate attraction' : 'Weak attraction',
-    },
-    {
-      name: 'Tara',
-      meaning: 'Birth star compatibility',
-      pts: taraScore, maxPts: 3,
-      status: status(taraScore, 3),
-      userVal: uName, prospectVal: pName,
-      detail: `Tara position ${taraVal} — ${taraFriendly}`,
-    },
-    {
-      name: 'Yoni',
-      meaning: 'Biological compatibility',
-      pts: yoniScore, maxPts: 4,
-      status: status(yoniScore, 4),
-      userVal: uName, prospectVal: pName,
-      detail: yoniScore === 4 ? 'Same Yoni — perfect' : yoniScore >= 2 ? 'Friendly Yoni' : 'Unfriendly Yoni',
-    },
-    {
-      name: 'Graha Maitri',
-      meaning: 'Planetary friendship',
-      pts: gmScore, maxPts: 5,
-      status: status(gmScore, 5),
-      userVal: uName, prospectVal: pName,
-      detail: gmScore === 5 ? 'Strong planetary bond' : gmScore === 3 ? 'Neutral planetary bond' : 'Weak planetary bond',
-    },
-    {
-      name: 'Gana',
-      meaning: 'Temperament match',
-      pts: ganaScore, maxPts: 6,
-      status: status(ganaScore, 6),
-      userVal: uGana, prospectVal: pGana,
-      detail: ganaDetail,
-    },
-    {
-      name: 'Bhakut',
-      meaning: 'Emotional compatibility',
-      pts: bhakutScore, maxPts: 7,
-      status: status(bhakutScore, 7),
-      userVal: uName, prospectVal: pName,
-      detail: bhakutDetail,
-    },
-    {
-      name: 'Nadi',
-      meaning: 'Health & lineage',
-      pts: nadiScore, maxPts: 8,
-      status: status(nadiScore, 8),
-      userVal: uNadi, prospectVal: pNadi,
-      detail: nadiDetail,
-    },
-  ];
+// Both the stored guna score and the on-screen breakdown come from the single
+// Ashtakoot engine in kundli.ts, so the total always equals the sum of the 8
+// kootas shown to the user. Pass the Moon-sign (rashi) index wherever available;
+// the koots that depend on rashi (Varna, Vashya, Graha Maitri, Bhakut) need it.
+export function getAshtakootBreakdown(
+  userNakshatra: number,
+  prospectNakshatra: number,
+  userRashi?: number,
+  prospectRashi?: number,
+): KootScore[] {
+  return calculateAshtakoot(userNakshatra, prospectNakshatra, userRashi, prospectRashi).koots;
 }
 
-export function calculateGunaScore(userNakshatra: number, prospectNakshatra: number): number {
-  const total = getAshtakootBreakdown(userNakshatra, prospectNakshatra)
-    .reduce((sum, k) => sum + k.pts, 0);
+export function calculateGunaScore(
+  userNakshatra: number,
+  prospectNakshatra: number,
+  userRashi?: number,
+  prospectRashi?: number,
+): number {
+  const { total } = calculateAshtakoot(userNakshatra, prospectNakshatra, userRashi, prospectRashi);
   return Math.round(Math.min(36, Math.max(0, total)));
 }
 
