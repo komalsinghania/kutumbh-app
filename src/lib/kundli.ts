@@ -53,12 +53,16 @@ const NAKSHATRA_LORDS = [
 ];
 
 // ── Lahiri Ayanamsa ───────────────────────────────────────────────────────────
-// Lahiri ayanamsa formula: 23°15' for J2000.0, precessing at ~50.3"/year
+// Lahiri (Chitrapaksha) ayanamsa, anchored to the ICRC/Swiss-Ephemeris standard
+// value of exactly 23.853222° at J2000.0 (JD 2451545.0) and advanced by
+// precession (~50.29"/year → ~1.3969°/century). Using the precise J2000 anchor
+// rather than a rounded 23.85° keeps placements correct near nakshatra/rashi
+// boundaries. For reference this yields ~24°07′ around 2026, matching published
+// Lahiri values.
 function lahiriAyanamsa(julianDate: number): number {
   const J2000 = 2451545.0;
   const T = (julianDate - J2000) / 36525.0; // Julian centuries from J2000
-  // IAU precession rate ~50.2796"/year → degrees/century = 50.2796*100/3600
-  const ayanamsa = 23.853 + 1.396819 * T + 0.0003086 * T * T;
+  const ayanamsa = 23.853222 + 1.396819 * T + 0.0003086 * T * T;
   return ayanamsa;
 }
 
@@ -114,16 +118,19 @@ export function calculateKundli(birth: BirthData): KundliResult {
 
 // ── Ashtakoot tables ──────────────────────────────────────────────────────────
 
-// Varna: 0=Brahmin, 1=Kshatriya, 2=Vaishya, 3=Shudra
-const VARNA: number[] = [
-  3, 0, 3, 3, 1, 3, 2, 0, 3, 1, 2, 1,
-  2, 1, 1, 0, 2, 0, 2, 2, 2, 0, 3, 3,
-  0, 0, 0,
-];
+// Varna: 0=Brahmin, 1=Kshatriya, 2=Vaishya, 3=Shudra (0 = highest).
+// Ashtakoot Varna is a function of the Moon SIGN (rashi), not the nakshatra:
+//   Brahmin  = Cancer, Scorpio, Pisces
+//   Kshatriya= Aries, Leo, Sagittarius
+//   Vaishya  = Taurus, Virgo, Capricorn
+//   Shudra   = Gemini, Libra, Aquarius
+// Indexed by rashi 0-11 (Aries…Pisces).
+const VARNA_RASHI: number[] = [1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0];
 
 // Vashya: 0=Chatushpad, 1=Manav, 2=Vanchar, 3=Jalchar, 4=Keet
-// Based on rashi (0-11)
-const VASHYA_RASHI: number[] = [0, 0, 1, 3, 2, 1, 1, 4, 0, 2, 1, 3];
+// Based on rashi (0-11). Split signs use their first-half designation:
+// Sagittarius (1st half human) → Manav; Capricorn (1st half quadruped) → Chatushpad.
+const VASHYA_RASHI: number[] = [0, 0, 1, 3, 2, 1, 1, 4, 1, 0, 1, 3];
 
 // Compatibility table for Vashya [a][b] = points (0, 0.5, 1, 1.5, 2)
 const VASHYA_TABLE: number[][] = [
@@ -134,23 +141,32 @@ const VASHYA_TABLE: number[][] = [
   [0, 0, 1, 0, 2], // Keet
 ];
 
-// Gana: 0=Deva, 1=Manav, 2=Rakshasa
+// Gana: 0=Deva, 1=Manav (Manushya), 2=Rakshasa. Indexed by nakshatra 0-26.
+//   Deva:     Ashwini, Mrigashira, Punarvasu, Pushya, Hasta, Swati, Anuradha, Shravana, Revati
+//   Manushya: Bharani, Rohini, Ardra, P/U Phalguni, P/U Ashadha, P/U Bhadrapada
+//   Rakshasa: Krittika, Ashlesha, Magha, Chitra, Vishakha, Jyeshtha, Mula, Dhanishta, Shatabhisha
 const GANA: number[] = [
-  0, 2, 0, 0, 0, 2, 0, 0, 2, 2, 2, 0,
-  0, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2,
-  1, 0, 0,
+  0, 1, 2, 1, 0, 1, 0, 0, 2, 2, 1, 1,
+  0, 2, 0, 2, 0, 2, 2, 1, 1, 0, 2, 2,
+  1, 1, 0,
 ];
 
+// [bride/user gana][groom/prospect gana]. Extremes are agreed (same = 6,
+// Deva↔Rakshasa = 0); Deva↔Manushya = 5 and Manushya↔Rakshasa = 1 follow the
+// widely reproduced simplified convention.
 const GANA_TABLE: number[][] = [
   [6, 5, 0], // Deva
-  [5, 6, 0], // Manav
-  [0, 0, 6], // Rakshasa
+  [5, 6, 1], // Manav
+  [0, 1, 6], // Rakshasa
 ];
 
-// Nadi: 0=Aadi (Vata), 1=Madhya (Pitta), 2=Antya (Kapha)
+// Nadi: 0=Aadi (Vata), 1=Madhya (Pitta), 2=Antya (Kapha). Indexed by nakshatra 0-26.
+//   Aadi:   Ashwini, Ardra, Punarvasu, U Phalguni, Hasta, Jyeshtha, Mula, Shatabhisha, P Bhadrapada
+//   Madhya: Bharani, Mrigashira, Pushya, P Phalguni, Chitra, Anuradha, P Ashadha, Dhanishta, U Bhadrapada
+//   Antya:  Krittika, Rohini, Ashlesha, Magha, Swati, Vishakha, U Ashadha, Shravana, Revati
 const NADI: number[] = [
-  0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2,
-  0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2,
+  0, 1, 2, 2, 1, 0, 0, 1, 2, 2, 1, 0,
+  0, 1, 2, 2, 1, 0, 0, 1, 2, 2, 1, 0,
   0, 1, 2,
 ];
 
@@ -158,9 +174,9 @@ const NADI: number[] = [
 // 0=Horse, 1=Elephant, 2=Sheep, 3=Snake, 4=Dog, 5=Cat, 6=Rat, 7=Cow,
 // 8=Buffalo, 9=Tiger, 10=Hare/Deer, 11=Monkey, 12=Mongoose, 13=Lion
 const YONI: number[] = [
-  0, 1, 2, 3, 3, 4, 5, 6, 7, 6, 8, 7,
-  9, 9, 10, 10, 11, 11, 4, 12, 5, 2, 0, 1,
-  13, 8, 12,
+  0, 1, 2, 3, 3, 4, 5, 2, 5, 6, 6, 7,
+  8, 9, 8, 9, 10, 10, 4, 11, 12, 11, 13, 0,
+  13, 7, 1,
 ];
 
 // Yoni compatibility: same yoni = 4, friendly = 3, neutral = 2, enemy = 1, opposite = 0
@@ -187,11 +203,13 @@ function yoniScore(a: number, b: number): number {
 const RASHI_LORD: number[] = [2, 5, 4, 3, 1, 4, 5, 2, 6, 7, 7, 6];
 // 1=Sun, 2=Mars, 3=Moon, 4=Mercury, 5=Venus, 6=Jupiter, 7=Saturn
 
+// Classical Parashari natural (naisargika) friendship. Anything not listed as a
+// friend or enemy is neutral. Keyed by planet code (1=Sun … 7=Saturn).
 const PLANET_FRIENDS: Record<number, number[]> = {
-  1: [3, 2, 6],      // Sun: Moon, Mars, Jupiter
+  1: [2, 3, 6],      // Sun: Mars, Moon, Jupiter
   2: [1, 3, 6],      // Mars: Sun, Moon, Jupiter
   3: [1, 4],         // Moon: Sun, Mercury
-  4: [1, 5, 7],      // Mercury: Sun, Venus, Saturn
+  4: [1, 5],         // Mercury: Sun, Venus
   5: [4, 7],         // Venus: Mercury, Saturn
   6: [1, 2, 3],      // Jupiter: Sun, Mars, Moon
   7: [4, 5],         // Saturn: Mercury, Venus
@@ -199,47 +217,42 @@ const PLANET_FRIENDS: Record<number, number[]> = {
 
 const PLANET_ENEMIES: Record<number, number[]> = {
   1: [5, 7],         // Sun: Venus, Saturn
-  2: [4, 7],         // Mars: Mercury, Saturn
-  3: [2],            // Moon: none/Mars (neutral in some systems)
-  4: [3, 2],         // Mercury: Moon, Mars (but Moon is neutral)
-  5: [1, 3, 2],      // Venus: Sun, Moon, Mars (Moon neutral in some)
-  6: [4, 5, 7],      // Jupiter: Mercury, Venus, Saturn
-  7: [1, 3, 2],      // Saturn: Sun, Moon, Mars
+  2: [4],            // Mars: Mercury
+  3: [],             // Moon: no natural enemies
+  4: [3],            // Mercury: Moon
+  5: [1, 3],         // Venus: Sun, Moon
+  6: [4, 5],         // Jupiter: Mercury, Venus
+  7: [1, 2, 3],      // Saturn: Sun, Mars, Moon
 };
+
+type Relation = 'friend' | 'enemy' | 'neutral';
+function planetRelation(a: number, b: number): Relation {
+  if ((PLANET_FRIENDS[a] ?? []).includes(b)) return 'friend';
+  if ((PLANET_ENEMIES[a] ?? []).includes(b)) return 'enemy';
+  return 'neutral';
+}
 
 function gruhaMaitriScore(rashiA: number, rashiB: number): number {
   const lordA = RASHI_LORD[rashiA];
   const lordB = RASHI_LORD[rashiB];
   if (lordA === lordB) return 5;
-  const aFriends = PLANET_FRIENDS[lordA] ?? [];
-  const bFriends = PLANET_FRIENDS[lordB] ?? [];
-  const aEnemies = PLANET_ENEMIES[lordA] ?? [];
-  const bEnemies = PLANET_ENEMIES[lordB] ?? [];
-  const aLikesB = aFriends.includes(lordB);
-  const bLikesA = bFriends.includes(lordA);
-  const aHatesB = aEnemies.includes(lordB);
-  const bHatesA = bEnemies.includes(lordA);
-  if (aLikesB && bLikesA) return 5;
-  if (aLikesB && !bHatesA) return 4;
-  if (!aHatesB && bLikesA) return 4;
-  if (!aHatesB && !bHatesA) return 3;
-  if ((aHatesB && bLikesA) || (aLikesB && bHatesA)) return 1;
-  return 0;
+  const rA = planetRelation(lordA, lordB); // A's lord toward B's lord
+  const rB = planetRelation(lordB, lordA); // B's lord toward A's lord
+  if (rA === 'friend' && rB === 'friend') return 5;
+  if ((rA === 'friend' && rB === 'neutral') || (rA === 'neutral' && rB === 'friend')) return 4;
+  if (rA === 'neutral' && rB === 'neutral') return 3;
+  if ((rA === 'friend' && rB === 'enemy') || (rA === 'enemy' && rB === 'friend')) return 1;
+  if ((rA === 'neutral' && rB === 'enemy') || (rA === 'enemy' && rB === 'neutral')) return 0.5;
+  return 0; // mutual enemies
 }
 
-// Bhakut: based on rashi distance
+// Bhakut/Rashikoot: purely the angular relationship between the two Moon signs.
+// Auspicious 1/1, 1/7, 3/11, 4/10 → 7 points. The three dosha axes score 0:
+//   2/12 (Dwirdwadash), 5/9 (Nav-Pancham), 6/8 (Shadashtak).
 function bhakutScore(rashiA: number, rashiB: number): number {
-  const diff = Math.abs(rashiA - rashiB);
-  const norm = Math.min(diff, 12 - diff);
-  // Bad rashis: 6/8 (shadashtak) = 0, 5/9 (pancha-nav) = 0 in some systems
-  // Good: same rashi = 7, 1/7 = 7
-  if (rashiA === rashiB) return 7;
-  if (diff === 6) return 0; // 7th rashi (opposite)
-  if (diff === 1 || diff === 11) return 7; // adjacent
-  if (diff === 2 || diff === 10) return 7;
-  if (diff === 3 || diff === 9) return 7;
-  if (diff === 4 || diff === 8) return 0; // 5/9 - bad bhakut
-  if (diff === 5 || diff === 7) return 0; // 6/8 - shadashtak dosha
+  const raw = Math.abs(rashiA - rashiB);
+  const d = Math.min(raw, 12 - raw); // normalized separation 0..6
+  if (d === 1 || d === 4 || d === 5) return 0; // 2/12, 5/9, 6/8 doshas
   return 7;
 }
 
@@ -287,9 +300,9 @@ export function calculateAshtakoot(userNakshatra: number, prospectNakshatra: num
   const uR = userRashi ?? Math.floor(uN / (27 / 12));
   const pR = prospectRashi ?? Math.floor(pN / (27 / 12));
 
-  // 1. Varna (1 pt)
-  const varnaU = VARNA[uN];
-  const varnaP = VARNA[pN];
+  // 1. Varna (1 pt) — derived from Moon sign (rashi), not nakshatra
+  const varnaU = VARNA_RASHI[uR % 12];
+  const varnaP = VARNA_RASHI[pR % 12];
   const varnaNames = ['Brahmin', 'Kshatriya', 'Vaishya', 'Shudra'];
   const varnaPts = varnaU <= varnaP ? 1 : 0;
   const varnaKoot: KootDetail = {
@@ -370,8 +383,9 @@ export function calculateAshtakoot(userNakshatra: number, prospectNakshatra: num
   const ganaP = GANA[pN];
   const ganaNames = ['Deva', 'Manav', 'Rakshasa'];
   const ganaPts = GANA_TABLE[ganaU][ganaP];
-  const ganaDosha = (ganaU === 0 && ganaP === 2) || (ganaU === 2 && ganaP === 0) ||
-                    (ganaU === 1 && ganaP === 2) || (ganaU === 2 && ganaP === 1);
+  // True Gana dosha is only the Deva↔Rakshasa clash (0 points). A Manushya↔
+  // Rakshasa pairing is a weaker mismatch (1 point), not a full dosha.
+  const ganaDosha = (ganaU === 0 && ganaP === 2) || (ganaU === 2 && ganaP === 0);
   const ganaKoot: KootDetail = {
     name: 'Gana',
     meaning: 'Temperament match',
@@ -421,10 +435,10 @@ export function calculateAshtakoot(userNakshatra: number, prospectNakshatra: num
   const total = Math.round(koots.reduce((s, k) => s + k.pts, 0));
 
   let interpretation: string;
-  if (total >= 32) interpretation = 'Excellent match — highly auspicious';
-  else if (total >= 24) interpretation = 'Good match — recommended';
-  else if (total >= 18) interpretation = 'Average match — acceptable';
-  else interpretation = 'Below average — consult a pandit';
+  if (total >= 33) interpretation = 'Excellent match — highly auspicious';
+  else if (total >= 25) interpretation = 'Very good match — recommended';
+  else if (total >= 18) interpretation = 'Acceptable match — average';
+  else interpretation = 'Below 18 — not traditionally recommended';
 
   return {
     koots,

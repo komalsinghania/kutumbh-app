@@ -319,7 +319,10 @@ export default function ProspectDetailPage() {
       };
       // Recompute scores from the edited values
       const gunaScore = profile.nakshatra >= 0 && nakshatra !== undefined
-        ? calculateGunaScore(profile.nakshatra, nakshatra)
+        ? calculateGunaScore(
+            profile.nakshatra, nakshatra,
+            profile.rashiIndex, f.rashiIndex >= 0 ? f.rashiIndex : undefined,
+          )
         : prospect.gunaScore ?? null;
       const compatScore = calculateCompatScore(profile, { ...prospect, ...base } as Prospect);
       const payload = { ...base, gunaScore, compatScore };

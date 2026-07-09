@@ -43,6 +43,26 @@ export async function saveUserProfile(uid: string, data: Partial<UserProfile>): 
   }
 }
 
+// Bump whenever the Ashtakoot / compatibility scoring logic changes, so every
+// user's stored scores are recomputed once on their next load.
+//   v2 — corrected Ashtakoot tables (Gana, Nadi, Yoni, Bhakut, Varna, Vashya,
+//        Graha Maitri) and unified the guna engine so the saved total matches
+//        the displayed 8-koota breakdown.
+export const SCORING_VERSION = 2;
+
+// One-time, idempotent recompute triggered on load. If the profile's stamped
+// scoringVersion is behind SCORING_VERSION, recompute all prospect scores and
+// stamp the new version so it runs at most once per engine change.
+export async function recalcScoresIfStale(uid: string): Promise<number> {
+  const profile = await getUserProfile(uid);
+  if (!profile) return 0;
+  if (profile.scoringVersion === SCORING_VERSION) return 0;
+  const updated = await recalcAllProspectScores(uid);
+  await updateDoc(doc(db, 'users', uid), { scoringVersion: SCORING_VERSION, updatedAt: Date.now() });
+  console.log('[firestore] recalcScoresIfStale | bumped to v' + SCORING_VERSION + ', recomputed', updated);
+  return updated;
+}
+
 // Recompute gunaScore + compatScore for EVERY prospect against the current
 // profile. Call after preference/profile changes so stored scores stay correct.
 // Reads the persisted profile internally so callers can't pass a stale copy.
@@ -62,7 +82,7 @@ export async function recalcAllProspectScores(uid: string): Promise<number> {
     const p = { id: d.id, ...d.data() } as Prospect;
     const gunaScore =
       profile.nakshatra >= 0 && p.nakshatra !== undefined && p.nakshatra >= 0
-        ? calculateGunaScore(profile.nakshatra, p.nakshatra)
+        ? calculateGunaScore(profile.nakshatra, p.nakshatra, profile.rashiIndex, p.rashiIndex)
         : null;
     const compatScore = calculateCompatScore(profile, p);
     batch.update(d.ref, { gunaScore, compatScore, updatedAt: now });

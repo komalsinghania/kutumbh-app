@@ -1,10 +1,10 @@
 ﻿'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/lib/auth-context';
-import { subscribeToProspects, saveUserProfile } from '@/lib/firestore';
+import { subscribeToProspects, saveUserProfile, recalcScoresIfStale, SCORING_VERSION } from '@/lib/firestore';
 import { Prospect, ProspectStage } from '@/types';
 import { hasCompareAccess, isTrialActive, isTrialExpired, trialDaysLeft, trialEndsAt } from '@/lib/trial';
 import TrialStartedModal from '@/components/TrialStartedModal';
@@ -270,6 +270,19 @@ export default function DashboardPage() {
     const u1 = subscribeToProspects(user.uid, setProspects);
     return () => { u1(); };
   }, [user]);
+
+  // One-time recompute after a scoring-engine change: if this user's stored
+  // scores predate the current SCORING_VERSION, recompute them all once. The
+  // prospects subscription above picks up the updated scores automatically.
+  const recalcRan = useRef(false);
+  useEffect(() => {
+    if (!user || !profile || recalcRan.current) return;
+    if (profile.scoringVersion === SCORING_VERSION) return;
+    recalcRan.current = true;
+    recalcScoresIfStale(user.uid)
+      .then(() => refreshProfile())
+      .catch(err => console.error('[dashboard] recalcScoresIfStale failed', err));
+  }, [user, profile, refreshProfile]);
 
   useEffect(() => {
     if (prospects.length > 0) {
@@ -1178,7 +1191,7 @@ export default function DashboardPage() {
                         </div>
                         {expanded.has(p.id) && hasProfile && p.nakshatra !== undefined && (
                           <div style={{ padding: '0 16px 16px', borderTop: '1px solid #f0ebe2' }}>
-                            <AshtakootBreakdown koots={getAshtakootBreakdown(profile.nakshatra, p.nakshatra)} total={p.gunaScore ?? 0} />
+                            <AshtakootBreakdown koots={getAshtakootBreakdown(profile.nakshatra, p.nakshatra, profile.rashiIndex, p.rashiIndex)} total={p.gunaScore ?? 0} />
                           </div>
                         )}
                       </div>
