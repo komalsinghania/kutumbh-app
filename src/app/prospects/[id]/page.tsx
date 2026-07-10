@@ -16,7 +16,7 @@ import { calculateKundli } from '@/lib/kundli';
 import { track } from '@/lib/analytics';
 import { getCityByName } from '@/lib/indian-cities';
 import {
-  Prospect, Note, ProspectStage, STAGE_LABELS, NAKSHATRAS, HOBBIES,
+  Prospect, Note, ProspectStage, ProspectDecision, STAGE_LABELS, NAKSHATRAS, HOBBIES,
   ConversationLog, Flag, FamilyScorecard, FamilyScorecardKey,
   FAMILY_SCORECARD_DIMENSIONS, MeetingData, MeetingRecord, MeetingDimensionKey,
   POST_MEETING_DIMENSIONS,
@@ -45,7 +45,7 @@ function meetingAvg(r: MeetingRecord): number | null {
 }
 
 const JOURNEY_STAGES: ProspectStage[] = [
-  'new', 'call_done', 'meeting_fixed', 'met',
+  'new', 'kundli_matched', 'call_done', 'meeting_fixed',
 ];
 
 const DECISION_STAGES: ProspectStage[] = ['interested', 'on_hold', 'rejected'];
@@ -57,15 +57,25 @@ const DECISION_INFO: Record<string, { label: string; icon: string; color: string
 };
 
 const JOURNEY_LABELS: Record<string, string> = {
-  new: 'New', photo_exchanged: 'Photo', kundli_sent: 'Kundli',
-  kundli_matched: 'Match', call_done: 'Call', family_call: 'Family',
-  meeting_fixed: 'Meet', met: 'Met', interested: 'Interested',
+  new: 'New', kundli_matched: 'Match', call_done: 'Call',
+  meeting_fixed: 'Meet', interested: 'Interested',
   on_hold: 'On Hold', rejected: 'Rejected',
 };
 
 const SOURCE_OPTIONS = [
   'Matrimonial Website', 'Relative', 'Family Friend', 'Pandit ji', 'Community Event', 'Other',
 ];
+
+// Green flag glyph — used wherever a green flag is represented (replaces the
+// old green-heart emoji so green matches the red 🚩 flag metaphor).
+function GreenFlagIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ verticalAlign: '-2px', flexShrink: 0 }}>
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="#2D6B4F" stroke="#2D6B4F" strokeWidth="1.6" strokeLinejoin="round"/>
+      <line x1="4" y1="22" x2="4" y2="15" stroke="#2D6B4F" strokeWidth="1.8" strokeLinecap="round"/>
+    </svg>
+  );
+}
 
 // ── Overview display components (top-level so children don't remount on render) ─
 
@@ -365,12 +375,16 @@ export default function ProspectDetailPage() {
 
   const changeStage = async (stage: ProspectStage) => {
     if (!user || !prospect) return;
-    await updateProspect(user.uid, id, { stage });
-    setProspect(p => p ? { ...p, stage } : p);
+    const isDecision = stage === 'interested' || stage === 'on_hold' || stage === 'rejected';
+    // Record a decision in its own field so it persists even after the prospect
+    // is later moved back to a process stage. Process-stage moves never clear it.
+    const patch: Partial<Prospect> = isDecision ? { stage, decision: stage as ProspectDecision } : { stage };
+    await updateProspect(user.uid, id, patch);
+    setProspect(p => p ? { ...p, ...patch } : p);
     await logStageChange(user.uid, id, prospect.name, STAGE_LABELS[stage]);
     if (stage === 'call_done') setActiveTab('conversations');
-    if (stage === 'meeting_fixed' || stage === 'met') setActiveTab('meeting');
-    if (stage === 'interested' || stage === 'on_hold' || stage === 'rejected') {
+    if (stage === 'meeting_fixed') setActiveTab('meeting');
+    if (isDecision) {
       setActiveTab('decision');
       track('decision_made', { decision: stage });
     }
@@ -466,6 +480,16 @@ export default function ProspectDetailPage() {
     toast.success('Flag removed');
   };
 
+  // Clicking a preset chip toggles it: add if not yet flagged, remove if it is.
+  const handleToggleFlag = async (type: 'green' | 'red', text: string) => {
+    const existing = flags.find(f => f.text === text);
+    if (existing) {
+      await handleDeleteFlag(existing.id, existing.type);
+    } else {
+      await handleAddFlag(type, text);
+    }
+  };
+
   const handleSaveFamily = async () => {
     if (!user || !prospect) return;
     setSavingFamily(true);
@@ -557,7 +581,13 @@ export default function ProspectDetailPage() {
   const redFlags = flags.filter(f => f.type === 'red');
   const alreadyFlaggedTexts = new Set(flags.map(f => f.text));
 
-  const isMeetingStage = prospect.stage === 'meeting_fixed' || prospect.stage === 'met';
+  const isMeetingStage = prospect.stage === 'meeting_fixed';
+  // The verdict to show in the Decision tab: the persisted `decision` if present,
+  // otherwise the stage itself when the prospect is currently on a decision stage.
+  // This keeps the decision visible even after moving back to a process stage.
+  const currentDecision: ProspectDecision | undefined =
+    prospect.decision ?? (DECISION_STAGES.includes(prospect.stage) ? (prospect.stage as ProspectDecision) : undefined);
+  const hasDecision = !!currentDecision;
   const hasKundliData = prospect.nakshatra !== undefined && prospect.nakshatra >= 0;
   const savedMeetings = meetingLocal.meetings ?? [];
   const activeMeeting: MeetingRecord = savedMeetings[activeMeetingIdx] ?? { meetingNumber: activeMeetingIdx + 1 };
@@ -569,7 +599,7 @@ export default function ProspectDetailPage() {
     { id: 'flags', label: `Flags (${flags.length})` },
     { id: 'family', label: 'Family' },
     ...(isMeetingStage ? [{ id: 'meeting' as Tab, label: 'Meeting' }] : []),
-    ...((prospect.stage === 'met' || DECISION_STAGES.includes(prospect.stage)) ? [{ id: 'decision' as Tab, label: DECISION_STAGES.includes(prospect.stage) ? `Decision ✓` : 'Decision' }] : []),
+    ...((prospect.stage === 'meeting_fixed' || hasDecision) ? [{ id: 'decision' as Tab, label: hasDecision ? `Decision ✓` : 'Decision' }] : []),
     ...(hasKundliData ? [{ id: 'kundli' as Tab, label: 'Kundli' }] : []),
   ];
 
@@ -930,7 +960,7 @@ export default function ProspectDetailPage() {
                       }}>
                         {isDecisionPill
                           ? (isDecisionStage ? decisionInfo!.label : 'Decision')
-                          : (stage === 'met' && meetingCount > 1 ? `Met (${meetingCount})` : JOURNEY_LABELS[stage])}
+                          : (stage === 'meeting_fixed' && meetingCount > 1 ? `Meet (${meetingCount})` : JOURNEY_LABELS[stage])}
                       </span>
                     </button>
 
@@ -1002,7 +1032,7 @@ export default function ProspectDetailPage() {
                 </div>
               ) : (
                 <button
-                  onClick={() => changeStage('met')}
+                  onClick={() => changeStage('meeting_fixed')}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6,
                     padding: '8px 14px', borderRadius: 12, border: 'none',
@@ -1490,7 +1520,7 @@ export default function ProspectDetailPage() {
               <div style={{ background: 'white', borderRadius: 18, border: '1px solid #e8dece', boxShadow: '0 2px 14px rgba(0,0,0,0.05)', padding: '14px 18px', display: 'flex', gap: 0, overflow: 'hidden' }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, paddingRight: 16, borderRight: '1px solid #f0ebe2' }}>
                   <span style={{ fontSize: '2rem', fontWeight: 800, color: '#2D6B4F', fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', lineHeight: 1 }}>{greenFlags.length}</span>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#2D6B4F', textTransform: 'uppercase', letterSpacing: '0.08em' }}>💚 Green Flags</span>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#2D6B4F', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'inline-flex', alignItems: 'center', gap: 4 }}><GreenFlagIcon /> Green Flags</span>
                   <div style={{ height: 4, width: '60%', borderRadius: 2, background: 'rgba(45,107,79,0.2)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: flags.length ? `${(greenFlags.length / flags.length) * 100}%` : '0%', background: '#2D6B4F', borderRadius: 2, transition: 'width 0.5s ease' }} />
                   </div>
@@ -1509,7 +1539,7 @@ export default function ProspectDetailPage() {
             <div style={{ background: 'white', borderRadius: 18, border: '1px solid rgba(45,107,79,0.25)', boxShadow: '0 2px 14px rgba(45,107,79,0.05)', overflow: 'hidden' }}>
               <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid rgba(45,107,79,0.15)', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(45,107,79,0.04)' }}>
                 <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(45,107,79,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '0.85rem' }}>💚</span>
+                  <GreenFlagIcon size={15} />
                 </div>
                 <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#2D6B4F', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Add Green Flag</span>
               </div>
@@ -1529,13 +1559,14 @@ export default function ProspectDetailPage() {
                       {cat.flags.map(f => {
                         const already = alreadyFlaggedTexts.has(f);
                         return (
-                          <button key={f} type="button" onClick={() => !already && handleAddFlag('green', f)} disabled={already}
+                          <button key={f} type="button" onClick={() => handleToggleFlag('green', f)}
+                            title={already ? 'Click to remove' : 'Click to add'}
                             style={{
                               padding: '5px 12px', borderRadius: 20,
                               border: `1px solid ${already ? 'rgba(45,107,79,0.4)' : 'rgba(45,107,79,0.3)'}`,
                               background: already ? 'rgba(45,107,79,0.12)' : 'white',
                               color: '#2D6B4F', fontSize: '0.73rem', fontWeight: already ? 700 : 500,
-                              cursor: already ? 'default' : 'pointer', opacity: already ? 0.8 : 1,
+                              cursor: 'pointer',
                               transition: 'all 0.15s',
                             }}>
                             {already ? '✓ ' : ''}{f}
@@ -1572,13 +1603,14 @@ export default function ProspectDetailPage() {
                       {cat.flags.map(f => {
                         const already = alreadyFlaggedTexts.has(f);
                         return (
-                          <button key={f} type="button" onClick={() => !already && handleAddFlag('red', f)} disabled={already}
+                          <button key={f} type="button" onClick={() => handleToggleFlag('red', f)}
+                            title={already ? 'Click to remove' : 'Click to add'}
                             style={{
                               padding: '5px 12px', borderRadius: 20,
                               border: `1px solid ${already ? 'rgba(139,42,42,0.4)' : 'rgba(139,42,42,0.3)'}`,
                               background: already ? 'rgba(139,42,42,0.1)' : 'white',
                               color: '#8B2A2A', fontSize: '0.73rem', fontWeight: already ? 700 : 500,
-                              cursor: already ? 'default' : 'pointer', opacity: already ? 0.8 : 1,
+                              cursor: 'pointer',
                               transition: 'all 0.15s',
                             }}>
                             {already ? '✓ ' : ''}{f}
@@ -1609,7 +1641,7 @@ export default function ProspectDetailPage() {
                         color: customFlagType === type ? 'white' : (type === 'green' ? '#2D6B4F' : '#8B2A2A'),
                         fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.15s',
                       }}>
-                      {type === 'green' ? '💚 Green' : '🚩 Red'}
+                      {type === 'green' ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><GreenFlagIcon /> Green</span> : '🚩 Red'}
                     </button>
                   ))}
                 </div>
@@ -1652,7 +1684,7 @@ export default function ProspectDetailPage() {
                     }}>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: '0.9rem' }}>{f.type === 'green' ? '💚' : '🚩'}</span>
+                          <span style={{ fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center' }}>{f.type === 'green' ? <GreenFlagIcon size={15} /> : '🚩'}</span>
                           <span style={{ fontSize: '0.85rem', fontWeight: 600, color: f.type === 'green' ? '#2D6B4F' : '#8B2A2A' }}>{f.text}</span>
                           {f.isCustom && <span style={{ fontSize: '0.65rem', color: '#a89e92', background: '#f0ebe2', borderRadius: 20, padding: '1px 7px' }}>custom</span>}
                         </div>
@@ -2004,8 +2036,8 @@ export default function ProspectDetailPage() {
               </>
             )}
 
-            {/* ── Met: post-meeting feedback ── */}
-            {prospect.stage === 'met' && (
+            {/* ── Post-meeting feedback (same stage as prep) ── */}
+            {prospect.stage === 'meeting_fixed' && (
               <>
                 {/* ── Meeting selector ── */}
                 <div style={{
@@ -2381,27 +2413,27 @@ export default function ProspectDetailPage() {
         {/* ── DECISION TAB ── */}
         {activeTab === 'decision' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {isDecisionStage && (
+            {hasDecision && (
               <div style={{
-                background: 'white', borderRadius: 18, border: `1.5px solid ${DECISION_INFO[prospect.stage].border}`,
+                background: 'white', borderRadius: 18, border: `1.5px solid ${DECISION_INFO[currentDecision!].border}`,
                 boxShadow: '0 2px 14px rgba(0,0,0,0.05)', padding: '18px 18px 20px',
                 display: 'flex', alignItems: 'center', gap: 14,
               }}>
                 <div style={{
                   width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
-                  background: DECISION_INFO[prospect.stage].bg,
-                  border: `2px solid ${DECISION_INFO[prospect.stage].border}`,
+                  background: DECISION_INFO[currentDecision!].bg,
+                  border: `2px solid ${DECISION_INFO[currentDecision!].border}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.4rem', color: DECISION_INFO[prospect.stage].color,
+                  fontSize: '1.4rem', color: DECISION_INFO[currentDecision!].color,
                 }}>
-                  {DECISION_INFO[prospect.stage].icon}
+                  {DECISION_INFO[currentDecision!].icon}
                 </div>
                 <div>
-                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: DECISION_INFO[prospect.stage].color, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: DECISION_INFO[currentDecision!].color, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
                     Current Decision
                   </p>
                   <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1a1410', margin: '3px 0 0', fontFamily: 'var(--font-fraunces, Fraunces, serif)' }}>
-                    {DECISION_INFO[prospect.stage].label}
+                    {DECISION_INFO[currentDecision!].label}
                   </p>
                   <p style={{ fontSize: '0.75rem', color: '#6b5e4d', margin: '2px 0 0' }}>
                     You can change it anytime below.
@@ -2413,7 +2445,7 @@ export default function ProspectDetailPage() {
             <div style={{ background: 'white', borderRadius: 18, border: '1px solid #e8dece', boxShadow: '0 2px 14px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
               <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid #f0ebe2' }}>
                 <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-                  {isDecisionStage ? 'Change Decision' : "You've met. What's your decision?"}
+                  {hasDecision ? 'Change Decision' : "You've met. What's your decision?"}
                 </span>
               </div>
               <div style={{ padding: '16px 16px 18px', display: 'flex', gap: 10 }}>
@@ -2423,7 +2455,7 @@ export default function ProspectDetailPage() {
                   { stage: 'rejected' as const, label: 'Reject', icon: '✕', desc: 'Not the right fit' },
                 ].map(({ stage, label, icon, desc }) => {
                   const info = DECISION_INFO[stage];
-                  const isActive = prospect.stage === stage;
+                  const isActive = currentDecision === stage;
                   return (
                     <button key={stage} onClick={() => changeStage(stage)}
                       style={{

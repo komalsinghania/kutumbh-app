@@ -701,7 +701,7 @@ export default function NewProspectPage() {
               value={form.stage}
               onChange={e => set('stage', e.target.value)}
             >
-              {(['new', 'photo_exchanged', 'kundli_sent', 'kundli_matched', 'call_done', 'family_call', 'meeting_fixed', 'met', 'interested', 'on_hold', 'rejected'] as ProspectStage[]).map(s => (
+              {(['new', 'kundli_matched', 'call_done', 'meeting_fixed', 'interested', 'on_hold', 'rejected'] as ProspectStage[]).map(s => (
                 <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
               ))}
             </select>
