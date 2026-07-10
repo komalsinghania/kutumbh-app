@@ -119,7 +119,15 @@ hobbies: Array of short strings. Labels: "Hobbies", "Interests", "Likes", "Hobbi
   Return null (not []) if no hobbies are mentioned.
 familyType: "Joint" or "Nuclear"
 diet: "Pure Veg", "Jain", "Eggetarian", or "Non-Veg"
-income: output as a range string like "10-20" or "35-50" (in LPA). If exact figure given, convert to nearest range.
+income: Map the annual income to EXACTLY ONE of these buckets and output that string verbatim (these are the only allowed values):
+  "< 5 LPA"  (under 5 lakh per annum)
+  "5-10"     (5 to 10 LPA)
+  "10-20"    (10 to 20 LPA)
+  "20-35"    (20 to 35 LPA)
+  "35-50"    (35 to 50 LPA)
+  "50+"      (over 50 LPA / 50 lakh+ / any figure in crores)
+  Convert any figure to LPA first (1 crore = 100 LPA → "50+"; "₹80,000/month" = 9.6 LPA → "5-10").
+  If income is not mentioned, use null. Do NOT invent a value or output any range not in the list above.
 height: output in feet-inches format like "5'6\\"
 gender: "Male" or "Female"`;
 

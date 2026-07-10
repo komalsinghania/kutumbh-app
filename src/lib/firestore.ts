@@ -7,7 +7,7 @@ import { db } from './firebase';
 import {
   UserProfile, Prospect, Note,
   ConversationLog, Flag, FamilyScorecard, FamilyScorecardKey,
-  MeetingData, ActivityEntry, ActivityType,
+  MeetingData, ActivityEntry, ActivityType, migrateStage,
 } from '@/types';
 import { calculateGunaScore, calculateCompatScore } from './scoring';
 
@@ -16,6 +16,12 @@ function stripUndefined<T extends object>(obj: T): T {
   return Object.fromEntries(
     Object.entries(obj).filter(([, v]) => v !== undefined)
   ) as T;
+}
+
+// Normalise a prospect read from Firestore: remap any retired stage value to a
+// surviving one so the UI never receives an unknown stage.
+function normalizeProspect(p: Prospect): Prospect {
+  return { ...p, stage: migrateStage(p.stage) };
 }
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
@@ -107,7 +113,7 @@ export function subscribeToProspects(
 ): () => void {
   const q = query(collection(db, 'users', uid, 'prospects'), orderBy('createdAt', 'desc'));
   return onSnapshot(q, snap => {
-    const prospects = snap.docs.map(d => ({ id: d.id, ...d.data() } as Prospect));
+    const prospects = snap.docs.map(d => normalizeProspect({ id: d.id, ...d.data() } as Prospect));
     callback(prospects);
   });
 }
@@ -171,7 +177,7 @@ export async function deleteAllUserData(uid: string): Promise<void> {
 export async function getProspect(uid: string, prospectId: string): Promise<Prospect | null> {
   const snap = await getDoc(doc(db, 'users', uid, 'prospects', prospectId));
   if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as Prospect;
+  return normalizeProspect({ id: snap.id, ...snap.data() } as Prospect);
 }
 
 export function subscribeToNotes(

@@ -35,28 +35,41 @@ export type ProspectSource =
   | 'Pandit ji'
   | 'Community Event'
   | 'Other';
+// ── Pipeline stages ───────────────────────────────────────────────────────────
+// Four process stages (new → kundli_matched → call_done → meeting_fixed) plus a
+// three-way outcome (interested / on_hold / rejected). Older records may carry
+// retired stage values — see migrateStage() below, applied on every read.
 export type ProspectStage =
   | 'new'
-  | 'photo_exchanged'
-  | 'kundli_sent'
   | 'kundli_matched'
   | 'call_done'
-  | 'family_call'
   | 'meeting_fixed'
-  | 'met'
   | 'interested'
   | 'on_hold'
   | 'rejected';
 
+// The three terminal outcomes, also usable as a standalone `decision` value.
+export type ProspectDecision = 'interested' | 'on_hold' | 'rejected';
+
+// Stages removed in the pipeline simplification, mapped to the nearest surviving
+// stage so prospects saved under an old value still render correctly.
+const RETIRED_STAGE_MAP: Record<string, ProspectStage> = {
+  photo_exchanged: 'new',
+  kundli_sent: 'new',
+  family_call: 'call_done',
+  met: 'meeting_fixed',
+};
+
+export function migrateStage(stage: string | undefined | null): ProspectStage {
+  if (!stage) return 'new';
+  return RETIRED_STAGE_MAP[stage] ?? (stage as ProspectStage);
+}
+
 export const STAGE_LABELS: Record<ProspectStage, string> = {
   new: 'New Lead ✦',
-  photo_exchanged: 'Photos Shared 📸',
-  kundli_sent: 'Kundli Sent ⭐',
   kundli_matched: 'Kundli Matched ✅',
   call_done: 'Call Done 📞',
-  family_call: 'Family Talked 👨‍👩‍👧',
   meeting_fixed: 'Meeting Fixed 📅',
-  met: 'Met in Person 🤝',
   interested: 'Mutually Interested 💚',
   on_hold: 'On Hold ⏸',
   rejected: 'Closed ✕',
@@ -64,13 +77,9 @@ export const STAGE_LABELS: Record<ProspectStage, string> = {
 
 export const STAGE_COLORS: Record<ProspectStage, string> = {
   new: 'bg-gray-100 text-gray-700',
-  photo_exchanged: 'bg-blue-100 text-blue-700',
-  kundli_sent: 'bg-yellow-100 text-yellow-700',
   kundli_matched: 'bg-green-100 text-green-700',
   call_done: 'bg-purple-100 text-purple-700',
-  family_call: 'bg-orange-100 text-orange-700',
   meeting_fixed: 'bg-red-100 text-red-700',
-  met: 'bg-teal-100 text-teal-700',
   interested: 'bg-emerald-100 text-emerald-700',
   on_hold: 'bg-gray-200 text-gray-600',
   rejected: 'bg-red-100 text-red-500',
@@ -197,6 +206,9 @@ export interface Prospect {
   hobbies?: string[];
   source: ProspectSource;
   stage: ProspectStage;
+  // The outcome verdict, persisted independently of `stage` so it survives when
+  // the prospect is moved back to a process stage (e.g. reopened after On Hold).
+  decision?: ProspectDecision;
   gunaScore: number | null;
   compatScore: number | null;
   firstImpression?: string;
@@ -488,23 +500,9 @@ export const STAGE_PROMPT_CONFIG: Partial<Record<ProspectStage, {
     title: "What's your first impression?",
     tagOptions: ['Looks promising', 'Need more info', 'Parents suggested', 'Not sure yet'],
   },
-  photo_exchanged: {
-    title: 'Rate their photos',
-    hasRating1: { label: 'Photo Match Expectation' },
-    hasRating2: { label: 'Overall Appearance' },
-    tagOptions: ['Better than expected', 'As expected', 'Below expectations', 'Edited/Filtered photos'],
-  },
-  kundli_sent: {
-    title: 'Kundli sent to whom?',
-    tagOptions: ['Family Pandit', 'Online Service', 'Self-Checked'],
-  },
   kundli_matched: {
     title: "Pandit's verdict?",
     tagOptions: ['Approved', 'Approved with remedies', 'Not recommended', 'Doshas found'],
-  },
-  family_call: {
-    title: 'How did the family interaction go?',
-    tagOptions: ['Families got along', 'Some concerns', 'Did not go well'],
   },
   meeting_fixed: {
     title: 'When and where is the meeting?',
