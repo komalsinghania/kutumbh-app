@@ -944,8 +944,8 @@ export default function ProspectDetailPage() {
           </div>
 
           {/* Header — current stage + journey actions */}
-          <div className="journey-head" style={{ padding: '13px 14px 0 18px' }}>
-            <div className="journey-head-main">
+          <div style={{ padding: '13px 14px 0 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ minWidth: 0, flex: '1 1 auto' }}>
               <div style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.24em', textTransform: 'uppercase', color: '#b08a4f', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 The Journey · Step {currentIdx + 1} of {JOURNEY_STAGES.length + 1}
               </div>
@@ -953,7 +953,7 @@ export default function ProspectDetailPage() {
                 {isDecisionStage ? DECISION_INFO[prospect.stage].label : JOURNEY_LABELS[prospect.stage]}
               </div>
             </div>
-            <div className="journey-head-actions">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginLeft: 'auto' }}>
               <button
                 disabled={currentIdx === 0}
                 onClick={() => currentIdx > 0 && changeStage(JOURNEY_STAGES[currentIdx - 1])}
