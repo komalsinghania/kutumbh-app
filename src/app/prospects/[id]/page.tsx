@@ -36,6 +36,49 @@ type Tab = 'overview' | 'conversations' | 'flags' | 'family' | 'meeting' | 'kund
 
 const MEETING_ORDINALS = ['1st', '2nd', '3rd', '4th', '5th'];
 
+// ── Meeting-question theming: group the prep questions into colour-coded topics ──
+const QUESTION_TOPICS = {
+  lifestyle: { label: 'Lifestyle',   color: '#E08A1E', emoji: '☀️' },
+  values:    { label: 'Values',      color: '#7C5CBF', emoji: '🧭' },
+  family:    { label: 'Family',      color: '#C13E7A', emoji: '👪' },
+  future:    { label: 'Future',      color: '#2A9D8F', emoji: '🌱' },
+  practical: { label: 'Practical',   color: '#3A7BD5', emoji: '📋' },
+  personal:  { label: 'Connection',  color: '#C13E2A', emoji: '💗' },
+  custom:    { label: 'Yours',       color: '#B8860B', emoji: '✍️' },
+} as const;
+type QuestionTopic = keyof typeof QUESTION_TOPICS;
+
+const QUESTION_TOPIC_MAP: Record<string, QuestionTopic> = {
+  'What does a typical day look like for you?': 'lifestyle',
+  'What are your hobbies outside work?': 'lifestyle',
+  'How do you feel about pets?': 'lifestyle',
+  'What role does religion play in your daily life?': 'values',
+  'How do you handle disagreements?': 'values',
+  "What's your relationship with your siblings like?": 'family',
+  'How often do you want to visit family after marriage?': 'family',
+  'Have you been in a relationship before?': 'family',
+  'Where do you see yourself in 5 years?': 'future',
+  'What are your expectations from marriage?': 'future',
+  'How do you feel about working after marriage?': 'future',
+  'What kind of wedding do you envision?': 'future',
+  "What's your take on finances — joint or separate?": 'practical',
+  'Do you have any health conditions I should know about?': 'practical',
+  'What made you say yes to meeting me?': 'personal',
+};
+const topicOf = (q: string): QuestionTopic => QUESTION_TOPIC_MAP[q] ?? 'custom';
+
+// Shared flag glyph (same waving-flag shape used in the "Your Flags" header) —
+// used for both green & red so the two sides match instead of heart-vs-flag.
+function FlagIcon({ color, size = 14 }: { color: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}>
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill={color} stroke={color} strokeWidth="1.4" strokeLinejoin="round" />
+      <line x1="4" y1="22" x2="4" y2="14" stroke={color} strokeWidth="1.9" strokeLinecap="round" />
+    </svg>
+  );
+}
+const FLAG_GREEN = '#2D6B4F', FLAG_RED = '#8B2A2A';
+
 function meetingAvg(r: MeetingRecord): number | null {
   const vals = POST_MEETING_DIMENSIONS
     .map(d => r[d.key as MeetingDimensionKey] as number | undefined)
@@ -58,25 +101,53 @@ const DECISION_INFO: Record<string, { label: string; icon: string; color: string
 
 const JOURNEY_LABELS: Record<string, string> = {
   new: 'New', photo_exchanged: 'Photo', kundli_sent: 'Kundli',
-  kundli_matched: 'Match', call_done: 'Call', family_call: 'Family',
-  meeting_fixed: 'Meet', met: 'Met', interested: 'Interested',
+  kundli_matched: 'Match', call_done: 'Call Done', family_call: 'Family',
+  meeting_fixed: 'Meeting Fixed', met: 'Met', interested: 'Interested',
   on_hold: 'On Hold', rejected: 'Rejected',
+};
+
+// Stepper semantics: clicking a done/current stage REVIEWS its content tab;
+// clicking a future stage ADVANCES the journey to it.
+const STAGE_TAB: Record<string, Tab> = {
+  new: 'overview', call_done: 'conversations', meeting_fixed: 'meeting', met: 'meeting',
+};
+
+// Action-phrased labels for the advance CTA (what you're marking as done)
+const ADVANCE_LABELS: Record<string, string> = {
+  call_done: 'Mark Call Done', meeting_fixed: 'Meeting Fixed', met: 'Mark as Met',
 };
 
 const SOURCE_OPTIONS = [
   'Matrimonial Website', 'Relative', 'Family Friend', 'Pandit ji', 'Community Event', 'Other',
 ];
 
+// Icons for the journey stepper nodes
+function stageIcon(stage: string, color: string): React.ReactNode {
+  const s = { stroke: color, strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, fill: 'none' };
+  switch (stage) {
+    case 'new': // sparkle — a fresh prospect
+      return <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.9 5.6L20 10.5l-6.1 1.9L12 18l-1.9-5.6L4 10.5l6.1-1.9L12 3z" {...s}/></svg>;
+    case 'call_done': // phone
+      return <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5 19.79 19.79 0 010 4.82 2 2 0 012 2.73h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 10.6a16 16 0 006.72 6.72l1.24-1.24a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7a2 2 0 011.72 2.03z" {...s}/></svg>;
+    case 'meeting_fixed': // calendar
+      return <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="3" {...s}/><path d="M16 2v4M8 2v4M3 10h18" {...s}/></svg>;
+    case 'met': // two people
+      return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" {...s}/><circle cx="9" cy="7" r="4" {...s}/><path d="M22 21v-2a4 4 0 00-3-3.87M15 3.13a4 4 0 010 7.75" {...s}/></svg>;
+    default: // decision — heart
+      return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" {...s}/></svg>;
+  }
+}
+
 // ── Overview display components (top-level so children don't remount on render) ─
 
 function DetailChip({ label, value }: { label: string; value?: string | number | null }) {
   if (!value && value !== 0) return null;
   return (
-    <div style={{ background: '#faf8f5', borderRadius: 10, border: '1px solid #ede8df', padding: '8px 12px' }}>
-      <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 3 }}>
+    <div style={{ background: '#fbf8f3', borderRadius: 12, border: '1px solid #f0e7d8', padding: '9px 12px' }}>
+      <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#b08a4f', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 3 }}>
         {label}
       </div>
-      <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1a1410', lineHeight: 1.3 }}>
+      <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#241209', lineHeight: 1.35 }}>
         {String(value)}
       </div>
     </div>
@@ -85,12 +156,12 @@ function DetailChip({ label, value }: { label: string; value?: string | number |
 
 function SectionCard({ icon, title, cols = 2, children }: { icon: React.ReactNode; title: string; cols?: number; children: React.ReactNode }) {
   return (
-    <div style={{ background: 'white', borderRadius: 18, border: '1px solid #e8dece', boxShadow: '0 2px 14px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-      <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid #f0ebe2', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(193,62,42,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <div style={{ background: 'white', borderRadius: 20, border: '1px solid #eee4d4', boxShadow: '0 4px 20px rgba(38,16,8,0.05)', overflow: 'hidden' }}>
+      <div style={{ padding: '13px 16px 11px', borderBottom: '1px dashed #f0e7d8', display: 'flex', alignItems: 'center', gap: 9 }}>
+        <div style={{ width: 27, height: 27, borderRadius: 9, background: 'rgba(193,62,42,0.08)', border: '1px solid rgba(193,62,42,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           {icon}
         </div>
-        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+        <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#241209', textTransform: 'uppercase', letterSpacing: '0.16em' }}>
           {title}
         </span>
       </div>
@@ -233,6 +304,17 @@ export default function ProspectDetailPage() {
   const [addingPhoto, setAddingPhoto] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
 
+  // Flash the tab pill when it's opened from the journey stepper, so the
+  // stepper→tab connection is visible instead of implicit.
+  const [flashTab, setFlashTab] = useState<Tab | null>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openTab = (tab: Tab) => {
+    setActiveTab(tab);
+    setFlashTab(tab);
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => setFlashTab(null), 900);
+  };
+
   const [pendingStage, setPendingStage] = useState<ProspectStage | null>(null);
 
   const [customFlagType, setCustomFlagType] = useState<'green' | 'red' | null>(null);
@@ -368,10 +450,11 @@ export default function ProspectDetailPage() {
     await updateProspect(user.uid, id, { stage });
     setProspect(p => p ? { ...p, stage } : p);
     await logStageChange(user.uid, id, prospect.name, STAGE_LABELS[stage]);
-    if (stage === 'call_done') setActiveTab('conversations');
-    if (stage === 'meeting_fixed' || stage === 'met') setActiveTab('meeting');
+    if (stage === 'new') openTab('overview');
+    if (stage === 'call_done') openTab('conversations');
+    if (stage === 'meeting_fixed' || stage === 'met') openTab('meeting');
     if (stage === 'interested' || stage === 'on_hold' || stage === 'rejected') {
-      setActiveTab('decision');
+      openTab('decision');
       track('decision_made', { decision: stage });
     }
   };
@@ -457,7 +540,6 @@ export default function ProspectDetailPage() {
       date: now.toLocaleDateString('en-IN'),
       createdAt: Date.now(),
     });
-    toast.success(`${type === 'green' ? '💚' : '🚩'} Flag added`);
   };
 
   const handleDeleteFlag = async (flagId: string, flagType: 'green' | 'red') => {
@@ -563,14 +645,20 @@ export default function ProspectDetailPage() {
   const activeMeeting: MeetingRecord = savedMeetings[activeMeetingIdx] ?? { meetingNumber: activeMeetingIdx + 1 };
   const meetingCount = savedMeetings.filter(m => m.savedAt).length;
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'conversations', label: `Calls (${conversations.length})` },
+  // Two tab groups so the bar mirrors the stepper:
+  //  • Journey tabs carry the same step number shown in "Step X of 5" up top.
+  //    Meetings covers steps 3–4 (Meeting Fixed + Met); Decision is step 5.
+  //  • Reference tabs have no journey step — fill them in anytime.
+  const journeyTabs: { id: Tab; label: string; step: string }[] = [
+    { id: 'overview', label: 'Overview', step: '1' },
+    { id: 'conversations', label: `Calls (${conversations.length})`, step: '2' },
+    { id: 'meeting', label: meetingCount > 0 ? `Meetings (${meetingCount})` : 'Meetings', step: '3–4' },
+    { id: 'decision', label: DECISION_STAGES.includes(prospect.stage) ? 'Decision ✓' : 'Decision', step: '5' },
+  ];
+  const referenceTabs: { id: Tab; label: string }[] = [
     { id: 'flags', label: `Flags (${flags.length})` },
     { id: 'family', label: 'Family' },
-    ...(isMeetingStage ? [{ id: 'meeting' as Tab, label: 'Meeting' }] : []),
-    ...((prospect.stage === 'met' || DECISION_STAGES.includes(prospect.stage)) ? [{ id: 'decision' as Tab, label: DECISION_STAGES.includes(prospect.stage) ? `Decision ✓` : 'Decision' }] : []),
-    ...(hasKundliData ? [{ id: 'kundli' as Tab, label: 'Kundli' }] : []),
+    { id: 'kundli', label: 'Kundli' },
   ];
 
   const isDecisionStage = DECISION_STAGES.includes(prospect.stage);
@@ -597,349 +685,443 @@ export default function ProspectDetailPage() {
         </div>
       )}
 
-      {/* ── Immersive Hero Header ── */}
+      {/* ── Cinematic dossier hero ── */}
       <div style={{
-        background: 'linear-gradient(160deg, #c13e2a 0%, #8B2A2A 60%, #5C1A1A 100%)',
+        background: 'linear-gradient(150deg, #1a0c07 0%, #3d1309 55%, #64200f 100%)',
         paddingTop: 'env(safe-area-inset-top, 0px)',
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* Decorative mandala-inspired background circles */}
+        {/* Giant watermark initial */}
         <div aria-hidden style={{
-          position: 'absolute', top: -60, right: -60, width: 220, height: 220,
-          borderRadius: '50%', border: '1px solid rgba(255,255,255,0.07)', pointerEvents: 'none',
+          position: 'absolute', top: -30, right: -10, lineHeight: 0.85,
+          fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)',
+          fontSize: 'clamp(160px, 28vw, 320px)', fontWeight: 700,
+          color: 'rgba(255,255,255,0.045)', userSelect: 'none', pointerEvents: 'none',
+        }}>
+          {prospect.name[0]}
+        </div>
+        {/* Ambient glows */}
+        <div aria-hidden style={{
+          position: 'absolute', top: -140, left: '32%', width: 460, height: 460, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(217,164,65,0.14) 0%, rgba(217,164,65,0) 65%)',
+          pointerEvents: 'none',
         }} />
         <div aria-hidden style={{
-          position: 'absolute', top: -30, right: -30, width: 140, height: 140,
-          borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)', pointerEvents: 'none',
+          position: 'absolute', bottom: -160, left: -90, width: 400, height: 400, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(193,62,42,0.28) 0%, rgba(193,62,42,0) 70%)',
+          pointerEvents: 'none',
+        }} />
+        {/* Ring ornaments */}
+        <div aria-hidden style={{
+          position: 'absolute', top: 26, right: '16%', width: 230, height: 230, borderRadius: '50%',
+          border: '1px solid rgba(217,164,65,0.13)', pointerEvents: 'none',
         }} />
         <div aria-hidden style={{
-          position: 'absolute', bottom: 40, left: -50, width: 180, height: 180,
-          borderRadius: '50%', border: '1px solid rgba(255,255,255,0.05)', pointerEvents: 'none',
+          position: 'absolute', top: 58, right: 'calc(16% + 34px)', width: 162, height: 162, borderRadius: '50%',
+          border: '1px dashed rgba(255,255,255,0.08)', pointerEvents: 'none',
         }} />
 
         {/* Nav row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 48, padding: '0 14px', position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, padding: '0 16px', position: 'relative', zIndex: 1, maxWidth: 1440, margin: '0 auto' }}>
           <button
             onClick={() => router.back()}
+            aria-label="Go back"
             style={{
               width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#ffffff', background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', borderRadius: '50%',
+              color: '#f3e7d3', background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.14)', cursor: 'pointer', borderRadius: 12,
               transition: 'background 0.18s',
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <svg width="17" height="17" viewBox="0 0 20 20" fill="none">
               <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
+          <span style={{
+            fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.32em', textTransform: 'uppercase',
+            color: 'rgba(217,164,65,0.85)', textIndent: '0.32em',
+          }}>
+            Prospect Dossier
+          </span>
           <button
             onClick={handleDelete}
+            aria-label="Delete prospect"
+            title="Delete prospect"
             style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.75)',
-              background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255,255,255,0.18)', cursor: 'pointer',
-              borderRadius: 20, padding: '6px 14px',
+              width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'rgba(255,203,190,0.9)', background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.14)', cursor: 'pointer', borderRadius: 12,
               transition: 'background 0.18s',
             }}
           >
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
               <path d="M2 4h12M5 4V2.5A.5.5 0 015.5 2h5a.5.5 0 01.5.5V4M6.5 7v5M9.5 7v5M3 4l.867 9.143A1 1 0 004.86 14h6.28a1 1 0 00.994-.857L13 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            Delete
           </button>
         </div>
 
-        {/* Profile hero content */}
-        <div style={{ padding: '8px 20px 0', position: 'relative', zIndex: 1, maxWidth: 1440, margin: '0 auto' }}>
-          {/* Avatar + name side by side */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16 }}>
-            {/* Avatar */}
+        {/* Identity + score gauges */}
+        <div style={{ padding: '12px 20px 0', position: 'relative', zIndex: 1, maxWidth: 1440, margin: '0 auto' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '18px 28px' }}>
+
+            {/* Avatar with gold halo */}
             <div style={{ position: 'relative', flexShrink: 0 }}>
-              {photos[0] ? (
-                <img
-                  src={photos[0]} alt=""
-                  onClick={() => setLightboxSrc(photos[0])}
-                  style={{
-                    width: 88, height: 88, borderRadius: '50%', objectFit: 'cover',
-                    border: '3px solid #ffffff', cursor: 'pointer',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
-                  }}
-                />
-              ) : (
-                <div style={{
-                  width: 88, height: 88, borderRadius: '50%', flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: '3px solid rgba(255,255,255,0.5)',
-                  background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)',
-                  color: '#ffffff', fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)',
-                  fontSize: '2rem', fontWeight: 700,
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-                }}>
-                  {prospect.name[0]}
-                </div>
-              )}
-              {/* Add photo badge */}
+              <div style={{
+                padding: 3, borderRadius: '50%',
+                background: 'conic-gradient(from 220deg, #d9a441, rgba(217,164,65,0.15), #d9a441)',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
+              }}>
+                {photos[0] ? (
+                  <img
+                    src={photos[0]} alt=""
+                    onClick={() => setLightboxSrc(photos[0])}
+                    style={{
+                      width: 92, height: 92, borderRadius: '50%', objectFit: 'cover',
+                      border: '3px solid #1a0c07', cursor: 'pointer', display: 'block',
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: 92, height: 92, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: '3px solid #1a0c07',
+                    background: 'linear-gradient(145deg, #4a1a0d, #2a0f08)',
+                    color: '#f3e7d3', fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)',
+                    fontSize: '2.1rem', fontWeight: 700,
+                  }}>
+                    {prospect.name[0]}
+                  </div>
+                )}
+              </div>
               {photos.length < 3 && (
                 <button
                   onClick={() => photoRef.current?.click()}
+                  title="Add photo"
                   style={{
                     position: 'absolute', bottom: 2, right: 2,
-                    width: 24, height: 24, borderRadius: '50%',
-                    background: '#ffffff', border: '2px solid #c13e2a',
+                    width: 26, height: 26, borderRadius: '50%',
+                    background: '#d9a441', border: '2px solid #1a0c07',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                    cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
                   }}
-                  title="Add photo"
                 >
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                    <path d="M6 2.5v7M2.5 6h7" stroke="#c13e2a" strokeWidth="1.8" strokeLinecap="round"/>
+                    <path d="M6 2.5v7M2.5 6h7" stroke="#1a0c07" strokeWidth="2" strokeLinecap="round"/>
                   </svg>
                 </button>
               )}
             </div>
 
-            {/* Name + subtitle */}
-            <div style={{ flex: 1, minWidth: 0, paddingBottom: 4 }}>
+            {/* Name block */}
+            <div style={{ flex: '1 1 260px', minWidth: 0 }}>
+              <div style={{
+                fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.26em', textTransform: 'uppercase',
+                color: 'rgba(217,164,65,0.9)', marginBottom: 6,
+              }}>
+                {prospect.source || 'Prospect'}
+              </div>
               <h1 style={{
                 fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)',
-                color: '#ffffff', fontSize: '1.65rem', fontWeight: 700,
-                lineHeight: 1.15, margin: 0,
-                textShadow: '0 1px 8px rgba(0,0,0,0.25)',
+                color: '#fdf6ea', fontSize: 'clamp(1.7rem, 4vw, 2.4rem)', fontWeight: 700,
+                lineHeight: 1.08, margin: 0, letterSpacing: '-0.01em',
               }}>
                 {prospect.name}
               </h1>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 8px', marginTop: 6 }}>
+              <div style={{
+                marginTop: 8, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '2px 10px',
+                fontSize: '0.8rem', color: 'rgba(253,246,234,0.62)', fontWeight: 500,
+              }}>
                 {[
                   prospect.age && `${prospect.age} yrs`,
                   prospect.city,
+                  prospect.height,
                   prospect.profession,
-                  prospect.source,
-                ].filter(Boolean).map((item, i) => (
-                  <span key={i} style={{
-                    fontSize: '0.72rem', color: 'rgba(255,255,255,0.82)',
-                    background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)',
-                    padding: '2px 8px', borderRadius: 20,
-                    border: '1px solid rgba(255,255,255,0.18)',
-                    fontWeight: 500,
-                  }}>
+                ].filter(Boolean).map((item, i, arr) => (
+                  <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     {item}
+                    {i < arr.length - 1 && <span aria-hidden style={{ width: 3, height: 3, borderRadius: '50%', background: 'rgba(217,164,65,0.6)' }} />}
                   </span>
                 ))}
               </div>
-            </div>
-          </div>
-
-          {/* Photo strip thumbnails (2nd and 3rd photos) */}
-          {photos.length > 1 && (
-            <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
-              {photos.slice(1).map((src, i) => (
-                <img
-                  key={i} src={src} alt=""
-                  onClick={() => setLightboxSrc(src)}
-                  style={{
-                    width: 42, height: 42, borderRadius: 10, objectFit: 'cover',
-                    border: '2px solid rgba(255,255,255,0.4)', cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Score chips — floating strip at bottom of hero */}
-        <div style={{ padding: '16px 20px 0', maxWidth: 1440, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'flex', gap: 10 }}>
-            {[
-              {
-                label: 'Overall Score',
-                value: overall !== null ? `${overall}%` : '—',
-                icon: '◎',
-                bg: 'rgba(255,255,255,0.18)',
-                valueBg: 'rgba(255,255,255,0.92)',
-                valueColor: '#c13e2a',
-              },
-              {
-                label: 'Kundli',
-                value: prospect.gunaScore !== null && prospect.gunaScore !== undefined ? `${prospect.gunaScore}/36` : '—',
-                icon: '✦',
-                bg: 'rgba(255,255,255,0.12)',
-                // Keep a solid light value box even for low matches so the dark-red
-                // number stays legible against the red header (a translucent maroon
-                // box merged into the gradient). Red text still signals "low".
-                valueBg: 'rgba(255,255,255,0.92)',
-                valueColor: prospect.gunaScore != null && prospect.gunaScore < 18 ? '#8B2A2A' : '#4A3728',
-                warning: prospect.gunaScore != null && prospect.gunaScore < 18 ? "Doesn't Match" : null,
-              },
-              {
-                label: 'Compat.',
-                value: prospect.compatScore !== null && prospect.compatScore !== undefined ? `${prospect.compatScore}%` : '—',
-                icon: '♡',
-                bg: 'rgba(255,255,255,0.12)',
-                valueBg: 'rgba(255,255,255,0.92)',
-                valueColor: '#2D6B4F',
-              },
-            ].map(({ label, value, icon, bg, valueBg, valueColor, warning }: { label: string; value: string; icon: string; bg: string; valueBg: string; valueColor: string; warning?: string | null }) => (
-              <div key={label} className="hero-score-chip" style={{
-                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                background: bg, backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.22)',
-                borderRadius: 14, padding: '10px 6px 10px',
-                gap: 2,
-              }}>
-                <div style={{
-                  fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)',
-                  background: valueBg, color: valueColor,
-                  fontSize: '1.25rem', fontWeight: 800,
-                  lineHeight: 1, padding: '3px 10px', borderRadius: 8,
-                  minWidth: 52, textAlign: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                }}>
-                  {value}
+              {/* Photo strip thumbnails */}
+              {photos.length > 1 && (
+                <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
+                  {photos.slice(1).map((src, i) => (
+                    <img
+                      key={i} src={src} alt=""
+                      onClick={() => setLightboxSrc(src)}
+                      style={{
+                        width: 40, height: 40, borderRadius: 10, objectFit: 'cover',
+                        border: '1.5px solid rgba(217,164,65,0.5)', cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                      }}
+                    />
+                  ))}
                 </div>
-                <div style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.75)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 4 }}>
-                  {label}
-                </div>
-                {warning && (
-                  <div style={{
-                    fontSize: '0.54rem', fontWeight: 800, color: '#8B2A2A',
-                    background: 'rgba(255,255,255,0.92)', padding: '1px 6px', borderRadius: 5,
-                    letterSpacing: '0.03em', textTransform: 'uppercase', marginTop: 3,
-                  }}>
-                    {warning}
+              )}
+            </div>
+
+            {/* Score ring gauges */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4, flexShrink: 0 }}>
+              {[
+                {
+                  label: 'Overall',
+                  display: overall !== null ? `${overall}` : '—',
+                  suffix: overall !== null ? '%' : '',
+                  pct: overall ?? 0,
+                  color: '#d9a441',
+                  warning: null as string | null,
+                },
+                {
+                  label: 'Kundli',
+                  display: prospect.gunaScore != null ? `${prospect.gunaScore}` : '—',
+                  suffix: prospect.gunaScore != null ? '/36' : '',
+                  pct: prospect.gunaScore != null ? (prospect.gunaScore / 36) * 100 : 0,
+                  color: prospect.gunaScore != null && prospect.gunaScore < 18 ? '#ff7a5c' : '#8fd6b0',
+                  warning: prospect.gunaScore != null && prospect.gunaScore < 18 ? 'Low match' : null,
+                },
+                {
+                  label: 'Compat',
+                  display: prospect.compatScore != null ? `${prospect.compatScore}` : '—',
+                  suffix: prospect.compatScore != null ? '%' : '',
+                  pct: prospect.compatScore ?? 0,
+                  color: '#8fd6b0',
+                  warning: null as string | null,
+                },
+              ].map(({ label, display, suffix, pct, color, warning }, gi) => {
+                const R = 30;
+                const CIRC = 2 * Math.PI * R;
+                return (
+                  <div key={label} className="hero-score-chip" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '4px 8px' }}>
+                    <div style={{ position: 'relative', width: 78, height: 78 }}>
+                      <svg width="78" height="78" viewBox="0 0 78 78">
+                        <circle cx="39" cy="39" r={R} fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="5" />
+                        <circle
+                          className="gauge-fill"
+                          cx="39" cy="39" r={R} fill="none"
+                          stroke={color} strokeWidth="5" strokeLinecap="round"
+                          strokeDasharray={CIRC}
+                          strokeDashoffset={CIRC * (1 - Math.min(pct, 100) / 100)}
+                          transform="rotate(-90 39 39)"
+                          style={{ '--circ': `${CIRC}`, animationDelay: `${0.25 + gi * 0.12}s` } as React.CSSProperties}
+                        />
+                      </svg>
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', fontSize: '1.15rem', fontWeight: 800, color: '#fdf6ea', lineHeight: 1 }}>
+                          {display}<span style={{ fontSize: '0.6rem', fontWeight: 600, color: 'rgba(253,246,234,0.55)' }}>{suffix}</span>
+                        </span>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.56rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: warning ? '#ff9a82' : 'rgba(253,246,234,0.55)', textIndent: '0.18em' }}>
+                      {warning ?? label}
+                    </span>
                   </div>
-                )}
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        {/* Curved bottom edge */}
-        <div style={{ height: 24, marginTop: 16, position: 'relative', overflow: 'hidden' }}>
-          <div style={{
-            position: 'absolute', bottom: 0, left: '-5%', right: '-5%', height: 48,
-            background: '#f5ede0', borderRadius: '50% 50% 0 0 / 48px 48px 0 0',
-          }} />
-        </div>
+        {/* Spacer for the overlapping journey card */}
+        <div style={{ height: 52 }} />
       </div>
 
-      {/* ── Journey Tracker — scrollable pill rail ── */}
-      <div style={{ maxWidth: 1440, margin: '0 auto', padding: '4px 16px 10px' }}>
+      {/* ── Journey stepper — floating card ── */}
+      <div style={{ maxWidth: 1440, margin: '0 auto', padding: '0 16px', position: 'relative', zIndex: 2, marginTop: -32 }}>
         <div style={{
-          background: 'white', borderRadius: 18,
-          border: '1px solid #e8dece',
-          boxShadow: '0 2px 14px rgba(0,0,0,0.06)',
-          overflow: 'hidden',
+          background: 'white', borderRadius: 22, border: '1px solid #eee4d4',
+          boxShadow: '0 16px 44px rgba(38,16,8,0.16)', overflow: 'hidden',
         }}>
-          {/* Header — title + current stage badge */}
-          <div style={{
-            padding: '10px 14px 8px',
-            borderBottom: '1px solid #f0ebe2',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
-              Journey Progress
-            </span>
-            <span style={{
-              fontSize: '0.72rem', fontWeight: 700, color: '#c13e2a',
-              background: 'rgba(193,62,42,0.08)', padding: '10px 12px',
-              borderRadius: 20, border: '1px solid rgba(193,62,42,0.22)',
-            }}>
-              {JOURNEY_LABELS[prospect.stage]}
-            </span>
+          {/* Ambient progress strip along the card's top edge */}
+          <div aria-hidden style={{ height: 3, background: '#f5eee1' }}>
+            <div style={{
+              height: '100%',
+              width: `${((currentIdx + 1) / (JOURNEY_STAGES.length + 1)) * 100}%`,
+              background: 'linear-gradient(90deg, #d9a441, #c13e2a)',
+              transition: 'width 0.5s ease',
+            }} />
           </div>
 
-          {/* Scrollable stage pills — flex-start + margin:auto centers when it fits
-              and falls back to left-aligned/scrollable when it overflows (mobile),
-              so the first pill never gets clipped off the left edge. */}
-          <div className="scrollbar-none" style={{ overflowX: 'auto', padding: '12px 14px 14px', display: 'flex', justifyContent: 'flex-start' }}>
-            <div style={{ display: 'flex', alignItems: 'center', minWidth: 'max-content', margin: '0 auto' }}>
+          {/* Header — current stage + journey actions */}
+          <div className="journey-head" style={{ padding: '13px 14px 0 18px' }}>
+            <div className="journey-head-main">
+              <div style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.24em', textTransform: 'uppercase', color: '#b08a4f', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                The Journey · Step {currentIdx + 1} of {JOURNEY_STAGES.length + 1}
+              </div>
+              <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', fontSize: '1.15rem', fontWeight: 700, color: '#241209', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {isDecisionStage ? DECISION_INFO[prospect.stage].label : JOURNEY_LABELS[prospect.stage]}
+              </div>
+            </div>
+            <div className="journey-head-actions">
+              <button
+                disabled={currentIdx === 0}
+                onClick={() => currentIdx > 0 && changeStage(JOURNEY_STAGES[currentIdx - 1])}
+                aria-label={currentIdx > 0 ? `Back to ${JOURNEY_LABELS[JOURNEY_STAGES[currentIdx - 1]]}` : 'At the first step'}
+                title={currentIdx > 0 ? `Back to ${JOURNEY_LABELS[JOURNEY_STAGES[currentIdx - 1]]}` : undefined}
+                style={{
+                  width: 36, height: 36, borderRadius: 12,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: '1.5px solid', borderColor: currentIdx === 0 ? '#f0e7d8' : '#e2d5bf',
+                  background: 'white',
+                  color: currentIdx === 0 ? '#d8cbb4' : '#6b5a44',
+                  cursor: currentIdx === 0 ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.18s', flexShrink: 0,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <path d="M12 15L7 10L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              {isDecisionStage ? (
+                prospect.stage === 'interested' ? (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '9px 14px', borderRadius: 12,
+                    border: '1.5px solid rgba(45,107,79,0.3)',
+                    background: 'rgba(45,107,79,0.08)',
+                    color: '#2D6B4F', fontWeight: 800, fontSize: '0.76rem',
+                    flexShrink: 0,
+                  }}>
+                    ✓ Decided
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => changeStage('met')}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '10px 16px', borderRadius: 12, border: 'none',
+                      background: 'linear-gradient(135deg, #c13e2a, #8B2A2A)',
+                      color: 'white', fontWeight: 800, fontSize: '0.78rem',
+                      cursor: 'pointer', boxShadow: '0 5px 16px rgba(193,62,42,0.35)',
+                      transition: 'all 0.18s', flexShrink: 0,
+                    }}
+                  >
+                    Reopen
+                  </button>
+                )
+              ) : (
+                <button
+                  onClick={() => {
+                    if (currentIdx < JOURNEY_STAGES.length - 1) {
+                      changeStage(JOURNEY_STAGES[currentIdx + 1] as ProspectStage);
+                    } else {
+                      openTab('decision');
+                    }
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '10px 16px', borderRadius: 12, border: 'none',
+                    background: 'linear-gradient(135deg, #c13e2a, #8B2A2A)',
+                    color: 'white', fontWeight: 800, fontSize: '0.78rem',
+                    cursor: 'pointer', boxShadow: '0 5px 16px rgba(193,62,42,0.35)',
+                    transition: 'all 0.18s', flexShrink: 0,
+                  }}
+                >
+                  {currentIdx < JOURNEY_STAGES.length - 1
+                    ? <span>{ADVANCE_LABELS[JOURNEY_STAGES[currentIdx + 1]] ?? JOURNEY_LABELS[JOURNEY_STAGES[currentIdx + 1]]}</span>
+                    : <span>Make a Decision</span>}
+                  <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+                    <path d="M8 5L13 10L8 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Stepper rail */}
+          <div className="scrollbar-none" style={{ overflowX: 'auto', padding: '16px 18px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', minWidth: 'max-content', width: '100%' }}>
               {([...JOURNEY_STAGES, 'decision'] as string[]).map((stage, idx) => {
                 const isDecisionPill = stage === 'decision';
                 const isDone = currentIdx > idx;
-                const isCurrent = currentIdx === idx;
+                const isCurrent = currentIdx === idx && !isDecisionPill;
                 const isDecisionActive = isDecisionPill && (isDecisionStage || activeTab === 'decision');
                 const decisionInfo = isDecisionPill && isDecisionStage ? DECISION_INFO[prospect.stage] : null;
-                const decisionActiveColor = decisionInfo?.color ?? '#c13e2a';
-                const decisionActiveBg = decisionInfo?.bg ?? 'rgba(193,62,42,0.07)';
-                const decisionActiveBorder = decisionInfo?.border ?? 'rgba(193,62,42,0.3)';
+                const label = isDecisionPill
+                  ? (decisionInfo?.label ?? 'Decision')
+                  : (stage === 'met' && meetingCount > 1 ? `Met (${meetingCount})` : JOURNEY_LABELS[stage]);
+                const nodeAccent = decisionInfo?.color ?? '#c13e2a';
                 return (
-                  <div key={stage} style={{ display: 'flex', alignItems: 'center' }}>
+                  <div key={stage} style={{ display: 'flex', alignItems: 'flex-start', flex: idx < JOURNEY_STAGES.length ? '1 0 auto' : '0 0 auto' }}>
                     <button
-                      onClick={() => !isDecisionPill ? changeStage(stage as ProspectStage) : setActiveTab('decision')}
+                      onClick={() => {
+                        if (isDecisionPill) { openTab('decision'); return; }
+                        if (idx > currentIdx) { changeStage(stage as ProspectStage); return; }
+                        openTab(STAGE_TAB[stage] ?? 'overview');
+                      }}
                       aria-label={isDecisionPill ? 'Decision' : JOURNEY_LABELS[stage]}
+                      title={isDecisionPill
+                        ? 'Open the decision tab'
+                        : idx > currentIdx
+                        ? `Move journey to “${JOURNEY_LABELS[stage]}”`
+                        : `Review ${JOURNEY_LABELS[stage]}`}
+                      className="journey-node"
                       style={{
-                        display: 'flex', alignItems: 'center', gap: isDone ? 5 : 4,
-                        padding: (isCurrent || isDecisionActive) ? '7px 14px' : isDone ? '5px 11px' : '5px 11px',
-                        borderRadius: 24,
-                        border: isDecisionActive
-                          ? `2px solid ${decisionActiveBorder}`
-                          : isCurrent
-                          ? '2px solid #c13e2a'
-                          : isDone
-                          ? 'none'
-                          : '1.5px solid #e0d8cc',
-                        background: isDecisionActive
-                          ? decisionActiveBg
-                          : isCurrent
-                          ? 'rgba(193,62,42,0.07)'
-                          : isDone
-                          ? '#c13e2a'
-                          : '#faf8f5',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        whiteSpace: 'nowrap',
-                        position: 'relative',
-                        boxShadow: isDecisionActive
-                          ? `0 0 0 3px ${decisionActiveBg}`
-                          : isCurrent ? '0 0 0 3px rgba(193,62,42,0.12)' : isDone ? '0 1px 4px rgba(193,62,42,0.2)' : 'none',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7,
+                        background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                        width: 64, flexShrink: 0,
+                        animationDelay: `${idx * 0.06}s`,
                       }}
                     >
-                      {/* Status icon */}
-                      {isDecisionPill && isDecisionStage ? (
-                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: decisionActiveColor, flexShrink: 0 }}>{decisionInfo!.icon}</span>
-                      ) : isDecisionPill && activeTab === 'decision' ? (
-                        <span style={{
-                          width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                          background: '#c13e2a',
-                          boxShadow: '0 0 0 2px rgba(193,62,42,0.25)',
-                        }} />
-                      ) : isDone ? (
-                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none" style={{ flexShrink: 0 }}>
-                          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      ) : isCurrent ? (
-                        <span style={{
-                          width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                          background: '#c13e2a',
-                          boxShadow: '0 0 0 2px rgba(193,62,42,0.25)',
-                        }} />
-                      ) : (
-                        <span style={{
-                          width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-                          background: '#d6c9b0',
-                        }} />
-                      )}
-                      {/* Label */}
+                      <div style={{ position: 'relative', width: 40, height: 40 }}>
+                        {(isCurrent || (isDecisionPill && isDecisionStage)) && (
+                          <span className="stage-pulse-ring" aria-hidden style={{
+                            position: 'absolute', inset: 7, borderRadius: '50%',
+                            border: `2px solid ${nodeAccent}`,
+                          }} />
+                        )}
+                        <div style={{
+                          position: 'absolute', inset: 0, borderRadius: '50%',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: isDone
+                            ? 'linear-gradient(145deg, #c13e2a, #8B2A2A)'
+                            : isDecisionPill && isDecisionStage
+                            ? decisionInfo!.bg
+                            : (isCurrent || isDecisionActive)
+                            ? 'white'
+                            : '#faf6ef',
+                          border: isDone
+                            ? 'none'
+                            : isDecisionPill && isDecisionStage
+                            ? `2px solid ${decisionInfo!.color}`
+                            : (isCurrent || isDecisionActive)
+                            ? '2px solid #c13e2a'
+                            : '1.5px solid #e7dcc8',
+                          boxShadow: isDone
+                            ? '0 3px 10px rgba(193,62,42,0.3)'
+                            : (isCurrent || isDecisionActive)
+                            ? '0 3px 12px rgba(193,62,42,0.18)'
+                            : 'none',
+                          transition: 'all 0.25s ease',
+                        }}>
+                          {isDone ? (
+                            <svg width="14" height="11" viewBox="0 0 14 11" fill="none">
+                              <path d="M1.5 5.5L5 9L12.5 1.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          ) : (
+                            stageIcon(stage, isDecisionPill && isDecisionStage ? decisionInfo!.color : (isCurrent || isDecisionActive) ? '#c13e2a' : '#b3a48b')
+                          )}
+                        </div>
+                      </div>
                       <span style={{
-                        fontSize: (isCurrent || isDecisionActive) ? '0.75rem' : '0.7rem',
-                        fontWeight: (isCurrent || isDecisionActive) ? 700 : isDone ? 500 : 400,
-                        color: isDecisionActive ? decisionActiveColor : isDone ? 'rgba(255,255,255,0.95)' : isCurrent ? '#c13e2a' : '#a89e92',
+                        fontSize: '0.67rem',
+                        fontWeight: (isCurrent || isDecisionActive) ? 800 : isDone ? 600 : 500,
+                        color: isDecisionPill && isDecisionStage
+                          ? decisionInfo!.color
+                          : (isCurrent || isDecisionActive) ? '#c13e2a' : isDone ? '#241209' : '#b3a48b',
+                        whiteSpace: 'nowrap', letterSpacing: '0.02em',
                       }}>
-                        {isDecisionPill
-                          ? (isDecisionStage ? decisionInfo!.label : 'Decision')
-                          : (stage === 'met' && meetingCount > 1 ? `Met (${meetingCount})` : JOURNEY_LABELS[stage])}
+                        {label}
                       </span>
                     </button>
-
-                    {/* Connector */}
                     {idx < JOURNEY_STAGES.length && (
-                      <div style={{
-                        width: 14, height: 2, flexShrink: 0,
-                        background: idx < currentIdx ? '#c13e2a' : '#e8dece',
-                        borderRadius: 2, margin: '0 1px',
+                      <div aria-hidden style={{
+                        flex: '1 1 26px', minWidth: 18, height: 2, borderRadius: 2, marginTop: 19,
+                        background: idx < currentIdx
+                          ? 'linear-gradient(90deg, #c13e2a, #d9a441)'
+                          : '#eee4d4',
+                        transition: 'background 0.3s ease',
                       }} />
                     )}
                   </div>
@@ -947,147 +1129,85 @@ export default function ProspectDetailPage() {
               })}
             </div>
           </div>
-
-          {/* ── Prev / Next stage navigation ── */}
-          <div style={{ padding: '10px 14px 12px', borderTop: '1px solid #f0ebe2', display: 'flex', alignItems: 'center', gap: 8 }}>
-
-            {/* Prev button */}
-            <button
-              disabled={currentIdx === 0}
-              onClick={() => currentIdx > 0 && changeStage(JOURNEY_STAGES[currentIdx - 1])}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '8px 14px', borderRadius: 12, border: '1.5px solid',
-                borderColor: currentIdx === 0 ? '#ede8df' : 'rgba(193,62,42,0.3)',
-                background: currentIdx === 0 ? '#faf8f5' : 'rgba(193,62,42,0.06)',
-                color: currentIdx === 0 ? '#d6c9b0' : '#c13e2a',
-                fontWeight: 600, fontSize: '0.78rem', cursor: currentIdx === 0 ? 'not-allowed' : 'pointer',
-                transition: 'all 0.18s', flexShrink: 0,
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-                <path d="M12 15L7 10L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              {currentIdx > 0 ? <span>{JOURNEY_LABELS[JOURNEY_STAGES[currentIdx - 1]]}</span> : <span>Start</span>}
-            </button>
-
-            {/* Step counter */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#a89e92', letterSpacing: '0.06em' }}>
-                STEP {currentIdx + 1} OF {JOURNEY_STAGES.length + 1}
-              </span>
-              {/* Mini progress bar */}
-              <div style={{ height: 3, width: '100%', maxWidth: 100, borderRadius: 2, background: '#ede8df', overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%', borderRadius: 2,
-                  background: 'linear-gradient(90deg, #c13e2a, #8B2A2A)',
-                  width: `${((currentIdx + 1) / (JOURNEY_STAGES.length + 1)) * 100}%`,
-                  transition: 'width 0.4s ease',
-                }} />
-              </div>
-            </div>
-
-            {/* Next button / Decision action */}
-            {isDecisionStage ? (
-              prospect.stage === 'interested' ? (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '8px 14px', borderRadius: 12,
-                  border: '1.5px solid rgba(45,107,79,0.3)',
-                  background: 'rgba(45,107,79,0.08)',
-                  color: '#2D6B4F', fontWeight: 700, fontSize: '0.75rem',
-                  flexShrink: 0,
-                }}>
-                  ✓ Decided
-                </div>
-              ) : (
-                <button
-                  onClick={() => changeStage('met')}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '8px 14px', borderRadius: 12, border: 'none',
-                    background: 'linear-gradient(135deg, #c13e2a, #8B2A2A)',
-                    color: 'white', fontWeight: 700, fontSize: '0.78rem',
-                    cursor: 'pointer', boxShadow: '0 3px 10px rgba(193,62,42,0.3)',
-                    transition: 'all 0.18s', flexShrink: 0,
-                  }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                    <path d="M2 8h10M8 4l4 4-4 4" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  Reopen
-                </button>
-              )
-            ) : (
-              <button
-                onClick={() => {
-                  if (currentIdx < JOURNEY_STAGES.length - 1) {
-                    changeStage(JOURNEY_STAGES[currentIdx + 1] as ProspectStage);
-                  } else {
-                    setActiveTab('decision');
-                  }
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '8px 14px', borderRadius: 12, border: 'none',
-                  background: 'linear-gradient(135deg, #c13e2a, #8B2A2A)',
-                  color: 'white',
-                  fontWeight: 700, fontSize: '0.78rem',
-                  cursor: 'pointer',
-                  boxShadow: '0 3px 10px rgba(193,62,42,0.3)',
-                  transition: 'all 0.18s', flexShrink: 0,
-                }}
-              >
-                {currentIdx < JOURNEY_STAGES.length - 1
-                  ? <span>{JOURNEY_LABELS[JOURNEY_STAGES[currentIdx + 1]]}</span>
-                  : <span>Decide →</span>}
-                {currentIdx < JOURNEY_STAGES.length - 1 && (
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-                    <path d="M8 5L13 10L8 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
-              </button>
-            )}
-          </div>
         </div>
       </div>
 
-      {/* ── Tabs — floating pill bar ── */}
+      {/* ── Sticky tab dock ── */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 10,
-        background: '#f5ede0',
-        borderBottom: '1px solid #e8dece',
-        paddingBottom: 12,
+        background: 'rgba(245,237,224,0.88)',
+        backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid rgba(38,16,8,0.07)',
+        marginTop: 14,
       }}>
-        <div className="scrollbar-none" style={{
-          overflowX: 'auto',
-          padding: '10px 16px 0',
-          maxWidth: 1440, margin: '0 auto',
-        }}>
-          <div style={{ display: 'flex', gap: 7, minWidth: 'max-content' }}>
-            {tabs.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab(t.id)}
-                style={{
-                  padding: '7px 18px',
-                  borderRadius: 24,
-                  fontSize: '0.78rem',
-                  fontWeight: activeTab === t.id ? 700 : 500,
-                  border: activeTab === t.id ? 'none' : '1.5px solid #d6c9b0',
-                  background: activeTab === t.id ? '#c13e2a' : 'white',
-                  color: activeTab === t.id ? '#ffffff' : '#6b5e4d',
-                  cursor: 'pointer',
-                  transition: 'all 0.18s ease',
-                  whiteSpace: 'nowrap',
-                  boxShadow: activeTab === t.id
-                    ? '0 3px 12px rgba(193,62,42,0.32)'
-                    : '0 1px 4px rgba(0,0,0,0.06)',
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
+        <div className="scrollbar-none" style={{ overflowX: 'auto', maxWidth: 1440, margin: '0 auto', padding: '10px 16px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, minWidth: 'max-content' }}>
+            {/* Journey group — numbered to match "Step X of 5" up top */}
+            <div style={{
+              display: 'inline-flex', gap: 3,
+              background: 'white', border: '1px solid #eee4d4', borderRadius: 999, padding: 4,
+              boxShadow: '0 2px 12px rgba(38,16,8,0.07)',
+            }}>
+              {journeyTabs.map(t => {
+                const active = activeTab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    className={flashTab === t.id ? 'tab-flash' : undefined}
+                    onClick={() => setActiveTab(t.id)}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 7,
+                      padding: '7px 15px 7px 8px', borderRadius: 999, border: 'none', cursor: 'pointer',
+                      fontSize: '0.78rem', whiteSpace: 'nowrap',
+                      fontWeight: active ? 700 : 500,
+                      background: active ? '#241209' : 'transparent',
+                      color: active ? '#f5e9d4' : '#8a7a63',
+                      boxShadow: active ? '0 4px 12px rgba(36,18,9,0.28)' : 'none',
+                      transition: 'all 0.18s ease',
+                    }}
+                  >
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      minWidth: 20, height: 20, padding: '0 5px', borderRadius: 999,
+                      fontSize: '0.62rem', fontWeight: 800, lineHeight: 1,
+                      background: active ? 'rgba(245,233,212,0.18)' : '#f4ece0',
+                      color: active ? '#f5e9d4' : '#b08a4f',
+                    }}>{t.step}</span>
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Reference group — no journey step, use anytime */}
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+              background: 'white', border: '1px solid #eee4d4', borderRadius: 999, padding: '4px 4px 4px 12px',
+              boxShadow: '0 2px 12px rgba(38,16,8,0.07)',
+            }}>
+              <span style={{ fontSize: '0.56rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#c4b291', paddingRight: 4, whiteSpace: 'nowrap' }}>Reference</span>
+              {referenceTabs.map(t => {
+                const active = activeTab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    className={flashTab === t.id ? 'tab-flash' : undefined}
+                    onClick={() => setActiveTab(t.id)}
+                    style={{
+                      padding: '7px 16px', borderRadius: 999, border: 'none', cursor: 'pointer',
+                      fontSize: '0.78rem', whiteSpace: 'nowrap',
+                      fontWeight: active ? 700 : 500,
+                      background: active ? '#241209' : 'transparent',
+                      color: active ? '#f5e9d4' : '#8a7a63',
+                      boxShadow: active ? '0 4px 12px rgba(36,18,9,0.28)' : 'none',
+                      transition: 'all 0.18s ease',
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -1485,110 +1605,131 @@ export default function ProspectDetailPage() {
         {activeTab === 'flags' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-            {/* Summary bar */}
-            {flags.length > 0 && (
-              <div style={{ background: 'white', borderRadius: 18, border: '1px solid #e8dece', boxShadow: '0 2px 14px rgba(0,0,0,0.05)', padding: '14px 18px', display: 'flex', gap: 0, overflow: 'hidden' }}>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, paddingRight: 16, borderRight: '1px solid #f0ebe2' }}>
-                  <span style={{ fontSize: '2rem', fontWeight: 800, color: '#2D6B4F', fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', lineHeight: 1 }}>{greenFlags.length}</span>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#2D6B4F', textTransform: 'uppercase', letterSpacing: '0.08em' }}>💚 Green Flags</span>
-                  <div style={{ height: 4, width: '60%', borderRadius: 2, background: 'rgba(45,107,79,0.2)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: flags.length ? `${(greenFlags.length / flags.length) * 100}%` : '0%', background: '#2D6B4F', borderRadius: 2, transition: 'width 0.5s ease' }} />
+            {/* ── The Balance: live green-vs-red verdict ── */}
+            {(() => {
+              const g = greenFlags.length, r = redFlags.length, tot = g + r;
+              const gp = tot ? (g / tot) * 100 : 50;
+              const ratio = tot ? g / tot : 0.5;
+              let verdict: string, vColor: string, vEmoji: string, vSub: string;
+              let vFlag: 'green' | 'red' | null = null;
+              if (tot === 0) {
+                verdict = 'Nothing flagged yet'; vColor = '#a08b6e'; vEmoji = '🕊️';
+                vSub = 'Tap the good & watch-out signs below as you notice them.';
+              } else if (ratio >= 0.7) {
+                verdict = 'Looking promising'; vColor = '#2D6B4F'; vEmoji = ''; vFlag = 'green';
+                vSub = 'The greens clearly outweigh the reds so far.';
+              } else if (ratio >= 0.55) {
+                verdict = 'Leaning positive'; vColor = '#3F8A5C'; vEmoji = ''; vFlag = 'green';
+                vSub = 'More good signs than concerns — keep observing.';
+              } else if (ratio >= 0.45) {
+                verdict = 'Mixed signals'; vColor = '#D98A1E'; vEmoji = '⚖️';
+                vSub = 'Fairly balanced. Weigh which flags matter most to you.';
+              } else if (ratio >= 0.3) {
+                verdict = 'Proceed with caution'; vColor = '#C4622A'; vEmoji = ''; vFlag = 'red';
+                vSub = 'The concerns are starting to outweigh the positives.';
+              } else {
+                verdict = 'Serious concerns'; vColor = '#8B2A2A'; vEmoji = ''; vFlag = 'red';
+                vSub = 'Red flags dominate — think carefully before moving ahead.';
+              }
+              return (
+                <div style={{ background: 'white', borderRadius: 18, border: '1px solid #eee4d4', boxShadow: '0 2px 14px rgba(38,16,8,0.05)', padding: '15px 18px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                      <span style={{ flexShrink: 0, display: 'inline-flex' }}>
+                        {vFlag ? <FlagIcon color={vFlag === 'green' ? FLAG_GREEN : FLAG_RED} size={22} /> : <span style={{ fontSize: '1.2rem' }}>{vEmoji}</span>}
+                      </span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', fontSize: '1.05rem', fontWeight: 700, color: '#241209', lineHeight: 1.15 }}>{verdict}</div>
+                        <div style={{ fontSize: '0.72rem', color: '#a08b6e', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{vSub}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.82rem', fontWeight: 800, color: '#2D6B4F' }}><FlagIcon color={FLAG_GREEN} size={13} />{g}</span>
+                      <span style={{ width: 1, height: 14, background: '#eadfce' }} />
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.82rem', fontWeight: 800, color: '#8B2A2A' }}><FlagIcon color={FLAG_RED} size={13} />{r}</span>
+                    </div>
                   </div>
-                </div>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, paddingLeft: 16 }}>
-                  <span style={{ fontSize: '2rem', fontWeight: 800, color: '#8B2A2A', fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', lineHeight: 1 }}>{redFlags.length}</span>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#8B2A2A', textTransform: 'uppercase', letterSpacing: '0.08em' }}>🚩 Red Flags</span>
-                  <div style={{ height: 4, width: '60%', borderRadius: 2, background: 'rgba(139,42,42,0.2)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: flags.length ? `${(redFlags.length / flags.length) * 100}%` : '0%', background: '#8B2A2A', borderRadius: 2, transition: 'width 0.5s ease' }} />
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {/* Green flags panel */}
-            <div style={{ background: 'white', borderRadius: 18, border: '1px solid rgba(45,107,79,0.25)', boxShadow: '0 2px 14px rgba(45,107,79,0.05)', overflow: 'hidden' }}>
-              <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid rgba(45,107,79,0.15)', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(45,107,79,0.04)' }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(45,107,79,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '0.85rem' }}>💚</span>
-                </div>
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#2D6B4F', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Add Green Flag</span>
-              </div>
-              <div style={{ padding: '12px 14px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {[
-                  { label: 'Communication', emoji: '🗣️', flags: ['Respectful in conversation', 'Good listener — asks questions back', 'Honest and transparent', 'Mature way of handling disagreements', 'Consistent behavior — no mixed signals'] },
-                  { label: 'Values & Character', emoji: '🌟', flags: ['Respects your opinions even when disagreeing', 'Supportive of your career/ambitions', 'Good sense of humor', 'Makes effort to know your family'] },
-                  { label: 'Family & Lifestyle', emoji: '🏡', flags: ['Family is warm and welcoming', 'Speaks well about their family', 'Has hobbies and interests beyond work'] },
-                  { label: 'Responsibility', emoji: '💼', flags: ['Clear about career goals', 'Financially responsible', 'Punctual — calls/meets on time'] },
-                ].map(cat => (
-                  <div key={cat.label}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 7 }}>
-                      <span style={{ fontSize: '0.8rem' }}>{cat.emoji}</span>
-                      <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#2D6B4F', textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.85 }}>{cat.label}</span>
+                  {/* Tug-of-war bar */}
+                  <div style={{ marginTop: 12, position: 'relative' }}>
+                    <div style={{ display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', background: '#efe7da' }}>
+                      <div style={{ width: `${gp}%`, background: tot ? 'linear-gradient(90deg, #2D6B4F, #3F8A5C)' : 'transparent', transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)' }} />
+                      <div style={{ flex: 1, background: tot ? 'linear-gradient(90deg, #A83636, #8B2A2A)' : 'transparent', transition: 'all 0.6s' }} />
                     </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      {cat.flags.map(f => {
-                        const already = alreadyFlaggedTexts.has(f);
-                        return (
-                          <button key={f} type="button" onClick={() => !already && handleAddFlag('green', f)} disabled={already}
-                            style={{
-                              padding: '5px 12px', borderRadius: 20,
-                              border: `1px solid ${already ? 'rgba(45,107,79,0.4)' : 'rgba(45,107,79,0.3)'}`,
-                              background: already ? 'rgba(45,107,79,0.12)' : 'white',
-                              color: '#2D6B4F', fontSize: '0.73rem', fontWeight: already ? 700 : 500,
-                              cursor: already ? 'default' : 'pointer', opacity: already ? 0.8 : 1,
-                              transition: 'all 0.15s',
-                            }}>
-                            {already ? '✓ ' : ''}{f}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    {tot > 0 && (
+                      <div style={{ position: 'absolute', top: '50%', left: `${gp}%`, transform: 'translate(-50%, -50%)', width: 14, height: 14, borderRadius: '50%', background: 'white', border: `2.5px solid ${vColor}`, boxShadow: '0 1px 4px rgba(0,0,0,0.18)', transition: 'left 0.6s cubic-bezier(0.4,0,0.2,1)' }} />
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              );
+            })()}
 
-            {/* Red flags panel */}
-            <div style={{ background: 'white', borderRadius: 18, border: '1px solid rgba(139,42,42,0.2)', boxShadow: '0 2px 14px rgba(139,42,42,0.04)', overflow: 'hidden' }}>
-              <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid rgba(139,42,42,0.12)', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(139,42,42,0.03)' }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(139,42,42,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '0.85rem' }}>🚩</span>
-                </div>
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#8B2A2A', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Add Red Flag</span>
-              </div>
-              <div style={{ padding: '12px 14px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {[
-                  { label: 'Communication', emoji: '💬', flags: ['Rude or dismissive in conversation', 'Avoids answering direct questions', 'Talks only about themselves', 'Inconsistent — says one thing, does another'] },
-                  { label: 'Respect & Attitude', emoji: '⚠️', flags: ['Disrespectful about your career/education', 'Controlling behavior — tells you what to do', 'Pressuring for quick decision', 'Disrespectful to waitstaff/service people'] },
-                  { label: 'Family & Lifestyle', emoji: '🏚️', flags: ['Family is demanding or rude', "Bad-mouths their own family", 'Very different lifestyle expectations', 'Drinks/smokes but hid it initially'] },
-                  { label: 'Trust & Honesty', emoji: '🔍', flags: ['Unclear about finances / suspicious', 'Still seems attached to an ex', 'Lies or exaggerates about themselves'] },
-                ].map(cat => (
-                  <div key={cat.label}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 7 }}>
-                      <span style={{ fontSize: '0.8rem' }}>{cat.emoji}</span>
-                      <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#8B2A2A', textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.85 }}>{cat.label}</span>
+            {/* ── Green & Red pickers, side by side ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, alignItems: 'stretch' }}>
+              {([
+                {
+                  type: 'green' as const, title: 'Good Signs', accent: '#2D6B4F',
+                  cats: [
+                    { label: 'Communication', emoji: '🗣️', flags: ['Respectful in conversation', 'Good listener — asks questions back', 'Honest and transparent', 'Mature way of handling disagreements', 'Consistent behavior — no mixed signals'] },
+                    { label: 'Values & Character', emoji: '🌟', flags: ['Respects your opinions even when disagreeing', 'Supportive of your career/ambitions', 'Good sense of humor', 'Makes effort to know your family'] },
+                    { label: 'Family & Lifestyle', emoji: '🏡', flags: ['Family is warm and welcoming', 'Speaks well about their family', 'Has hobbies and interests beyond work'] },
+                    { label: 'Responsibility', emoji: '💼', flags: ['Clear about career goals', 'Financially responsible', 'Punctual — calls/meets on time'] },
+                  ],
+                },
+                {
+                  type: 'red' as const, title: 'Watch-Outs', accent: '#8B2A2A',
+                  cats: [
+                    { label: 'Communication', emoji: '💬', flags: ['Rude or dismissive in conversation', 'Avoids answering direct questions', 'Talks only about themselves', 'Inconsistent — says one thing, does another'] },
+                    { label: 'Respect & Attitude', emoji: '⚠️', flags: ['Disrespectful about your career/education', 'Controlling behavior — tells you what to do', 'Pressuring for quick decision', 'Disrespectful to waitstaff/service people'] },
+                    { label: 'Family & Lifestyle', emoji: '🏚️', flags: ['Family is demanding or rude', "Bad-mouths their own family", 'Very different lifestyle expectations', 'Drinks/smokes but hid it initially'] },
+                    { label: 'Trust & Honesty', emoji: '🔍', flags: ['Unclear about finances / suspicious', 'Still seems attached to an ex', 'Lies or exaggerates about themselves'] },
+                  ],
+                },
+              ]).map(panel => {
+                const rgb = panel.type === 'green' ? '45,107,79' : '139,42,42';
+                return (
+                  <div key={panel.type} style={{ background: 'white', borderRadius: 20, border: `1px solid rgba(${rgb},0.22)`, boxShadow: `0 4px 18px rgba(${rgb},0.06)`, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ padding: '14px 16px', borderBottom: `1px solid rgba(${rgb},0.12)`, display: 'flex', alignItems: 'center', gap: 10, background: `rgba(${rgb},0.04)` }}>
+                      <div style={{ width: 34, height: 34, borderRadius: 10, background: `rgba(${rgb},0.12)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FlagIcon color={panel.accent} size={17} /></div>
+                      <div>
+                        <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', fontSize: '1rem', fontWeight: 700, color: panel.accent, lineHeight: 1.1 }}>{panel.title}</div>
+                        <div style={{ fontSize: '0.66rem', color: '#a08b6e', marginTop: 1 }}>Tap what you&apos;ve noticed</div>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      {cat.flags.map(f => {
-                        const already = alreadyFlaggedTexts.has(f);
-                        return (
-                          <button key={f} type="button" onClick={() => !already && handleAddFlag('red', f)} disabled={already}
-                            style={{
-                              padding: '5px 12px', borderRadius: 20,
-                              border: `1px solid ${already ? 'rgba(139,42,42,0.4)' : 'rgba(139,42,42,0.3)'}`,
-                              background: already ? 'rgba(139,42,42,0.1)' : 'white',
-                              color: '#8B2A2A', fontSize: '0.73rem', fontWeight: already ? 700 : 500,
-                              cursor: already ? 'default' : 'pointer', opacity: already ? 0.8 : 1,
-                              transition: 'all 0.15s',
-                            }}>
-                            {already ? '✓ ' : ''}{f}
-                          </button>
-                        );
-                      })}
+                    <div style={{ padding: '14px 16px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      {panel.cats.map(cat => (
+                        <div key={cat.label}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 9 }}>
+                            <span style={{ width: 3, height: 12, borderRadius: 2, background: panel.accent, opacity: 0.55 }} />
+                            <span style={{ fontSize: '0.78rem' }}>{cat.emoji}</span>
+                            <span style={{ fontSize: '0.62rem', fontWeight: 800, color: panel.accent, textTransform: 'uppercase', letterSpacing: '0.09em', opacity: 0.9 }}>{cat.label}</span>
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                            {cat.flags.map(f => {
+                              const already = alreadyFlaggedTexts.has(f);
+                              return (
+                                <button key={f} type="button" onClick={() => !already && handleAddFlag(panel.type, f)} disabled={already}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 999,
+                                    border: `1.5px solid ${already ? panel.accent : `rgba(${rgb},0.28)`}`,
+                                    background: already ? panel.accent : 'white',
+                                    color: already ? 'white' : panel.accent, fontSize: '0.76rem', fontWeight: already ? 700 : 500,
+                                    cursor: already ? 'default' : 'pointer', transition: 'all 0.15s', lineHeight: 1.25,
+                                  }}
+                                  onMouseEnter={e => { if (!already) { e.currentTarget.style.background = `rgba(${rgb},0.09)`; e.currentTarget.style.borderColor = panel.accent; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
+                                  onMouseLeave={e => { if (!already) { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = `rgba(${rgb},0.28)`; e.currentTarget.style.transform = 'none'; } }}
+                                >
+                                  <span style={{ fontSize: '0.7rem', opacity: already ? 1 : 0.6, fontWeight: 800 }}>{already ? '✓' : '+'}</span>{f}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
 
             {/* Custom flag */}
@@ -1600,35 +1741,46 @@ export default function ProspectDetailPage() {
                 <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Custom Flag</span>
               </div>
               <div style={{ padding: '12px 14px 14px' }}>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                  {(['green', 'red'] as const).map(type => (
-                    <button key={type} onClick={() => setCustomFlagType(type)}
-                      style={{
-                        flex: 1, padding: '9px 12px', borderRadius: 12, border: `1.5px solid ${customFlagType === type ? (type === 'green' ? '#2D6B4F' : '#8B2A2A') : '#e8dece'}`,
-                        background: customFlagType === type ? (type === 'green' ? '#2D6B4F' : '#8B2A2A') : 'white',
-                        color: customFlagType === type ? 'white' : (type === 'green' ? '#2D6B4F' : '#8B2A2A'),
-                        fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.15s',
-                      }}>
-                      {type === 'green' ? '💚 Green' : '🚩 Red'}
-                    </button>
-                  ))}
-                </div>
-                {customFlagType && (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      type="text" value={customFlagText} onChange={e => setCustomFlagText(e.target.value)}
-                      placeholder={`Describe your ${customFlagType} flag…`}
-                      style={{ flex: 1, borderRadius: 12, border: '1.5px solid #e8dece', padding: '10px 14px', background: '#faf8f5', fontFamily: 'inherit', fontSize: '0.85rem', color: '#1a1410', outline: 'none' }}
-                      onFocus={e => { e.currentTarget.style.borderColor = '#c13e2a'; }}
-                      onBlur={e => { e.currentTarget.style.borderColor = '#e8dece'; }}
-                    />
-                    <button
-                      onClick={async () => { if (!customFlagText.trim()) return; await handleAddFlag(customFlagType, customFlagText.trim(), true); setCustomFlagText(''); setCustomFlagType(null); }}
-                      disabled={!customFlagText.trim()}
-                      style={{ padding: '10px 18px', borderRadius: 12, border: 'none', cursor: customFlagText.trim() ? 'pointer' : 'not-allowed', background: customFlagText.trim() ? 'linear-gradient(135deg, #c13e2a, #8B2A2A)' : '#e8dece', color: customFlagText.trim() ? 'white' : '#a89e92', fontWeight: 700, fontSize: '0.85rem', flexShrink: 0 }}
-                    >Add</button>
-                  </div>
-                )}
+                {(() => {
+                  const active = customFlagType ?? 'green';
+                  const accent = active === 'green' ? '#2D6B4F' : '#8B2A2A';
+                  return (
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      {/* compact green/red segmented toggle */}
+                      <div style={{ display: 'inline-flex', padding: 3, gap: 3, borderRadius: 11, background: '#f4ede2', flexShrink: 0 }}>
+                        {(['green', 'red'] as const).map(type => {
+                          const on = active === type;
+                          const c = type === 'green' ? '#2D6B4F' : '#8B2A2A';
+                          return (
+                            <button key={type} type="button" onClick={() => setCustomFlagType(type)} title={type === 'green' ? 'Green flag' : 'Red flag'}
+                              style={{
+                                width: 38, height: 34, borderRadius: 9, border: 'none', cursor: 'pointer',
+                                background: on ? 'white' : 'transparent',
+                                boxShadow: on ? `0 1px 4px rgba(0,0,0,0.1)` : 'none',
+                                opacity: on ? 1 : 0.45, transition: 'all 0.15s',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}>
+                              <FlagIcon color={c} size={16} />
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <input
+                        type="text" value={customFlagText} onChange={e => setCustomFlagText(e.target.value)}
+                        onKeyDown={async e => { if (e.key === 'Enter' && customFlagText.trim()) { await handleAddFlag(active, customFlagText.trim(), true); setCustomFlagText(''); } }}
+                        placeholder={`Add your own ${active === 'green' ? 'green' : 'red'} flag…`}
+                        style={{ flex: 1, minWidth: 160, borderRadius: 12, border: '1.5px solid #e8dece', padding: '10px 14px', background: '#faf8f5', fontFamily: 'inherit', fontSize: '0.85rem', color: '#1a1410', outline: 'none', transition: 'border-color 0.15s' }}
+                        onFocus={e => { e.currentTarget.style.borderColor = accent; }}
+                        onBlur={e => { e.currentTarget.style.borderColor = '#e8dece'; }}
+                      />
+                      <button
+                        onClick={async () => { if (!customFlagText.trim()) return; await handleAddFlag(active, customFlagText.trim(), true); setCustomFlagText(''); }}
+                        disabled={!customFlagText.trim()}
+                        style={{ padding: '10px 20px', borderRadius: 12, border: 'none', cursor: customFlagText.trim() ? 'pointer' : 'not-allowed', background: customFlagText.trim() ? accent : '#e8dece', color: customFlagText.trim() ? 'white' : '#a89e92', fontWeight: 700, fontSize: '0.85rem', flexShrink: 0, transition: 'all 0.15s' }}
+                      >Add</button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -1642,8 +1794,8 @@ export default function ProspectDetailPage() {
                   <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Your Flags</span>
                   <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'white', background: '#c13e2a', borderRadius: 20, padding: '1px 7px', marginLeft: 2 }}>{flags.length}</span>
                 </div>
-                <div style={{ padding: '10px 14px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {flags.map(f => (
+                <div style={{ padding: '10px 14px 14px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8 }}>
+                  {[...flags].sort((a, b) => (a.type === b.type ? 0 : a.type === 'green' ? -1 : 1)).map(f => (
                     <div key={f.id} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '10px 14px', borderRadius: 12,
@@ -1652,7 +1804,7 @@ export default function ProspectDetailPage() {
                     }}>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: '0.9rem' }}>{f.type === 'green' ? '💚' : '🚩'}</span>
+                          <FlagIcon color={f.type === 'green' ? FLAG_GREEN : FLAG_RED} size={15} />
                           <span style={{ fontSize: '0.85rem', fontWeight: 600, color: f.type === 'green' ? '#2D6B4F' : '#8B2A2A' }}>{f.text}</span>
                           {f.isCustom && <span style={{ fontSize: '0.65rem', color: '#a89e92', background: '#f0ebe2', borderRadius: 20, padding: '1px 7px' }}>custom</span>}
                         </div>
@@ -1906,6 +2058,25 @@ export default function ProspectDetailPage() {
           </div>
         )}
 
+        {/* ── MEETING TAB — locked state before a meeting is fixed ── */}
+        {activeTab === 'meeting' && !isMeetingStage && (
+          <div style={{ background: 'white', borderRadius: 20, border: '1px solid #eee4d4', boxShadow: '0 4px 20px rgba(38,16,8,0.05)', padding: '38px 24px', textAlign: 'center' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(193,62,42,0.08)', border: '1px solid rgba(193,62,42,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="3" stroke="#c13e2a" strokeWidth="1.6"/><path d="M16 2v4M8 2v4M3 10h18" stroke="#c13e2a" strokeWidth="1.6" strokeLinecap="round"/></svg>
+            </div>
+            <p style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', fontSize: '1.05rem', fontWeight: 700, color: '#241209', margin: '0 0 6px' }}>No meeting yet</p>
+            <p style={{ fontSize: '0.82rem', color: '#a08b6e', margin: '0 auto 18px', maxWidth: 380, lineHeight: 1.55 }}>
+              Once a meeting is fixed with {prospect.name.split(' ')[0]}, this tab holds your prep questions, and after you meet — your feedback and ratings.
+            </p>
+            <button
+              onClick={() => changeStage('meeting_fixed')}
+              style={{ padding: '11px 22px', borderRadius: 14, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #c13e2a, #8B2A2A)', color: 'white', fontWeight: 800, fontSize: '0.84rem', boxShadow: '0 5px 16px rgba(193,62,42,0.3)' }}
+            >
+              Meeting Fixed — Start Prep
+            </button>
+          </div>
+        )}
+
         {/* ── MEETING TAB ── */}
         {activeTab === 'meeting' && isMeetingStage && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1932,38 +2103,73 @@ export default function ProspectDetailPage() {
                 )}
 
                 {/* Questions to ask */}
-                <div style={{ background: 'white', borderRadius: 18, border: '1px solid #e8dece', boxShadow: '0 2px 14px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-                  <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid #f0ebe2', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(193,62,42,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#c13e2a" strokeWidth="1.6"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" stroke="#c13e2a" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="#c13e2a" strokeWidth="2" strokeLinecap="round"/></svg>
+                {(() => {
+                  const allQ = [...(MEETING_QUESTIONS as readonly string[]), ...(meetingLocal.customQuestions ?? [])];
+                  const askedCount = allQ.filter(q => meetingLocal.questionsAsked.includes(q)).length;
+                  const total = allQ.length;
+                  const pct = total ? Math.round((askedCount / total) * 100) : 0;
+                  const R = 22, C = 2 * Math.PI * R;
+                  return (
+                <div style={{ background: 'white', borderRadius: 22, border: '1px solid #e8dece', boxShadow: '0 4px 24px rgba(38,16,8,0.06)', overflow: 'hidden' }}>
+                  {/* Header with progress ring */}
+                  <div style={{ padding: '18px 20px', borderBottom: '1px solid #f0ebe2', display: 'flex', alignItems: 'center', gap: 16, background: 'linear-gradient(120deg, #fff8f5, #fdfbf7)' }}>
+                    <div style={{ position: 'relative', width: 52, height: 52, flexShrink: 0 }}>
+                      <svg width="52" height="52" viewBox="0 0 52 52" style={{ transform: 'rotate(-90deg)' }}>
+                        <circle cx="26" cy="26" r={R} fill="none" stroke="#f0e6d8" strokeWidth="5" />
+                        <circle cx="26" cy="26" r={R} fill="none" stroke="#c13e2a" strokeWidth="5" strokeLinecap="round"
+                          strokeDasharray={C} strokeDashoffset={C - (C * pct) / 100} style={{ transition: 'stroke-dashoffset 0.5s ease' }} />
+                      </svg>
+                      <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800, color: '#c13e2a' }}>{pct}%</span>
                     </div>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Questions to Ask</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', fontSize: '1.08rem', fontWeight: 700, color: '#241209', lineHeight: 1.2 }}>Questions to Ask</div>
+                      <div style={{ fontSize: '0.78rem', color: '#a08b6e', marginTop: 3 }}>
+                        <span style={{ color: '#c13e2a', fontWeight: 700 }}>{askedCount}</span> of {total} covered — tap a card once you&apos;ve asked it
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ padding: '10px 14px 10px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-                    {[...(MEETING_QUESTIONS as readonly string[]), ...(meetingLocal.customQuestions ?? [])].map(q => {
+
+                  {/* Responsive card grid */}
+                  <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
+                    {allQ.map(q => {
                       const selected = meetingLocal.questionsAsked.includes(q);
+                      const t = QUESTION_TOPICS[topicOf(q)];
                       return (
                         <button key={q} type="button" onClick={() => toggleMeetingItem(q, 'questionsAsked')}
                           style={{
-                            display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', borderRadius: 12, textAlign: 'left', cursor: 'pointer', width: '100%',
-                            background: selected ? 'rgba(193,62,42,0.06)' : '#faf8f5',
-                            border: `1px solid ${selected ? 'rgba(193,62,42,0.3)' : '#ede8df'}`,
-                            transition: 'all 0.15s',
-                          }}>
-                          <span style={{
-                            width: 18, height: 18, borderRadius: 4, border: `2px solid ${selected ? '#c13e2a' : '#d6c9b0'}`,
-                            flexShrink: 0, marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem',
-                            background: selected ? '#c13e2a' : 'white', color: 'white', transition: 'all 0.15s',
-                          }}>
-                            {selected && '✓'}
-                          </span>
-                          <span style={{ fontSize: '0.83rem', flex: 1, color: '#1a1410', fontWeight: selected ? 500 : 400, lineHeight: 1.45 }}>{q}</span>
+                            position: 'relative', display: 'flex', flexDirection: 'column', gap: 10, padding: '14px 14px 14px 16px', borderRadius: 16,
+                            textAlign: 'left', cursor: 'pointer', width: '100%', overflow: 'hidden',
+                            background: selected ? `linear-gradient(135deg, ${t.color}0d, #ffffff)` : '#faf8f5',
+                            border: `1.5px solid ${selected ? t.color + '66' : '#ede8df'}`,
+                            boxShadow: selected ? `0 4px 14px ${t.color}22` : 'none',
+                            transition: 'all 0.18s ease',
+                          }}
+                          onMouseEnter={e => { if (!selected) { e.currentTarget.style.borderColor = t.color + '55'; e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
+                          onMouseLeave={e => { if (!selected) { e.currentTarget.style.borderColor = '#ede8df'; e.currentTarget.style.background = '#faf8f5'; e.currentTarget.style.transform = 'none'; } }}
+                        >
+                          {/* accent spine */}
+                          <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: t.color, opacity: selected ? 1 : 0.4 }} />
+                          {/* top row: topic chip + check */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px', borderRadius: 999, background: t.color + '14', color: t.color, fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                              <span style={{ fontSize: '0.72rem' }}>{t.emoji}</span>{t.label}
+                            </span>
+                            <span style={{
+                              width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                              border: `2px solid ${selected ? t.color : '#d6c9b0'}`,
+                              background: selected ? t.color : 'white', color: 'white',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 900,
+                              transition: 'all 0.18s',
+                            }}>{selected && '✓'}</span>
+                          </div>
+                          <span style={{ fontSize: '0.9rem', color: '#241209', fontWeight: selected ? 600 : 500, lineHeight: 1.4 }}>{q}</span>
                         </button>
                       );
                     })}
                   </div>
+
                   {/* Add custom question */}
-                  <div style={{ padding: '0 14px 14px', display: 'flex', gap: 8 }}>
+                  <div style={{ padding: '4px 16px 18px', display: 'flex', gap: 8 }}>
                     <input
                       type="text"
                       value={customQuestionText}
@@ -1979,8 +2185,8 @@ export default function ProspectDetailPage() {
                           setCustomQuestionText('');
                         }
                       }}
-                      placeholder="Add a custom question…"
-                      style={{ flex: 1, borderRadius: 12, border: '1.5px solid #e8dece', padding: '10px 14px', background: '#faf8f5', fontFamily: 'inherit', fontSize: '0.83rem', color: '#1a1410', outline: 'none' }}
+                      placeholder="✍️  Add your own question…"
+                      style={{ flex: 1, borderRadius: 14, border: '1.5px solid #e8dece', padding: '12px 16px', background: '#faf8f5', fontFamily: 'inherit', fontSize: '0.86rem', color: '#1a1410', outline: 'none', transition: 'border-color 0.15s' }}
                       onFocus={e => { e.currentTarget.style.borderColor = '#c13e2a'; }}
                       onBlur={e => { e.currentTarget.style.borderColor = '#e8dece'; }}
                     />
@@ -1997,10 +2203,12 @@ export default function ProspectDetailPage() {
                         }));
                         setCustomQuestionText('');
                       }}
-                      style={{ padding: '10px 18px', borderRadius: 12, border: 'none', cursor: customQuestionText.trim() ? 'pointer' : 'not-allowed', background: customQuestionText.trim() ? 'linear-gradient(135deg, #c13e2a, #8B2A2A)' : '#e8dece', color: customQuestionText.trim() ? 'white' : '#a89e92', fontWeight: 700, fontSize: '0.83rem', flexShrink: 0 }}
+                      style={{ padding: '12px 22px', borderRadius: 14, border: 'none', cursor: customQuestionText.trim() ? 'pointer' : 'not-allowed', background: customQuestionText.trim() ? 'linear-gradient(135deg, #c13e2a, #8B2A2A)' : '#e8dece', color: customQuestionText.trim() ? 'white' : '#a89e92', fontWeight: 700, fontSize: '0.86rem', flexShrink: 0, transition: 'all 0.15s' }}
                     >Add</button>
                   </div>
                 </div>
+                  );
+                })()}
               </>
             )}
 
@@ -2350,6 +2558,21 @@ export default function ProspectDetailPage() {
         )}
 
         {/* ── KUNDLI TAB ── */}
+        {activeTab === 'kundli' && !hasKundliData && (
+          <div style={{ background: 'white', borderRadius: 20, border: '1px solid #eee4d4', boxShadow: '0 4px 20px rgba(38,16,8,0.05)', padding: '38px 24px', textAlign: 'center' }}>
+            <div style={{ fontSize: '2rem', marginBottom: 10 }}>🔯</div>
+            <p style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', fontSize: '1.05rem', fontWeight: 700, color: '#241209', margin: '0 0 6px' }}>Kundli not calculated yet</p>
+            <p style={{ fontSize: '0.82rem', color: '#a08b6e', margin: '0 auto 18px', maxWidth: 380, lineHeight: 1.55 }}>
+              Add {prospect.name.split(' ')[0]}&apos;s birth details (date, time and place) or pick a Nakshatra to unlock the full Kundli Milan report.
+            </p>
+            <button
+              onClick={() => { setActiveTab('overview'); startEdit(); }}
+              style={{ padding: '11px 22px', borderRadius: 14, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #c13e2a, #8B2A2A)', color: 'white', fontWeight: 800, fontSize: '0.84rem', boxShadow: '0 5px 16px rgba(193,62,42,0.3)' }}
+            >
+              Add Birth Details
+            </button>
+          </div>
+        )}
         {activeTab === 'kundli' && hasKundliData && (
           <div>
             {profile && profile.nakshatra >= 0 ? (
@@ -2413,7 +2636,11 @@ export default function ProspectDetailPage() {
             <div style={{ background: 'white', borderRadius: 18, border: '1px solid #e8dece', boxShadow: '0 2px 14px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
               <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid #f0ebe2' }}>
                 <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-                  {isDecisionStage ? 'Change Decision' : "You've met. What's your decision?"}
+                  {isDecisionStage
+                    ? 'Change Decision'
+                    : prospect.stage === 'met'
+                    ? "You've met. What's your decision?"
+                    : 'Ready to decide? You can decide at any stage.'}
                 </span>
               </div>
               <div style={{ padding: '16px 16px 18px', display: 'flex', gap: 10 }}>
