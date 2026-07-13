@@ -99,23 +99,15 @@ function leadNarrative(p: Prospect): string {
   const when = timeAgoWords(p.lastActivityAt ?? p.createdAt);
   switch (p.stage) {
     case 'new':
-      return `Newly added — ${ordinalWord(pos)} of eleven. Her biodata is waiting for your first read.`;
-    case 'photo_exchanged':
-      return `At the Photos stage — ${ordinalWord(pos)} of eleven. Look closely, then decide if the kundli is worth matching.`;
-    case 'kundli_sent':
-      return `Kundli is out for matching — ${ordinalWord(pos)} of eleven. The pandit's verdict is what you're waiting on.`;
+      return `Newly added — ${ordinalWord(pos)} of five. Her biodata is waiting for your first read.`;
     case 'kundli_matched':
-      return `Kundli matched — ${ordinalWord(pos)} of eleven. A first call is the natural next step.`;
+      return `Kundli matched — ${ordinalWord(pos)} of five. A first call is the natural next step.`;
     case 'call_done':
-      return `At the Call stage — ${ordinalWord(pos)} of eleven. You spoke ${when}; a follow-up is due to keep things warm.`;
-    case 'family_call':
-      return `Families are talking — ${ordinalWord(pos)} of eleven. Listen for warmth and genuine intent.`;
+      return `At the Call stage — ${ordinalWord(pos)} of five. You spoke ${when}; a follow-up is due to keep things warm.`;
     case 'meeting_fixed':
-      return `A meeting is fixed — ${ordinalWord(pos)} of eleven. Prepare what you most want to observe.`;
-    case 'met':
-      return `You've met — ${ordinalWord(pos)} of eleven. Sit with how it felt before the next move.`;
+      return `A meeting is fixed — ${ordinalWord(pos)} of five. Prepare what you most want to observe.`;
     case 'interested':
-      return `Mutually interested — ${ordinalWord(pos)} of eleven. The conversation now turns gently toward roka.`;
+      return `Mutually interested — ${ordinalWord(pos)} of five. The conversation now turns gently toward roka.`;
     case 'on_hold':
       return `On hold — paused ${when}. A gentle nudge may bring it back to life.`;
     default:
@@ -128,13 +120,9 @@ function diaryNote(p: Prospect): string {
   const when = timeAgoWords(p.lastActivityAt ?? p.createdAt);
   switch (p.stage) {
     case 'new': return 'Newly added — biodata awaiting your first read.';
-    case 'photo_exchanged': return 'Photos shared — appearance review pending.';
-    case 'kundli_sent': return 'Kundli sent — waiting on the match verdict.';
     case 'kundli_matched': return 'Newly matched — a first call is next.';
     case 'call_done': return `Spoke ${when} — a follow-up call is due.`;
-    case 'family_call': return 'Families talking — waiting to hear back.';
     case 'meeting_fixed': return 'Meeting fixed — preparation pending.';
-    case 'met': return 'Met in person — reflecting on the next step.';
     case 'interested': return 'Mutually interested — roka on the horizon.';
     case 'on_hold': return `On hold — paused ${when}.`;
     default: return STAGE_TAB_LABELS[p.stage];
@@ -142,25 +130,23 @@ function diaryNote(p: Prospect): string {
 }
 
 const STAGE_ORDER: ProspectStage[] = [
-  'new', 'photo_exchanged', 'kundli_sent', 'kundli_matched',
-  'call_done', 'family_call', 'meeting_fixed', 'met', 'interested', 'on_hold', 'rejected',
+  'new', 'kundli_matched', 'call_done', 'meeting_fixed',
+  'interested', 'on_hold', 'rejected',
 ];
 
 const STAGE_TAB_LABELS: Record<ProspectStage, string> = {
-  new: 'New Lead', photo_exchanged: 'Photos', kundli_sent: 'Kundli', kundli_matched: 'Matched',
-  call_done: 'Calls', family_call: 'Family', meeting_fixed: 'Meeting', met: 'Met',
+  new: 'New Lead', kundli_matched: 'Matched', call_done: 'Calls', meeting_fixed: 'Meeting',
   interested: 'Interested', on_hold: 'On Hold', rejected: 'Closed',
 };
 
 const JOURNEY_STAGES: ProspectStage[] = [
-  'new', 'photo_exchanged', 'kundli_sent', 'kundli_matched',
-  'call_done', 'family_call', 'meeting_fixed', 'met', 'interested',
+  'new', 'kundli_matched', 'call_done', 'meeting_fixed', 'interested',
 ];
 
 const STAGE_QUICK_ACTION: Partial<Record<ProspectStage, string>> = {
-  new: 'Review Biodata', photo_exchanged: 'Check Kundli', kundli_sent: 'View Report',
-  kundli_matched: 'Schedule Call', call_done: 'Log Another Call', family_call: 'Rate Family',
-  meeting_fixed: 'Prep Meeting', met: 'Rate Meeting', interested: 'Next Steps',
+  new: 'Review Biodata',
+  kundli_matched: 'Schedule Call', call_done: 'Log Another Call',
+  meeting_fixed: 'Prep Meeting', interested: 'Next Steps',
   on_hold: 'Resume', rejected: 'View Summary',
 };
 
@@ -1541,10 +1527,9 @@ function BoardProspectCard({ prospect: p, index, onTap }: { prospect: Prospect; 
 
   // Next-step button: map current stage to the simplified 5-step journey label
   const NEXT_STEP_LABEL: Partial<Record<ProspectStage, string>> = {
-    new: 'Call', photo_exchanged: 'Call', kundli_sent: 'Call', kundli_matched: 'Call',
-    call_done: 'Meet', family_call: 'Meet',
-    meeting_fixed: 'Met',
-    met: 'Decision',
+    new: 'Call', kundli_matched: 'Call',
+    call_done: 'Meet',
+    meeting_fixed: 'Decision',
     on_hold: 'Resume', rejected: 'View Summary',
   };
   const nextStepLabel = NEXT_STEP_LABEL[p.stage] ?? null;

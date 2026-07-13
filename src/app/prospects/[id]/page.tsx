@@ -16,7 +16,7 @@ import { calculateKundli } from '@/lib/kundli';
 import { track } from '@/lib/analytics';
 import { getCityByName } from '@/lib/indian-cities';
 import {
-  Prospect, Note, ProspectStage, STAGE_LABELS, NAKSHATRAS, HOBBIES,
+  Prospect, Note, ProspectStage, ProspectDecision, STAGE_LABELS, NAKSHATRAS, HOBBIES,
   ConversationLog, Flag, FamilyScorecard, FamilyScorecardKey,
   FAMILY_SCORECARD_DIMENSIONS, MeetingData, MeetingRecord, MeetingDimensionKey,
   POST_MEETING_DIMENSIONS,
@@ -88,7 +88,7 @@ function meetingAvg(r: MeetingRecord): number | null {
 }
 
 const JOURNEY_STAGES: ProspectStage[] = [
-  'new', 'call_done', 'meeting_fixed', 'met',
+  'new', 'kundli_matched', 'call_done', 'meeting_fixed',
 ];
 
 const DECISION_STAGES: ProspectStage[] = ['interested', 'on_hold', 'rejected'];
@@ -109,7 +109,7 @@ const JOURNEY_LABELS: Record<string, string> = {
 // Stepper semantics: clicking a done/current stage REVIEWS its content tab;
 // clicking a future stage ADVANCES the journey to it.
 const STAGE_TAB: Record<string, Tab> = {
-  new: 'overview', call_done: 'conversations', meeting_fixed: 'meeting', met: 'meeting',
+  new: 'overview', kundli_matched: 'kundli', call_done: 'conversations', meeting_fixed: 'meeting',
 };
 
 // Action-phrased labels for the advance CTA (what you're marking as done)
@@ -127,12 +127,12 @@ function stageIcon(stage: string, color: string): React.ReactNode {
   switch (stage) {
     case 'new': // sparkle — a fresh prospect
       return <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.9 5.6L20 10.5l-6.1 1.9L12 18l-1.9-5.6L4 10.5l6.1-1.9L12 3z" {...s}/></svg>;
+    case 'kundli_matched': // star — horoscope match
+      return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.6 6.6L21 11l-6.4 2.4L12 20l-2.6-6.6L3 11l6.4-2.4L12 2z" {...s}/></svg>;
     case 'call_done': // phone
       return <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5 19.79 19.79 0 010 4.82 2 2 0 012 2.73h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 10.6a16 16 0 006.72 6.72l1.24-1.24a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7a2 2 0 011.72 2.03z" {...s}/></svg>;
     case 'meeting_fixed': // calendar
       return <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="3" {...s}/><path d="M16 2v4M8 2v4M3 10h18" {...s}/></svg>;
-    case 'met': // two people
-      return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" {...s}/><circle cx="9" cy="7" r="4" {...s}/><path d="M22 21v-2a4 4 0 00-3-3.87M15 3.13a4 4 0 010 7.75" {...s}/></svg>;
     default: // decision — heart
       return <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" {...s}/></svg>;
   }
@@ -447,12 +447,17 @@ export default function ProspectDetailPage() {
 
   const changeStage = async (stage: ProspectStage) => {
     if (!user || !prospect) return;
-    await updateProspect(user.uid, id, { stage });
-    setProspect(p => p ? { ...p, stage } : p);
+    const isDecision = stage === 'interested' || stage === 'on_hold' || stage === 'rejected';
+    // Record a decision in its own field so it persists even after the prospect
+    // is later moved back to a process stage. Process-stage moves never clear it.
+    const patch: Partial<Prospect> = isDecision ? { stage, decision: stage as ProspectDecision } : { stage };
+    await updateProspect(user.uid, id, patch);
+    setProspect(p => p ? { ...p, ...patch } : p);
     await logStageChange(user.uid, id, prospect.name, STAGE_LABELS[stage]);
     if (stage === 'new') openTab('overview');
+    if (stage === 'kundli_matched') openTab('kundli');
     if (stage === 'call_done') openTab('conversations');
-    if (stage === 'meeting_fixed' || stage === 'met') openTab('meeting');
+    if (stage === 'meeting_fixed') openTab('meeting');
     if (stage === 'interested' || stage === 'on_hold' || stage === 'rejected') {
       openTab('decision');
       track('decision_made', { decision: stage });
@@ -548,6 +553,16 @@ export default function ProspectDetailPage() {
     toast.success('Flag removed');
   };
 
+  // Clicking a preset chip toggles it: add if not yet flagged, remove if it is.
+  const handleToggleFlag = async (type: 'green' | 'red', text: string) => {
+    const existing = flags.find(f => f.text === text);
+    if (existing) {
+      await handleDeleteFlag(existing.id, existing.type);
+    } else {
+      await handleAddFlag(type, text);
+    }
+  };
+
   const handleSaveFamily = async () => {
     if (!user || !prospect) return;
     setSavingFamily(true);
@@ -639,26 +654,33 @@ export default function ProspectDetailPage() {
   const redFlags = flags.filter(f => f.type === 'red');
   const alreadyFlaggedTexts = new Set(flags.map(f => f.text));
 
-  const isMeetingStage = prospect.stage === 'meeting_fixed' || prospect.stage === 'met';
+  const isMeetingStage = prospect.stage === 'meeting_fixed';
+  // The verdict to show in the Decision tab: the persisted `decision` if present,
+  // otherwise the stage itself when the prospect is currently on a decision stage.
+  // This keeps the decision visible even after moving back to a process stage.
+  const currentDecision: ProspectDecision | undefined =
+    prospect.decision ?? (DECISION_STAGES.includes(prospect.stage) ? (prospect.stage as ProspectDecision) : undefined);
+  const hasDecision = !!currentDecision;
   const hasKundliData = prospect.nakshatra !== undefined && prospect.nakshatra >= 0;
   const savedMeetings = meetingLocal.meetings ?? [];
   const activeMeeting: MeetingRecord = savedMeetings[activeMeetingIdx] ?? { meetingNumber: activeMeetingIdx + 1 };
   const meetingCount = savedMeetings.filter(m => m.savedAt).length;
 
   // Two tab groups so the bar mirrors the stepper:
-  //  • Journey tabs carry the same step number shown in "Step X of 5" up top.
-  //    Meetings covers steps 3–4 (Meeting Fixed + Met); Decision is step 5.
+  //  • Journey tabs carry the same step number shown in "Step X of 5" up top:
+  //    1 New→Overview, 2 Kundli Matched→Kundli, 3 Call Done→Calls,
+  //    4 Meeting Fixed→Meetings, 5 Decision.
   //  • Reference tabs have no journey step — fill them in anytime.
   const journeyTabs: { id: Tab; label: string; step: string }[] = [
     { id: 'overview', label: 'Overview', step: '1' },
-    { id: 'conversations', label: `Calls (${conversations.length})`, step: '2' },
-    { id: 'meeting', label: meetingCount > 0 ? `Meetings (${meetingCount})` : 'Meetings', step: '3–4' },
+    { id: 'kundli', label: 'Kundli', step: '2' },
+    { id: 'conversations', label: `Calls (${conversations.length})`, step: '3' },
+    { id: 'meeting', label: meetingCount > 0 ? `Meetings (${meetingCount})` : 'Meetings', step: '4' },
     { id: 'decision', label: DECISION_STAGES.includes(prospect.stage) ? 'Decision ✓' : 'Decision', step: '5' },
   ];
   const referenceTabs: { id: Tab; label: string }[] = [
     { id: 'flags', label: `Flags (${flags.length})` },
     { id: 'family', label: 'Family' },
-    { id: 'kundli', label: 'Kundli' },
   ];
 
   const isDecisionStage = DECISION_STAGES.includes(prospect.stage);
@@ -987,7 +1009,7 @@ export default function ProspectDetailPage() {
                   </div>
                 ) : (
                   <button
-                    onClick={() => changeStage('met')}
+                    onClick={() => changeStage('meeting_fixed')}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 6,
                       padding: '10px 16px', borderRadius: 12, border: 'none',
@@ -1040,7 +1062,7 @@ export default function ProspectDetailPage() {
                 const decisionInfo = isDecisionPill && isDecisionStage ? DECISION_INFO[prospect.stage] : null;
                 const label = isDecisionPill
                   ? (decisionInfo?.label ?? 'Decision')
-                  : (stage === 'met' && meetingCount > 1 ? `Met (${meetingCount})` : JOURNEY_LABELS[stage]);
+                  : (stage === 'meeting_fixed' && meetingCount > 1 ? `Met (${meetingCount})` : JOURNEY_LABELS[stage]);
                 const nodeAccent = decisionInfo?.color ?? '#c13e2a';
                 return (
                   <div key={stage} style={{ display: 'flex', alignItems: 'flex-start', flex: idx < JOURNEY_STAGES.length ? '1 0 auto' : '0 0 auto' }}>
@@ -2212,8 +2234,8 @@ export default function ProspectDetailPage() {
               </>
             )}
 
-            {/* ── Met: post-meeting feedback ── */}
-            {prospect.stage === 'met' && (
+            {/* ── Post-meeting feedback (same stage as prep) ── */}
+            {prospect.stage === 'meeting_fixed' && (
               <>
                 {/* ── Meeting selector ── */}
                 <div style={{
@@ -2604,27 +2626,27 @@ export default function ProspectDetailPage() {
         {/* ── DECISION TAB ── */}
         {activeTab === 'decision' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {isDecisionStage && (
+            {hasDecision && (
               <div style={{
-                background: 'white', borderRadius: 18, border: `1.5px solid ${DECISION_INFO[prospect.stage].border}`,
+                background: 'white', borderRadius: 18, border: `1.5px solid ${DECISION_INFO[currentDecision!].border}`,
                 boxShadow: '0 2px 14px rgba(0,0,0,0.05)', padding: '18px 18px 20px',
                 display: 'flex', alignItems: 'center', gap: 14,
               }}>
                 <div style={{
                   width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
-                  background: DECISION_INFO[prospect.stage].bg,
-                  border: `2px solid ${DECISION_INFO[prospect.stage].border}`,
+                  background: DECISION_INFO[currentDecision!].bg,
+                  border: `2px solid ${DECISION_INFO[currentDecision!].border}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.4rem', color: DECISION_INFO[prospect.stage].color,
+                  fontSize: '1.4rem', color: DECISION_INFO[currentDecision!].color,
                 }}>
-                  {DECISION_INFO[prospect.stage].icon}
+                  {DECISION_INFO[currentDecision!].icon}
                 </div>
                 <div>
-                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: DECISION_INFO[prospect.stage].color, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+                  <p style={{ fontSize: '0.7rem', fontWeight: 700, color: DECISION_INFO[currentDecision!].color, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
                     Current Decision
                   </p>
                   <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1a1410', margin: '3px 0 0', fontFamily: 'var(--font-fraunces, Fraunces, serif)' }}>
-                    {DECISION_INFO[prospect.stage].label}
+                    {DECISION_INFO[currentDecision!].label}
                   </p>
                   <p style={{ fontSize: '0.75rem', color: '#6b5e4d', margin: '2px 0 0' }}>
                     You can change it anytime below.
@@ -2638,7 +2660,7 @@ export default function ProspectDetailPage() {
                 <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
                   {isDecisionStage
                     ? 'Change Decision'
-                    : prospect.stage === 'met'
+                    : prospect.stage === 'meeting_fixed'
                     ? "You've met. What's your decision?"
                     : 'Ready to decide? You can decide at any stage.'}
                 </span>
@@ -2650,7 +2672,7 @@ export default function ProspectDetailPage() {
                   { stage: 'rejected' as const, label: 'Reject', icon: '✕', desc: 'Not the right fit' },
                 ].map(({ stage, label, icon, desc }) => {
                   const info = DECISION_INFO[stage];
-                  const isActive = prospect.stage === stage;
+                  const isActive = currentDecision === stage;
                   return (
                     <button key={stage} onClick={() => changeStage(stage)}
                       style={{

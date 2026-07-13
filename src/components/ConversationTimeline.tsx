@@ -261,7 +261,7 @@ export default function ConversationTimeline({ conversations, onAdd, onUpdate, o
                   return (
                     <button
                       key={type}
-                      onClick={() => setCallType(type)}
+                      onClick={() => setCallType(callType === type ? '' : type)}
                       style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                         gap: 6, padding: '10px 6px', borderRadius: 12, cursor: 'pointer',
@@ -297,7 +297,7 @@ export default function ConversationTimeline({ conversations, onAdd, onUpdate, o
                   return (
                     <button
                       key={d}
-                      onClick={() => setDuration(d)}
+                      onClick={() => setDuration(duration === d ? '' : d)}
                       style={{
                         padding: '8px 16px', borderRadius: 24, cursor: 'pointer',
                         border: isActive ? '2px solid #c13e2a' : '1.5px solid #e0d8cc',
@@ -408,7 +408,7 @@ export default function ConversationTimeline({ conversations, onAdd, onUpdate, o
                   return (
                     <button
                       key={opt.emoji}
-                      onClick={() => setMood(opt.emoji)}
+                      onClick={() => setMood(mood === opt.emoji ? '' : opt.emoji)}
                       style={{
                         flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
                         gap: 5, padding: '10px 4px', borderRadius: 14, cursor: 'pointer',
@@ -443,7 +443,7 @@ export default function ConversationTimeline({ conversations, onAdd, onUpdate, o
                   return (
                     <button
                       key={v}
-                      onClick={() => setTheirVibe(v)}
+                      onClick={() => setTheirVibe(theirVibe === v ? '' : v)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 6,
                         padding: '8px 12px', borderRadius: 24, cursor: 'pointer',
@@ -479,7 +479,7 @@ export default function ConversationTimeline({ conversations, onAdd, onUpdate, o
                   return (
                     <button
                       key={opt}
-                      onClick={() => setFollowUp(opt)}
+                      onClick={() => setFollowUp(followUp === opt ? '' : opt)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 7,
                         padding: '8px 13px', borderRadius: 24, cursor: 'pointer',
@@ -628,9 +628,9 @@ export default function ConversationTimeline({ conversations, onAdd, onUpdate, o
                       background: fuCfg ? `${fuCfg.dot}18` : 'rgba(193,62,42,0.1)',
                       border: `2px solid ${fuCfg?.dot ?? '#c13e2a'}40`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '1.1rem',
+                      color: fuCfg?.dot ?? '#c13e2a',
                     }}>
-                      {c.mood}
+                      {CALL_TYPE_META[c.callType]?.icon ?? <PhoneIcon />}
                     </div>
                     {!isLast && (
                       <div style={{
