@@ -4,8 +4,8 @@ import { verifyFirebaseIdToken } from '@/lib/verify-firebase-token';
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID!;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
 
-// Amount in paise (₹499 = 49900 paise)
-const AMOUNT_PAISE = 49900;
+// Amount in paise (₹99 = 9900 paise)
+const AMOUNT_PAISE = 9900;
 const CURRENCY = 'INR';
 
 export async function POST(req: NextRequest) {

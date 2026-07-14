@@ -44,7 +44,7 @@ const LINKS = [
   {
     k: 'The cost',
     title: 'Pay once, till your roka',
-    body: "Free for 3 prospects. ₹499 once when you're ready to compare. No subscriptions.",
+    body: "Free for 3 prospects. ₹99 once when you're ready to compare. No subscriptions.",
     href: '/pricing',
   },
 ];

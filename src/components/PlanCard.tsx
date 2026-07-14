@@ -80,7 +80,7 @@ export default function PlanCard({ isPaid, paidAt, razorpayPaymentId, onUpgradeS
                 fontSize: '1.6rem', fontWeight: 800, lineHeight: 1,
                 color: isPaid ? '#a8f0c8' : '#f5ede0',
               }}>
-                {isPaid ? '₹499' : '₹0'}
+                {isPaid ? '₹99' : '₹0'}
               </div>
               <div style={{ fontSize: '0.6rem', color: isPaid ? 'rgba(168,240,200,0.5)' : 'rgba(245,237,224,0.35)', marginTop: 3 }}>
                 {isPaid ? 'paid once' : 'free forever'}
@@ -169,7 +169,7 @@ export default function PlanCard({ isPaid, paidAt, razorpayPaymentId, onUpgradeS
                 <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#2D6B4F', background: 'rgba(45,107,79,0.1)', border: '1px solid rgba(45,107,79,0.25)', borderRadius: 20, padding: '2px 7px' }}>50% OFF</span>
                 <span style={{ fontSize: '0.85rem', color: '#a89e92', textDecoration: 'line-through' }}>₹999</span>
               </div>
-              <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', fontSize: '1.5rem', fontWeight: 800, color: '#c13e2a', lineHeight: 1 }}>₹499</div>
+              <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', fontSize: '1.5rem', fontWeight: 800, color: '#c13e2a', lineHeight: 1 }}>₹99</div>
               <div style={{ fontSize: '0.6rem', color: '#a89e92' }}>once</div>
             </div>
           </div>
@@ -179,7 +179,7 @@ export default function PlanCard({ isPaid, paidAt, razorpayPaymentId, onUpgradeS
           </div>
           <RazorpayButton
             onSuccess={onUpgradeSuccess}
-            label="Unlock Roka Ready — ₹499"
+            label="Unlock Roka Ready — ₹99"
             style={{ width: '100%', borderRadius: 14, padding: '14px 20px', fontSize: '0.9rem' }}
           />
         </div>

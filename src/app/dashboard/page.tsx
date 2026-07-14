@@ -869,7 +869,7 @@ export default function DashboardPage() {
                         {startingTrial ? 'Starting…' : 'Start Free Trial'}
                       </button>
                       <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.4)', marginTop: 12 }}>
-                        Then <span style={{ textDecoration: 'line-through' }}>₹999</span> ₹499 once (50% OFF) — no subscription, no auto-renewal.
+                        Then <span style={{ textDecoration: 'line-through' }}>₹999</span> ₹99 once (50% OFF) — no subscription, no auto-renewal.
                       </p>
                     </div>
                   </div>
@@ -930,7 +930,7 @@ export default function DashboardPage() {
                             <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)', textDecoration: 'line-through' }}>₹999</span>
                           </div>
                           <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.6rem', fontWeight: 800, color: 'white', lineHeight: 1 }}>
-                            ₹499
+                            ₹99
                             <span style={{ fontSize: '0.65rem', fontWeight: 500, color: 'rgba(255,255,255,0.4)', marginLeft: 6, fontFamily: 'inherit' }}>once</span>
                           </div>
                         </div>
@@ -1004,7 +1004,7 @@ export default function DashboardPage() {
                         <div>
                           <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a89e92', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>You pay</div>
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                            <span style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '2.2rem', fontWeight: 800, color: '#c13e2a', lineHeight: 1 }}>₹499</span>
+                            <span style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '2.2rem', fontWeight: 800, color: '#c13e2a', lineHeight: 1 }}>₹99</span>
                             <span style={{ fontSize: '0.75rem', color: '#a89e92', textDecoration: 'line-through' }}>₹999</span>
                           </div>
                         </div>
@@ -1020,7 +1020,7 @@ export default function DashboardPage() {
 
                       <RazorpayButton
                         onSuccess={refreshProfile}
-                        label="Unlock Roka Ready — ₹499"
+                        label="Unlock Roka Ready — ₹99"
                         style={{ width: '100%', borderRadius: 14, padding: '15px 20px', fontSize: '0.95rem', letterSpacing: '0.01em' }}
                       />
 
