@@ -869,7 +869,7 @@ export default function DashboardPage() {
                         {startingTrial ? 'Starting…' : 'Start Free Trial'}
                       </button>
                       <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.4)', marginTop: 12 }}>
-                        Then ₹499 once — no subscription, no auto-renewal.
+                        Then <span style={{ textDecoration: 'line-through' }}>₹999</span> ₹499 once (50% OFF) — no subscription, no auto-renewal.
                       </p>
                     </div>
                   </div>
@@ -924,12 +924,15 @@ export default function DashboardPage() {
                           <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff6b4a', boxShadow: '0 0 6px rgba(255,107,74,0.8)' }} />
                           <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,200,180,0.9)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Roka Ready</span>
                         </div>
-                        <div style={{
-                          fontFamily: 'var(--font-fraunces, Fraunces, serif)',
-                          fontSize: '1.6rem', fontWeight: 800, color: 'white', lineHeight: 1,
-                        }}>
-                          ₹499
-                          <span style={{ fontSize: '0.65rem', fontWeight: 500, color: 'rgba(255,255,255,0.4)', marginLeft: 6, fontFamily: 'inherit' }}>once</span>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'flex-end', marginBottom: 2 }}>
+                            <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a8f0c8', background: 'rgba(168,240,200,0.15)', border: '1px solid rgba(168,240,200,0.3)', borderRadius: 20, padding: '2px 7px' }}>50% OFF</span>
+                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)', textDecoration: 'line-through' }}>₹999</span>
+                          </div>
+                          <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.6rem', fontWeight: 800, color: 'white', lineHeight: 1 }}>
+                            ₹499
+                            <span style={{ fontSize: '0.65rem', fontWeight: 500, color: 'rgba(255,255,255,0.4)', marginLeft: 6, fontFamily: 'inherit' }}>once</span>
+                          </div>
                         </div>
                       </div>
 
@@ -1002,16 +1005,16 @@ export default function DashboardPage() {
                           <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a89e92', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>You pay</div>
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                             <span style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '2.2rem', fontWeight: 800, color: '#c13e2a', lineHeight: 1 }}>₹499</span>
-                            <span style={{ fontSize: '0.75rem', color: '#a89e92', textDecoration: 'line-through' }}>₹2,000+/mo</span>
+                            <span style={{ fontSize: '0.75rem', color: '#a89e92', textDecoration: 'line-through' }}>₹999</span>
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a89e92', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}></div>
-                          {/* <div style={{
+                          <div style={{
                             background: 'rgba(45,107,79,0.1)', border: '1px solid rgba(45,107,79,0.25)',
                             borderRadius: 20, padding: '4px 12px',
                             fontSize: '0.75rem', fontWeight: 700, color: '#2D6B4F',
-                          }}>Save ₹23,501/yr</div> */}
+                          }}>50% OFF</div>
                         </div>
                       </div>
 

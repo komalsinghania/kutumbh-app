@@ -165,6 +165,10 @@ export default function PlanCard({ isPaid, paidAt, razorpayPaymentId, onUpgradeS
               <div style={{ fontSize: '0.72rem', color: '#a89e92', marginTop: 2 }}>One payment · no subscription · no auto-renewal</div>
             </div>
             <div style={{ marginLeft: 'auto', textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end', marginBottom: 2 }}>
+                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#2D6B4F', background: 'rgba(45,107,79,0.1)', border: '1px solid rgba(45,107,79,0.25)', borderRadius: 20, padding: '2px 7px' }}>50% OFF</span>
+                <span style={{ fontSize: '0.85rem', color: '#a89e92', textDecoration: 'line-through' }}>₹999</span>
+              </div>
               <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', fontSize: '1.5rem', fontWeight: 800, color: '#c13e2a', lineHeight: 1 }}>₹499</div>
               <div style={{ fontSize: '0.6rem', color: '#a89e92' }}>once</div>
             </div>
