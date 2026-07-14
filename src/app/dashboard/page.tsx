@@ -1399,7 +1399,7 @@ export default function DashboardPage() {
                 {([
                   { label: 'Total', value: prospects.length, color: '#1a1410' },
                   { label: 'Active', value: prospects.filter(p => p.stage !== 'rejected' && p.stage !== 'on_hold').length, color: '#c13e2a' },
-                  { label: 'On Hold', value: stageCounts['on_hold'] ?? 0, color: '#b8892b' },
+                  { label: 'On Hold', value: prospects.filter(p => p.stage === 'on_hold').length, color: '#b8892b' },
                   { label: 'Interested', value: prospects.filter(p => p.stage === 'interested').length, color: '#2D6B4F' },
                 ] as { label: string; value: number; color: string }[]).map(({ label, value, color }) => (
                   <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
