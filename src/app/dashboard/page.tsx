@@ -1398,10 +1398,11 @@ export default function DashboardPage() {
             {/* Journey stats */}
             <div style={{ background: 'white', borderRadius: 16, padding: '18px 20px', border: '1px solid #ede4d4', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
               <p style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c13e2a', marginBottom: 16 }}>Your Journey</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, textAlign: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12, textAlign: 'center' }}>
                 {([
                   { label: 'Total', value: prospects.length, color: '#1a1410' },
                   { label: 'Active', value: prospects.filter(p => p.stage !== 'rejected' && p.stage !== 'on_hold').length, color: '#c13e2a' },
+                  { label: 'On Hold', value: prospects.filter(p => p.stage === 'on_hold').length, color: '#b8892b' },
                   { label: 'Interested', value: prospects.filter(p => p.stage === 'interested').length, color: '#2D6B4F' },
                 ] as { label: string; value: number; color: string }[]).map(({ label, value, color }) => (
                   <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
