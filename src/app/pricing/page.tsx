@@ -8,10 +8,10 @@ import SiteHeader from '@/components/SiteHeader';
 export const metadata: Metadata = {
   title: 'Pricing — RokaMaybe',
   description:
-    'Free for 3 prospects. ₹499 once — valid till your roka. Tap Compare and get 7 days free, no card. No subscriptions, no auto-renew traps.',
+    'Free for 3 prospects. ₹499 once — valid till your roka. Unlock Compare with a single payment. No subscriptions, no auto-renew traps.',
   openGraph: pageOpenGraph(
     'Pricing — RokaMaybe',
-    'Free for 3 prospects. ₹499 once — valid till your roka. Tap Compare and get 7 days free, no card. No subscriptions, no auto-renew traps.',
+    'Free for 3 prospects. ₹499 once — valid till your roka. Unlock Compare with a single payment. No subscriptions, no auto-renew traps.',
   ),
 };
 

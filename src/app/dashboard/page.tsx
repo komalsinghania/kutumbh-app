@@ -6,8 +6,7 @@ import { auth } from '@/lib/firebase';
 import { useAuth } from '@/lib/auth-context';
 import { subscribeToProspects, saveUserProfile, recalcScoresIfStale, SCORING_VERSION } from '@/lib/firestore';
 import { Prospect, ProspectStage } from '@/types';
-import { hasCompareAccess, isTrialActive, isTrialExpired, trialDaysLeft, trialEndsAt } from '@/lib/trial';
-import TrialStartedModal from '@/components/TrialStartedModal';
+import { hasCompareAccess } from '@/lib/trial';
 import {
   calculateOverallScore, getCompatBreakdown, getAshtakootBreakdown, calculateCompatScore, getDealbreakersCheck,
 } from '@/lib/scoring';
@@ -209,30 +208,12 @@ export default function DashboardPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
-  const [showTrialModal, setShowTrialModal] = useState(false);
 
   const toggleExpand = (id: string) =>
     setExpanded(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const toggleCompare = (id: string) =>
     setCompareIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : prev.length < 3 ? [...prev, id] : prev);
-
-  // Begin the 7-day Compare trial. Called only when the user explicitly clicks
-  // "Start Free Trial" — never automatically on opening the tab.
-  const [startingTrial, setStartingTrial] = useState(false);
-  const startTrial = async () => {
-    if (!user || !profile || profile.isPaid || profile.trialStartedAt || startingTrial) return;
-    setStartingTrial(true);
-    try {
-      await saveUserProfile(user.uid, { trialStartedAt: Date.now() });
-      await refreshProfile();
-      setShowTrialModal(true);
-    } catch (e) {
-      console.error('[trial] failed to start trial', e);
-    } finally {
-      setStartingTrial(false);
-    }
-  };
 
   // Shared handler for both the desktop sidebar and mobile bottom nav.
   const selectTab = (tab: MainTab) => {
@@ -338,12 +319,8 @@ export default function DashboardPage() {
   const initials = (name: string) => name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const firstName = profile.name.split(' ')[0];
 
-  // Compare access + trial state (derived from the profile).
+  // Compare access (derived from the profile).
   const compareAccess = hasCompareAccess(profile);
-  const trialActive = !profile.isPaid && isTrialActive(profile);
-  const trialExpired = !profile.isPaid && isTrialExpired(profile);
-  const trialNotStarted = !profile.isPaid && !profile.trialStartedAt;
-  const daysLeft = trialDaysLeft(profile);
 
   /* ── Sidebar nav items ─── */
   const NAV_ITEMS: [MainTab, string, string, number | null][] = [
@@ -828,82 +805,9 @@ export default function DashboardPage() {
 
             {mainTab === 'compare' && (
               <div style={{ padding: `0 ${isMobile ? 16 : 28}px`, marginBottom: 4 }}>
-                {/* ── Trial offer (unpaid, not yet started) ── */}
-                {trialNotStarted && (
-                  <div style={{
-                    marginBottom: 16, borderRadius: 24, overflow: 'hidden',
-                    background: 'linear-gradient(145deg, #1a0d08 0%, #3a1510 45%, #1c0a0a 100%)',
-                    boxShadow: '0 20px 60px rgba(139,42,42,0.18), 0 4px 16px rgba(0,0,0,0.08)',
-                    position: 'relative',
-                  }}>
-                    <div style={{ position: 'absolute', top: -40, right: -30, width: 170, height: 170, borderRadius: '50%', background: 'radial-gradient(circle, rgba(193,62,42,0.35) 0%, transparent 70%)', pointerEvents: 'none' }} />
-                    <div style={{ padding: '28px 24px', position: 'relative', textAlign: 'center' }}>
-                      <div style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        background: 'rgba(193,62,42,0.25)', border: '1px solid rgba(193,62,42,0.4)',
-                        borderRadius: 20, padding: '5px 12px', marginBottom: 16,
-                      }}>
-                        <span style={{ fontSize: '0.9rem' }}>🎁</span>
-                        <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,200,180,0.9)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>7 Days Free</span>
-                      </div>
-                      <h3 style={{
-                        fontFamily: 'var(--font-fraunces, Fraunces, serif)',
-                        fontSize: '1.5rem', fontWeight: 800, color: 'white', lineHeight: 1.25, marginBottom: 10,
-                      }}>
-                        Try Compare free<br /><em style={{ color: '#ffb8a0' }}>for 7 days.</em>
-                      </h3>
-                      <p style={{ fontSize: '0.84rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.55, maxWidth: 340, margin: '0 auto 22px' }}>
-                        Compare up to 3 prospects side by side — kundli score, compatibility, and every flag that matters. No card needed to start.
-                      </p>
-                      <button
-                        onClick={startTrial}
-                        disabled={startingTrial}
-                        style={{
-                          width: '100%', maxWidth: 320, border: 'none', cursor: startingTrial ? 'wait' : 'pointer',
-                          padding: '15px 20px', borderRadius: 14,
-                          background: startingTrial ? '#8a5040' : 'linear-gradient(135deg, #d44d36 0%, #b83521 100%)',
-                          color: 'white', fontWeight: 700, fontSize: '0.95rem',
-                          boxShadow: '0 6px 20px rgba(193,62,42,0.4)', letterSpacing: '0.01em',
-                        }}
-                      >
-                        {startingTrial ? 'Starting…' : 'Start Free Trial'}
-                      </button>
-                      <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.4)', marginTop: 12 }}>
-                        Then <span style={{ textDecoration: 'line-through' }}>₹999</span> ₹499 once (50% OFF) — no subscription, no auto-renewal.
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {/* ── Active-trial banner ── */}
-                {trialActive && (
-                  <div style={{
-                    marginBottom: 16, borderRadius: 16, padding: '14px 18px',
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    background: 'linear-gradient(135deg, rgba(45,107,79,0.1), rgba(184,137,43,0.1))',
-                    border: '1px solid rgba(45,107,79,0.3)',
-                  }}>
-                    <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>🎁</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: '0.86rem', fontWeight: 700, color: '#1a1410' }}>
-                        Free trial active — {daysLeft} day{daysLeft === 1 ? '' : 's'} left
-                      </p>
-                      <p style={{ fontSize: '0.72rem', color: '#6b5e4d', marginTop: 2 }}>
-                        Compare stays unlocked until {trialEndsAt(profile) ? new Date(trialEndsAt(profile)!).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''}. Unlock forever any time.
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {/* ── Paywall once the trial has ended ── */}
-                {trialExpired && (
+                {/* ── Paywall for unpaid users ── */}
+                {!compareAccess && (
                   <div style={{ marginBottom: 16, borderRadius: 24, overflow: 'hidden', boxShadow: '0 20px 60px rgba(139,42,42,0.18), 0 4px 16px rgba(0,0,0,0.08)' }}>
-                    <div style={{
-                      background: '#3a1510', padding: '10px 24px', textAlign: 'center',
-                      borderBottom: '1px solid rgba(255,255,255,0.08)',
-                    }}>
-                      <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#ffb8a0', letterSpacing: '0.04em' }}>
-                        ⏳ Your 7-day free trial has ended
-                      </span>
-                    </div>
                     {/* Top gradient hero */}
                     <div style={{
                       background: 'linear-gradient(145deg, #1a0d08 0%, #3a1510 40%, #1c0a0a 100%)',
@@ -1507,14 +1411,6 @@ export default function DashboardPage() {
           </nav>
         )}
       </div>{/* end main column */}
-
-      {showTrialModal && (
-        <TrialStartedModal
-          daysLeft={daysLeft}
-          endsAt={trialEndsAt(profile)}
-          onClose={() => setShowTrialModal(false)}
-        />
-      )}
     </div>
   );
 }

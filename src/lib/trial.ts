@@ -35,7 +35,7 @@ export function trialDaysLeft(profile: TrialProfile): number {
   return Math.max(0, Math.ceil((end - Date.now()) / DAY_MS));
 }
 
-/** The user can open Compare if they've paid or the trial is still active. */
+/** The user can open Compare only after paying. */
 export function hasCompareAccess(profile: TrialProfile): boolean {
-  return !!profile?.isPaid || isTrialActive(profile);
+  return !!profile?.isPaid;
 }

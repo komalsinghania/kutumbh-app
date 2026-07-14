@@ -202,7 +202,7 @@ function CompareContent() {
     );
   }
 
-  // Compare is unlocked by payment or an active trial. Guard direct URL access.
+  // Compare is unlocked by payment only. Guard direct URL access.
   if (!hasCompareAccess(profile)) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6" style={{ background: '#f5ede0' }}>
@@ -210,7 +210,7 @@ function CompareContent() {
           <div style={{ fontSize: '2rem', marginBottom: 8 }}>🔒</div>
           <p style={{ color: '#1a1410', fontWeight: 600, marginBottom: 4 }}>Compare is locked</p>
           <p style={{ color: '#6b5e4d', fontSize: '0.85rem', marginBottom: 16 }}>
-            Your free trial has ended. Unlock Compare to keep going.
+            Unlock Compare to see your prospects side by side.
           </p>
           <button onClick={() => router.push('/dashboard')} className="btn-primary">Back to Dashboard</button>
         </div>
