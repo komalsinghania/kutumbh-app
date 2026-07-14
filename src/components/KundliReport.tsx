@@ -26,8 +26,8 @@ const BAR_COLOR: Record<string, string> = {
 };
 const STATUS_ICON: Record<string, string> = {
   full: '✅',
-  partial: '🟡',
-  miss: '❌',
+  partial: '🟠',
+  miss: '🔴',
 };
 
 export default function KundliReport({
