@@ -1730,16 +1730,16 @@ export default function ProspectDetailPage() {
                             {cat.flags.map(f => {
                               const already = alreadyFlaggedTexts.has(f);
                               return (
-                                <button key={f} type="button" onClick={() => !already && handleAddFlag(panel.type, f)} disabled={already}
+                                <button key={f} type="button" onClick={() => handleToggleFlag(panel.type, f)}
                                   style={{
                                     display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 999,
                                     border: `1.5px solid ${already ? panel.accent : `rgba(${rgb},0.28)`}`,
                                     background: already ? panel.accent : 'white',
                                     color: already ? 'white' : panel.accent, fontSize: '0.76rem', fontWeight: already ? 700 : 500,
-                                    cursor: already ? 'default' : 'pointer', transition: 'all 0.15s', lineHeight: 1.25,
+                                    cursor: 'pointer', transition: 'all 0.15s', lineHeight: 1.25,
                                   }}
                                   onMouseEnter={e => { if (!already) { e.currentTarget.style.background = `rgba(${rgb},0.09)`; e.currentTarget.style.borderColor = panel.accent; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
-                                  onMouseLeave={e => { if (!already) { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = `rgba(${rgb},0.28)`; e.currentTarget.style.transform = 'none'; } }}
+                                  onMouseLeave={e => { if (!already) { e.currentTarget.style.background = already ? panel.accent : 'white'; e.currentTarget.style.borderColor = already ? panel.accent : `rgba(${rgb},0.28)`; e.currentTarget.style.transform = 'none'; } }}
                                 >
                                   <span style={{ fontSize: '0.7rem', opacity: already ? 1 : 0.6, fontWeight: 800 }}>{already ? '✓' : '+'}</span>{f}
                                 </button>
