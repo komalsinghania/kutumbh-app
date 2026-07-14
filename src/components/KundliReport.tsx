@@ -85,7 +85,7 @@ export default function KundliReport({
         {/* Birth details — condensed */}
         <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-gray-100">
           {[
-            { label: `${userProfile.name} (You)`, nak: NAKSHATRA_NAMES[userNakshatra], rashi: userRashi !== undefined ? RASHI_SHORT[userRashi] : undefined, meta: [] as string[] },
+            { label: `${userProfile.name} (You)`, nak: NAKSHATRA_NAMES[userNakshatra], rashi: userRashi !== undefined ? RASHI_SHORT[userRashi] : undefined, meta: [userProfile.dobDate, userProfile.dobTime, userProfile.dobPlace].filter(Boolean) as string[] },
             { label: prospectName, nak: NAKSHATRA_NAMES[prospectNakshatra], rashi: prospectRashi !== undefined ? RASHI_SHORT[prospectRashi] : undefined, meta: [prospectDob, prospectBirthTime, prospectBirthPlace].filter(Boolean) as string[] },
           ].map((p, i) => (
             <div key={i} className="min-w-0">
@@ -93,7 +93,10 @@ export default function KundliReport({
               <p className="text-sm text-[#1a1410] font-medium mt-0.5">
                 {p.nak}{p.rashi ? <span className="text-gray-400 font-normal"> · {p.rashi}</span> : null}
               </p>
-              {p.meta.length > 0 && <p className="text-[11px] text-gray-400 mt-0.5 truncate">{p.meta.join(' · ')}</p>}
+              {p.meta.length > 0
+                ? <p className="text-[11px] text-gray-400 mt-0.5 truncate">{p.meta.join(' · ')}</p>
+                : <p className="text-[11px] text-gray-300 mt-0.5 italic">Birth details not provided</p>
+              }
             </div>
           ))}
         </div>
