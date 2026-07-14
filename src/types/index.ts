@@ -280,11 +280,11 @@ export const CONVERSATION_TOPICS = [
 ] as const;
 
 export const MOOD_OPTIONS = [
-  { emoji: '😊', label: 'Really Positive' },
-  { emoji: '🙂', label: 'Good' },
-  { emoji: '😐', label: 'Neutral' },
-  { emoji: '😕', label: 'Slightly Negative' },
   { emoji: '😞', label: 'Bad Feeling' },
+  { emoji: '😕', label: 'Slightly Negative' },
+  { emoji: '😐', label: 'Neutral' },
+  { emoji: '🙂', label: 'Good' },
+  { emoji: '😊', label: 'Really Positive' },
 ] as const;
 
 export const THEIR_VIBE_OPTIONS = [
