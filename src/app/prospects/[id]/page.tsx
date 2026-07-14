@@ -550,7 +550,6 @@ export default function ProspectDetailPage() {
   const handleDeleteFlag = async (flagId: string, flagType: 'green' | 'red') => {
     if (!user) return;
     await deleteFlag(user.uid, id, flagId, flagType);
-    toast.success('Flag removed');
   };
 
   // Clicking a preset chip toggles it: add if not yet flagged, remove if it is.
