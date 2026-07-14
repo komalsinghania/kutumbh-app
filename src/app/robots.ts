@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { SITE_URL } from '@/lib/og';
 
 /**
  * Generates /robots.txt for RokaMaybe.
@@ -29,6 +30,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/dashboard', '/prospects', '/profile', '/onboarding', '/api/'],
     },
-    sitemap: 'https://rokamaybe.com/sitemap.xml',
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }
