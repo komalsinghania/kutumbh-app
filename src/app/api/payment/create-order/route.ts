@@ -1,3 +1,16 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/payment/create-order
+//
+// Creates a Razorpay order for the Compare feature unlock (₹499 one-time).
+// The order ID is returned to the client so Razorpay's checkout.js can open
+// the payment modal. No sensitive work happens here — the actual payment
+// confirmation is done by the /api/payment/verify route after the user pays.
+//
+// Security:
+//   • Requires a valid Firebase ID token in the Authorization header.
+//   • Uses Basic auth (key_id:key_secret) against the Razorpay REST API.
+//   • The `receipt` field encodes the Firebase uid for audit purposes.
+// ─────────────────────────────────────────────────────────────────────────────
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyFirebaseIdToken } from '@/lib/verify-firebase-token';
 

@@ -1,3 +1,22 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/payment/verify
+//
+// Verifies a completed Razorpay payment and marks the user as paid in Firestore.
+//
+// Flow:
+//   1. Authenticate the request with the Firebase ID token.
+//   2. Validate the Razorpay payment signature (HMAC-SHA256) to confirm the
+//      payment was not tampered with.
+//   3. Write { isPaid, paidAt, razorpayOrderId, razorpayPaymentId } to the
+//      user's Firestore document via the REST API using the user's own ID token
+//      (no firebase-admin / service-account required).
+//
+// Security:
+//   • Signature verification ensures only genuine Razorpay payments unlock the
+//     feature — a forged request without the matching HMAC will be rejected.
+//   • The Firestore write uses the caller's own token so Security Rules still
+//     enforce that a user can only write to their own document.
+// ─────────────────────────────────────────────────────────────────────────────
 import { NextRequest, NextResponse } from 'next/server';
 import { createHmac } from 'crypto';
 import { verifyFirebaseIdToken } from '@/lib/verify-firebase-token';

@@ -1,4 +1,15 @@
 'use client';
+// ─────────────────────────────────────────────────────────────────────────────
+// AuthModal — sign-in / sign-up dialog.
+//
+// Supports two auth methods:
+//   1. Google OAuth — tries a popup first, falls back to redirect on mobile /
+//      browsers that block popups (Safari, in-app WebViews).
+//   2. Email + Password — covers both sign-up and sign-in in one form.
+//
+// The `onSuccess` callback is fired after a successful sign-in so the parent
+// can navigate to the dashboard or close the modal.
+// ─────────────────────────────────────────────────────────────────────────────
 
 import { useState, useEffect } from 'react';
 import {
@@ -10,6 +21,7 @@ import toast from 'react-hot-toast';
 import { Logo } from '@/components/Logo';
 import { track } from '@/lib/analytics';
 
+/** Extract the Firebase error code from an unknown thrown value. */
 function errCode(err: unknown): string {
   if (typeof err === 'object' && err !== null && 'code' in err) {
     return String((err as { code: unknown }).code ?? '');
@@ -17,6 +29,7 @@ function errCode(err: unknown): string {
   return '';
 }
 
+/** Inline Google "G" colour logo for the sign-in button. */
 function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48">

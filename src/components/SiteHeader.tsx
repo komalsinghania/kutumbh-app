@@ -1,4 +1,21 @@
 'use client';
+// ─────────────────────────────────────────────────────────────────────────────
+// SiteHeader — the single shared marketing navigation bar.
+//
+// Used on the landing page (overHero mode) and on every static marketing page
+// (/features, /how-it-works, /pricing, /blog, etc.).
+//
+// Behaviour:
+//   • overHero=true  (landing page): starts transparent over the dark hero and
+//     transitions to a solid, blurred bar once the user scrolls past 30 px.
+//   • overHero=false (inner pages):  always renders as a solid, sticky bar.
+//
+// Auth-awareness:
+//   Watches Firebase auth state and swaps the CTA button between "Sign In /
+//   Start Free" (signed-out) and "Go to Dashboard" (signed-in). Uses
+//   onAuthStateChanged directly (rather than useAuth) so the header stays
+//   lightweight — it only needs the boolean, not the full profile.
+// ─────────────────────────────────────────────────────────────────────────────
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';

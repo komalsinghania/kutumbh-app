@@ -1,10 +1,22 @@
 'use client';
+// ─────────────────────────────────────────────────────────────────────────────
+// RazorpayButton — one-time payment button for the Compare feature unlock.
+//
+// Payment flow (5 steps):
+//   1. Fetch a Firebase ID token from the current user.
+//   2. Lazy-load the Razorpay checkout.js SDK (avoids adding it to the
+//      initial bundle — it's only needed when the user clicks Pay).
+//   3. POST to /api/payment/create-order → receives a Razorpay order_id.
+//   4. Open the Razorpay checkout modal (UPI, cards, netbanking, etc.).
+//   5. On success, POST the payment response to /api/payment/verify, which
+//      validates the HMAC signature and marks the user as paid in Firestore.
+// ─────────────────────────────────────────────────────────────────────────────
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { auth } from '@/lib/firebase';
 import toast from 'react-hot-toast';
 
-// Razorpay checkout script is loaded lazily so it doesn't affect page load
+/** Lazily inject the Razorpay checkout script; resolves true when ready. */
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise(resolve => {
     if (typeof window !== 'undefined' && (window as any).Razorpay) {

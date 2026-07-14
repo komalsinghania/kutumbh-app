@@ -1,3 +1,20 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/extract-biodata
+//
+// Uses Claude (Anthropic) to extract structured fields from an Indian
+// matrimonial biodata supplied as:
+//   • A plain-text paste   → JSON body { text }
+//   • A base64 image       → JSON body { image, mimeType }
+//   • A file upload        → multipart/form-data { file } (JPEG/PNG/PDF/.docx)
+//
+// Security controls:
+//   • Firebase ID token required (401 otherwise).
+//   • Per-user rate limit: 20 requests / 60 s (Upstash Redis; in-memory fallback).
+//   • Hard cap on upload size (8 MB) and text length (60 000 chars).
+//   • Only specific MIME types accepted for file uploads.
+//   • Errors returned to the client are safe, sanitised messages — raw API
+//     errors are only logged server-side.
+// ─────────────────────────────────────────────────────────────────────────────
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import mammoth from 'mammoth';

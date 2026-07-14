@@ -1,7 +1,20 @@
 'use client';
+// ─────────────────────────────────────────────────────────────────────────────
+// CookieConsent — GDPR / DPDP-compliant consent banner.
+//
+// Shown once on first visit (when `rm_cookie_consent` is not in localStorage).
+// Persists the user's choice in localStorage and dispatches the custom event
+// `rm-consent-changed` so AnalyticsProvider can start PostHog immediately
+// after "Accept all" without waiting for a page reload.
+//
+// Choices stored:
+//   'all'       — user accepts analytics + strictly necessary cookies.
+//   'necessary' — user accepts only strictly necessary (auth) cookies.
+// ─────────────────────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
+// Key shared with analytics.ts (analyticsConsented() reads the same key).
 const STORAGE_KEY = 'rm_cookie_consent'; // 'all' | 'necessary'
 
 export default function CookieConsent() {

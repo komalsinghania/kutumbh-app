@@ -1,3 +1,14 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Root layout — wraps every page in the app.
+//
+// Responsibilities:
+//   • Load all three brand typefaces via next/font (zero layout shift).
+//   • Expose CSS custom properties for the fonts (--font-fraunces, etc.).
+//   • Wrap the tree with AuthProvider so any component can call useAuth().
+//   • Mount global singletons: toast, cookie-consent banner, analytics, and
+//     Vercel Analytics / Speed Insights (edge-friendly, no cookies).
+//   • Set the default site-wide <title> and Open Graph metadata.
+// ─────────────────────────────────────────────────────────────────────────────
 import type { Metadata } from 'next';
 import { Fraunces, Instrument_Serif, DM_Sans } from 'next/font/google';
 import './globals.css';
@@ -8,6 +19,8 @@ import AnalyticsProvider from '@/components/AnalyticsProvider';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
+// ── Brand typefaces ───────────────────────────────────────────────────────────
+// Fraunces: display serif used for headings and the logotype.
 const fraunces = Fraunces({
   weight: ['300', '400', '500', '600', '700'],
   style: ['normal', 'italic'],
@@ -16,6 +29,7 @@ const fraunces = Fraunces({
   display: 'swap',
 });
 
+// Instrument Serif: editorial italic for pull-quotes and decorative body text.
 const instrumentSerif = Instrument_Serif({
   weight: ['400'],
   style: ['normal', 'italic'],
@@ -24,6 +38,7 @@ const instrumentSerif = Instrument_Serif({
   display: 'swap',
 });
 
+// DM Sans: clean geometric sans for UI labels, body copy, and form text.
 const dmSans = DM_Sans({
   weight: ['400', '500', '600', '700'],
   subsets: ['latin'],
@@ -33,6 +48,7 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://rokamaybe.com'),
+  // Default title — individual pages override this via their own `export const metadata`.
   title: 'RokaMaybe — Your Arranged Marriage Tracker',
   description: 'The calm, private dashboard for your rishta search. Track every prospect, kundli, and conversation in one place.',
   icons: {
@@ -56,12 +72,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
+    // Font CSS variables are applied at the <html> level so every child can
+    // reference them via var(--font-fraunces) etc. without extra providers.
     <html lang="en" className={`${fraunces.variable} ${instrumentSerif.variable} ${dmSans.variable}`} suppressHydrationWarning>
       <body className="min-h-screen" suppressHydrationWarning>
+        {/* AuthProvider supplies useAuth() context to every client component. */}
         <AuthProvider>
           {children}
+          {/* Boots PostHog analytics after cookie consent. Renders nothing. */}
           <AnalyticsProvider />
+          {/* GDPR/DPDP-compliant cookie consent banner — shown once per browser. */}
           <CookieConsent />
+          {/* Global toast notifications — success uses green, errors use sindoor red. */}
           <Toaster
             position="top-right"
             toastOptions={{
@@ -88,6 +110,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               },
             }}
           />
+          {/* Vercel edge analytics — cookieless, no GDPR impact. */}
           <Analytics />
           <SpeedInsights />
         </AuthProvider>
