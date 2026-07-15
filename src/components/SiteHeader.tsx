@@ -8,12 +8,15 @@ import { auth } from '@/lib/firebase';
 import { Logo } from '@/components/Logo';
 import AuthModal from '@/components/AuthModal';
 import { track } from '@/lib/analytics';
+import { PAYMENTS_ENABLED } from '@/lib/config';
 import '@/app/landing.css';
 
+// Pricing is hidden from the nav while payments are disabled (early access) —
+// it reappears automatically when PAYMENTS_ENABLED is flipped back on.
 const LINKS = [
   { href: '/features', label: 'Features' },
   { href: '/how-it-works', label: 'How it works' },
-  { href: '/pricing', label: 'Pricing' },
+  ...(PAYMENTS_ENABLED ? [{ href: '/pricing', label: 'Pricing' }] : []),
   { href: '/mummy-mode', label: 'Mummy Mode' },
   { href: '/blog', label: 'Blog' },
 ];
