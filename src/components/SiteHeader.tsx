@@ -14,6 +14,7 @@ const LINKS = [
   { href: '/features', label: 'Features' },
   { href: '/how-it-works', label: 'How it works' },
   { href: '/pricing', label: 'Pricing' },
+  { href: '/mummy-mode', label: 'Mummy Mode' },
   { href: '/blog', label: 'Blog' },
 ];
 
@@ -30,6 +31,7 @@ export default function SiteHeader({ overHero = false }: { overHero?: boolean })
   const [loggedIn, setLoggedIn] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => onAuthStateChanged(auth, user => setLoggedIn(!!user)), []);
 
@@ -41,14 +43,29 @@ export default function SiteHeader({ overHero = false }: { overHero?: boolean })
     return () => window.removeEventListener('scroll', handler);
   }, [overHero]);
 
+  // Every menu link / button already closes the menu on click, so navigation
+  // never leaves it open. (Avoid a pathname effect here — calling setState
+  // synchronously in an effect triggers cascading renders.)
+
+  // Lock body scroll while the mobile menu is open.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [menuOpen]);
+
   const openAuth = (placement: string) => {
     track('cta_clicked', { placement });
+    setMenuOpen(false);
     if (loggedIn) router.push('/dashboard');
     else setShowModal(true);
   };
 
   // Inner pages are always solid + sticky; the landing bar tracks scroll.
-  const solid = !overHero || scrolled;
+  // Also go solid while the mobile menu is open so the bar (logo + close
+  // button) reads as dark-on-cream, matching the full-screen menu behind it.
+  const solid = !overHero || scrolled || menuOpen;
   const navClass = [
     'lp-nav',
     solid ? 'lp-nav-scrolled' : '',
@@ -65,9 +82,10 @@ export default function SiteHeader({ overHero = false }: { overHero?: boolean })
       )}
 
       <nav className={navClass} aria-label="Main navigation">
-        <Link href="/" aria-label="RokaMaybe home" style={{ display: 'inline-flex' }}>
-          <Logo dark={!solid} style={{ fontSize: '1.4rem' }} />
-        </Link>
+        {/* Logo is itself a link to "/" — no wrapping anchor (would nest <a> in <a>). */}
+        <Logo dark={!solid} style={{ fontSize: '1.4rem' }} />
+
+        {/* Desktop links + auth */}
         <div className="lp-nav-links">
           {LINKS.map(l => (
             <Link
@@ -87,7 +105,44 @@ export default function SiteHeader({ overHero = false }: { overHero?: boolean })
             </>
           )}
         </div>
+
+        {/* Mobile hamburger */}
+        <button
+          className={`lp-nav-burger ${menuOpen ? 'lp-nav-burger-open' : ''}`}
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen(o => !o)}
+        >
+          <span /><span /><span />
+        </button>
       </nav>
+
+      {/* Mobile full-screen menu */}
+      {menuOpen && (
+        <div className="lp-nav-mobile" role="menu" aria-label="Mobile navigation">
+            {LINKS.map(l => (
+              <Link
+                key={l.href}
+                role="menuitem"
+                className={`lp-nav-mobile-link ${pathname === l.href ? 'lp-nav-mobile-link-active' : ''}`}
+                href={l.href}
+                onClick={() => setMenuOpen(false)}
+              >
+                {l.label}
+              </Link>
+            ))}
+            <div className="lp-nav-mobile-actions">
+              {loggedIn ? (
+                <button className="lp-btn-nav" onClick={() => { setMenuOpen(false); router.push('/dashboard'); }}>Go to Dashboard</button>
+              ) : (
+                <>
+                  <button className="lp-btn-signin lp-nav-mobile-signin" onClick={() => openAuth('nav_signin')}>Sign In</button>
+                  <button className="lp-btn-nav" onClick={() => openAuth('nav')}>Start Free</button>
+                </>
+              )}
+            </div>
+        </div>
+      )}
     </>
   );
 }

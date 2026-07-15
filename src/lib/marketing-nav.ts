@@ -9,6 +9,13 @@ export function stripNav(html: string): string {
   return html.replace(/^\s*<nav[\s\S]*?<\/nav>\s*/i, '');
 }
 
+// The static marketing HTML also ships with its own stripped-down <footer> baked
+// in at the end. The site now renders a single shared <SiteFooter/> on every
+// page, so strip that trailing footer block out before injecting the markup.
+export function stripFooter(html: string): string {
+  return html.replace(/\s*<footer[\s\S]*?<\/footer>\s*$/i, '');
+}
+
 export function withAboutLink(html: string): string {
   return html
     .replace(
