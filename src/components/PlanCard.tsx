@@ -10,7 +10,8 @@ interface Props {
 }
 
 const FREE_FEATURES = [
-  'Track up to 3 prospects',
+  // No prospect cap is enforced while payments are disabled.
+  PAYMENTS_ENABLED ? 'Track up to 3 prospects' : 'Track all your prospects',
   'All 5 stages of the journey',
   'AI biodata extraction',
   'Full Kundli Milan (Ashtakoot · 36 guna)',
