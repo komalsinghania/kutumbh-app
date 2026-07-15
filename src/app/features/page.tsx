@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { pageOpenGraph } from '@/lib/og';
 import './page.css';
 import content from './content';
-import { withAboutLink, stripNav } from '@/lib/marketing-nav';
+import { withAboutLink, stripNav, stripFooter } from '@/lib/marketing-nav';
 import SiteHeader from '@/components/SiteHeader';
+import SiteFooter from '@/components/SiteFooter';
 
 export const metadata: Metadata = {
   title: 'Features — RokaMaybe',
@@ -19,7 +20,8 @@ export default function FeaturesPage() {
   return (
     <>
       <SiteHeader />
-      <div className="mkt-features" dangerouslySetInnerHTML={{ __html: withAboutLink(stripNav(content)) }} />
+      <div className="mkt-features" dangerouslySetInnerHTML={{ __html: withAboutLink(stripFooter(stripNav(content))) }} />
+      <SiteFooter />
     </>
   );
 }

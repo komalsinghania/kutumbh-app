@@ -29,9 +29,9 @@ const STATIC_LAST_MODIFIED = new Date('2026-07-14');
  *   'never' because articles are not edited after publication.
  *
  * Excluded pages
- *   Authenticated app routes (/dashboard, /prospects, /profile, /onboarding)
- *   and API routes are intentionally omitted — they are blocked in robots.ts
- *   as well and contain no publicly indexable content.
+ *   Authenticated app routes (/dashboard, /prospects, /profile, /onboarding,
+ *   /compare) and API routes are intentionally omitted — they are blocked in
+ *   robots.ts as well and contain no publicly indexable content.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages: MetadataRoute.Sitemap = [
@@ -70,12 +70,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: STATIC_LAST_MODIFIED,
       changeFrequency: 'weekly',
       priority: 0.9,
-    },
-    {
-      url: `${SITE_URL}/compare`,
-      lastModified: STATIC_LAST_MODIFIED,
-      changeFrequency: 'monthly',
-      priority: 0.7,
     },
     {
       url: `${SITE_URL}/blog`,
