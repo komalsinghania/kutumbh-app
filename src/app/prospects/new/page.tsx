@@ -12,7 +12,7 @@ import {
 import { normalizeHobbies } from '@/lib/hobbies';
 import { calculateKundli } from '@/lib/kundli';
 import CitySearch from '@/components/CitySearch';
-import { getCityByName } from '@/lib/indian-cities';
+import { resolveBirthPlace } from '@/lib/indian-cities';
 import toast from 'react-hot-toast';
 import { Logo } from '@/components/Logo';
 
@@ -141,14 +141,17 @@ export default function NewProspectPage() {
   };
 
   const calcKundliFromValues = (dobDate: string, dobTime: string, dobPlace: string) => {
-    const city = getCityByName(dobPlace);
-    if (!city) { toast('City not found in database — enter nakshatra manually.', { icon: 'ℹ️' }); setKundliManualMode(true); return false; }
+    const place = resolveBirthPlace(dobPlace);
     try {
-      const result = calculateKundli({ date: dobDate, time: dobTime, lat: city.lat, lng: city.lng, tzOffset: city.tz });
+      const result = calculateKundli({ date: dobDate, time: dobTime, lat: place.lat, lng: place.lng, tzOffset: place.tz });
       setForm(f => ({ ...f, nakshatra: result.nakshatra, rashiIndex: result.rashi, rashi: result.rashiName }));
       setKundliCalcDone(true);
-      track('kundli_calculated', { context: 'new_prospect' });
-      toast.success(`Nakshatra: ${result.nakshatraName} (${result.rashiName})`);
+      track('kundli_calculated', { context: 'new_prospect', approximate: place.approximate });
+      if (place.approximate) {
+        toast(`Nakshatra: ${result.nakshatraName} (approx. location, IST) — set it manually if this looks off.`, { icon: 'ℹ️' });
+      } else {
+        toast.success(`Nakshatra: ${result.nakshatraName} (${result.rashiName})`);
+      }
       return true;
     } catch {
       toast.error('Could not calculate nakshatra — enter manually.');
