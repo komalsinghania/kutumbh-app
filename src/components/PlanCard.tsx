@@ -1,5 +1,6 @@
 'use client';
 import RazorpayButton from './RazorpayButton';
+import { PAYMENTS_ENABLED } from '@/lib/config';
 
 interface Props {
   isPaid?: boolean;
@@ -9,7 +10,8 @@ interface Props {
 }
 
 const FREE_FEATURES = [
-  'Track up to 3 prospects',
+  // No prospect cap is enforced while payments are disabled.
+  PAYMENTS_ENABLED ? 'Track up to 3 prospects' : 'Track all your prospects',
   'All 5 stages of the journey',
   'AI biodata extraction',
   'Full Kundli Milan (Ashtakoot · 36 guna)',
@@ -148,8 +150,8 @@ export default function PlanCard({ isPaid, paidAt, razorpayPaymentId, onUpgradeS
         </div>
       </div>
 
-      {/* ── Upgrade CTA — free users only ── */}
-      {!isPaid && (
+      {/* ── Upgrade CTA — free users only (hidden while payments are disabled) ── */}
+      {PAYMENTS_ENABLED && !isPaid && (
         <div style={{
           background: 'white', borderRadius: 18,
           border: '1.5px solid rgba(193,62,42,0.2)',

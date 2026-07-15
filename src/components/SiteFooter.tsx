@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
+import { PAYMENTS_ENABLED } from '@/lib/config';
 import '@/app/landing.css';
 
 /**
@@ -41,7 +42,8 @@ export default function SiteFooter() {
           {[
             { title: 'Product', links: [
               { label: 'Features', href: '/features' },
-              { label: 'Pricing', href: '/pricing' },
+              // Pricing hidden while payments are disabled (early access).
+              ...(PAYMENTS_ENABLED ? [{ label: 'Pricing', href: '/pricing' }] : []),
               { label: 'How it works', href: '/how-it-works' },
               { label: 'Blog', href: '/blog' },
               { label: 'About', href: '/about' },

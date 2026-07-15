@@ -627,7 +627,7 @@ export default function LandingPage() {
           <div className="lp-hero-inner">
             <div className="lp-hero-badge">
               <span className="lp-dot" />
-              Launch offer — ₹99 once, lifetime access. First 100 users only
+              Early access — every feature free, no card needed
             </div>
 
             <h1 className="lp-hero-title">
