@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHmac } from 'crypto';
 import { verifyFirebaseIdToken } from '@/lib/verify-firebase-token';
+import { PAYMENTS_ENABLED } from '@/lib/config';
 
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!;
@@ -45,6 +46,11 @@ async function markUserPaid(
 }
 
 export async function POST(req: NextRequest) {
+  // Payments are temporarily disabled — the app is free for everyone.
+  if (!PAYMENTS_ENABLED) {
+    return NextResponse.json({ error: 'Payments are disabled' }, { status: 403 });
+  }
+
   // Authenticate the caller
   const authHeader = req.headers.get('authorization');
   const uid = await verifyFirebaseIdToken(authHeader);

@@ -1,4 +1,5 @@
 import { UserProfile } from '@/types';
+import { PAYMENTS_ENABLED } from '@/lib/config';
 
 // Compare is unlocked either by a one-time payment (isPaid) or by a free trial
 // that begins the first time the user opens the Compare tab. The trial start
@@ -35,7 +36,9 @@ export function trialDaysLeft(profile: TrialProfile): number {
   return Math.max(0, Math.ceil((end - Date.now()) / DAY_MS));
 }
 
-/** The user can open Compare if they've paid or the trial is still active. */
+/** The user can open Compare if they've paid or the trial is still active.
+ *  While payments are disabled (early access), Compare is free for everyone. */
 export function hasCompareAccess(profile: TrialProfile): boolean {
+  if (!PAYMENTS_ENABLED) return true;
   return !!profile?.isPaid || isTrialActive(profile);
 }

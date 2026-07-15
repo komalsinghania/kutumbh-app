@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { subscribeToProspects, saveUserProfile, recalcScoresIfStale, SCORING_VERSION } from '@/lib/firestore';
 import { Prospect, ProspectStage } from '@/types';
 import { hasCompareAccess, isTrialActive, isTrialExpired, trialDaysLeft, trialEndsAt } from '@/lib/trial';
+import { PAYMENTS_ENABLED } from '@/lib/config';
 import TrialStartedModal from '@/components/TrialStartedModal';
 import {
   calculateOverallScore, getCompatBreakdown, getAshtakootBreakdown, calculateCompatScore, getDealbreakersCheck,
@@ -339,10 +340,12 @@ export default function DashboardPage() {
   const firstName = profile.name.split(' ')[0];
 
   // Compare access + trial state (derived from the profile).
+  // While payments are disabled, Compare is free for all and none of the
+  // trial / paywall UI should render.
   const compareAccess = hasCompareAccess(profile);
-  const trialActive = !profile.isPaid && isTrialActive(profile);
-  const trialExpired = !profile.isPaid && isTrialExpired(profile);
-  const trialNotStarted = !profile.isPaid && !profile.trialStartedAt;
+  const trialActive = PAYMENTS_ENABLED && !profile.isPaid && isTrialActive(profile);
+  const trialExpired = PAYMENTS_ENABLED && !profile.isPaid && isTrialExpired(profile);
+  const trialNotStarted = PAYMENTS_ENABLED && !profile.isPaid && !profile.trialStartedAt;
   const daysLeft = trialDaysLeft(profile);
 
   /* ── Sidebar nav items ─── */

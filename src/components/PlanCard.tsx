@@ -1,5 +1,6 @@
 'use client';
 import RazorpayButton from './RazorpayButton';
+import { PAYMENTS_ENABLED } from '@/lib/config';
 
 interface Props {
   isPaid?: boolean;
@@ -148,8 +149,8 @@ export default function PlanCard({ isPaid, paidAt, razorpayPaymentId, onUpgradeS
         </div>
       </div>
 
-      {/* ── Upgrade CTA — free users only ── */}
-      {!isPaid && (
+      {/* ── Upgrade CTA — free users only (hidden while payments are disabled) ── */}
+      {PAYMENTS_ENABLED && !isPaid && (
         <div style={{
           background: 'white', borderRadius: 18,
           border: '1.5px solid rgba(193,62,42,0.2)',
