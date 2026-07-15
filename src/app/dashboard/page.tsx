@@ -8,6 +8,7 @@ import { subscribeToProspects, saveUserProfile, recalcScoresIfStale, SCORING_VER
 import { Prospect, ProspectStage } from '@/types';
 import { hasCompareAccess, isTrialActive, isTrialExpired, trialDaysLeft, trialEndsAt } from '@/lib/trial';
 import { PAYMENTS_ENABLED } from '@/lib/config';
+import { MARKETING_LINKS } from '@/lib/marketing-links';
 import TrialStartedModal from '@/components/TrialStartedModal';
 import {
   calculateOverallScore, getCompatBreakdown, getAshtakootBreakdown, calculateCompatScore, getDealbreakersCheck,
@@ -211,6 +212,7 @@ export default function DashboardPage() {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const toggleExpand = (id: string) =>
     setExpanded(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -433,6 +435,27 @@ export default function DashboardPage() {
                 </button>
               );
             })}
+
+            {/* Explore — marketing / info pages */}
+            <div style={{
+              margin: '14px 14px 8px', paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.06)',
+              fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.16em',
+              textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)',
+            }}>Explore</div>
+            {MARKETING_LINKS.map(l => (
+              <Link key={l.href} href={l.href}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 11,
+                  padding: '9px 14px', borderRadius: 10, marginBottom: 2,
+                  color: 'rgba(255,255,255,0.4)', fontSize: '0.84rem', fontWeight: 400,
+                  textDecoration: 'none', transition: 'all 0.18s ease',
+                }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="rgba(255,255,255,0.3)" style={{ flexShrink: 0 }}>
+                  <path d="M9 5l7 7-7 7" stroke="rgba(255,255,255,0.3)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>{l.label}</span>
+              </Link>
+            ))}
           </nav>
 
           {/* User footer */}
@@ -486,17 +509,67 @@ export default function DashboardPage() {
             boxShadow: '0 2px 16px rgba(0,0,0,0.2)',
           }}>
             <Logo className="text-lg" dark />
-            <button onClick={() => setMainTab('profile')} style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }}>
-              <div style={{
-                width: 34, height: 34, borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(193,62,42,0.7), rgba(184,137,43,0.5))',
-                color: '#f5ede0', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.68rem', fontWeight: 800, border: '1.5px solid rgba(193,62,42,0.5)',
-              }}>
-                {initials(profile.name)}
-              </div>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button onClick={() => setMainTab('profile')} style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }} aria-label="Profile">
+                <div style={{
+                  width: 34, height: 34, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, rgba(193,62,42,0.7), rgba(184,137,43,0.5))',
+                  color: '#f5ede0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.68rem', fontWeight: 800, border: '1.5px solid rgba(193,62,42,0.5)',
+                }}>
+                  {initials(profile.name)}
+                </div>
+              </button>
+              {/* Hamburger → marketing / info pages menu */}
+              <button
+                onClick={() => setMenuOpen(o => !o)}
+                aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={menuOpen}
+                style={{
+                  width: 38, height: 38, borderRadius: 10, cursor: 'pointer', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: menuOpen ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f5ede0" strokeWidth="2" strokeLinecap="round">
+                  {menuOpen
+                    ? <><path d="M6 6l12 12" /><path d="M18 6L6 18" /></>
+                    : <><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></>}
+                </svg>
+              </button>
+            </div>
           </header>
+        )}
+
+        {/* ── Mobile: marketing / info menu (opened from the header hamburger) ── */}
+        {isMobile && menuOpen && (
+          <>
+            <div onClick={() => setMenuOpen(false)}
+              style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.45)' }} />
+            <div style={{
+              position: 'fixed', top: 62, right: 10, zIndex: 41, minWidth: 210,
+              background: 'linear-gradient(180deg, #241812 0%, #1e130c 100%)',
+              borderRadius: 14, padding: 8,
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
+            }}>
+              <div style={{
+                fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.16em',
+                textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', padding: '6px 12px 8px',
+              }}>Explore</div>
+              {MARKETING_LINKS.map(l => (
+                <Link key={l.href} href={l.href} onClick={() => setMenuOpen(false)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '11px 12px', borderRadius: 9, textDecoration: 'none',
+                    color: 'rgba(245,237,224,0.85)', fontSize: '0.9rem', fontWeight: 500,
+                  }}>
+                  {l.label}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.25)"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" /></svg>
+                </Link>
+              ))}
+            </div>
+          </>
         )}
 
         {/* ── Desktop Top Bar ── (hidden on the board — the Almanac has its own masthead) */}
