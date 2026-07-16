@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -138,7 +138,7 @@ export default function OnboardingPage() {
       if (place.approximate) {
         toast(`Nakshatra: ${result.nakshatraName} (approx. location, IST) — pick it manually if this looks off.`, { icon: 'ℹ️' });
       } else {
-        toast.success(`Nakshatra calculated: ${result.nakshatraName} (${result.rashiName})`);
+        toast.success(`Nakshatra calculated: ${result.nakshatraName}`);
       }
       return true;
     } catch {
