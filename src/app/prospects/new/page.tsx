@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -15,6 +15,8 @@ import CitySearch from '@/components/CitySearch';
 import { resolveBirthPlace } from '@/lib/indian-cities';
 import toast from 'react-hot-toast';
 import { Logo } from '@/components/Logo';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const SOURCES: ProspectSource[] = [
   'Matrimonial Website', 'Relative', 'Family Friend', 'Pandit ji', 'Community Event', 'Other',
@@ -593,16 +595,64 @@ export default function NewProspectPage() {
             </Field>
           </div>
           <Field label="Date of Birth">
-            <input type="date" value={form.dobDate} onChange={e => {
-              const dob = e.target.value;
-              const computed = ageFromDob(dob);
-              setForm(f => ({ ...f, dobDate: dob, age: computed ? String(computed) : f.age }));
-              setKundliCalcDone(false);
-            }} max={new Date().toISOString().split('T')[0]} />
+            <DatePicker
+              selected={form.dobDate ? new Date(form.dobDate) : null}
+              onChange={(date: Date | null) => {
+                if (!date) return;
+                const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                const computed = ageFromDob(iso);
+                setForm(f => ({ ...f, dobDate: iso, age: computed ? String(computed) : f.age }));
+                setKundliCalcDone(false);
+              }}
+              maxDate={new Date()}
+              showMonthDropdown
+              showYearDropdown
+              dropdownMode="select"
+              dateFormat="dd/MM/yyyy"
+              placeholderText="Select date of birth"
+              className="w-full"
+              wrapperClassName="w-full"
+              popperPlacement="bottom-start"
+              showPopperArrow={false}
+              yearDropdownItemNumber={100}
+              scrollableYearDropdown
+            />
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Birth Time (IST)">
-              <input type="time" value={form.dobTime} onChange={e => { set('dobTime', e.target.value); setKundliCalcDone(false); }} />
+              <div className="flex gap-1 items-center">
+                <select
+                  value={form.dobTime ? form.dobTime.split(':')[0] : ''}
+                  onChange={e => {
+                    const h = e.target.value;
+                    const m = form.dobTime ? form.dobTime.split(':')[1] || '00' : '00';
+                    set('dobTime', h ? `${h}:${m}` : '');
+                    setKundliCalcDone(false);
+                  }}
+                  style={{ flex: 1, borderRadius: 10, border: '1.5px solid #d6c9b0', padding: '8px 6px', fontSize: '0.85rem', background: 'white', color: '#1a1410' }}
+                >
+                  <option value="">HH</option>
+                  {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(h => (
+                    <option key={h} value={h}>{h}</option>
+                  ))}
+                </select>
+                <span style={{ color: '#6b5e4d', fontWeight: 700 }}>:</span>
+                <select
+                  value={form.dobTime ? form.dobTime.split(':')[1] || '' : ''}
+                  onChange={e => {
+                    const m = e.target.value;
+                    const h = form.dobTime ? form.dobTime.split(':')[0] || '00' : '00';
+                    set('dobTime', m ? `${h}:${m}` : h ? `${h}:00` : '');
+                    setKundliCalcDone(false);
+                  }}
+                  style={{ flex: 1, borderRadius: 10, border: '1.5px solid #d6c9b0', padding: '8px 6px', fontSize: '0.85rem', background: 'white', color: '#1a1410' }}
+                >
+                  <option value="">MM</option>
+                  {['00','05','10','15','20','25','30','35','40','45','50','55'].map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
             </Field>
             <Field label="Birth Place">
               <CitySearch value={form.dobPlace} onChange={(name) => { set('dobPlace', name); setKundliCalcDone(false); }} placeholder="Birth city…" />

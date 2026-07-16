@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -31,6 +31,8 @@ import EmojiPicker from '@/components/EmojiPicker';
 import StagePromptModal from '@/components/StagePromptModal';
 import toast from 'react-hot-toast';
 import { Logo } from '@/components/Logo';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 type Tab = 'overview' | 'conversations' | 'flags' | 'family' | 'meeting' | 'kundli' | 'decision';
 
@@ -191,6 +193,71 @@ function EditChip({ label, value, onChange, type = 'text', placeholder }: {
       <label style={editLabelStyle}>{label}</label>
       <input type={type} value={value} placeholder={placeholder}
         onChange={e => onChange(e.target.value)} style={editInputStyle} />
+    </div>
+  );
+}
+
+/** Date picker chip — uses react-datepicker to avoid native OS picker crashes in Instagram WebView */
+function EditDateChip({ label, value, onChange }: {
+  label: string; value: string; onChange: (v: string) => void;
+}) {
+  return (
+    <div style={{ background: '#faf8f5', borderRadius: 10, border: '1px solid #ede8df', padding: '8px 12px' }}>
+      <label style={editLabelStyle}>{label}</label>
+      <DatePicker
+        selected={value ? new Date(value) : null}
+        onChange={(date: Date | null) => {
+          if (!date) return;
+          const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+          onChange(iso);
+        }}
+        maxDate={new Date()}
+        showMonthDropdown
+        showYearDropdown
+        dropdownMode="select"
+        dateFormat="dd/MM/yyyy"
+        placeholderText="Select date"
+        wrapperClassName="w-full"
+        popperPlacement="bottom-start"
+        showPopperArrow={false}
+        yearDropdownItemNumber={100}
+        scrollableYearDropdown
+      />
+    </div>
+  );
+}
+
+/** Time select chip — uses HH/MM dropdowns to avoid native time picker crashes in Instagram WebView */
+function EditTimeChip({ label, value, onChange }: {
+  label: string; value: string; onChange: (v: string) => void;
+}) {
+  const [h, m] = value ? value.split(':') : ['', ''];
+  return (
+    <div style={{ background: '#faf8f5', borderRadius: 10, border: '1px solid #ede8df', padding: '8px 12px' }}>
+      <label style={editLabelStyle}>{label}</label>
+      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        <select
+          value={h || ''}
+          onChange={e => onChange(e.target.value ? `${e.target.value}:${m || '00'}` : '')}
+          style={{ ...editInputStyle, flex: 1, padding: '5px 4px' }}
+        >
+          <option value="">HH</option>
+          {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(hr => (
+            <option key={hr} value={hr}>{hr}</option>
+          ))}
+        </select>
+        <span style={{ color: '#6b5e4d', fontWeight: 700 }}>:</span>
+        <select
+          value={m || ''}
+          onChange={e => onChange(h ? `${h}:${e.target.value}` : `00:${e.target.value}`)}
+          style={{ ...editInputStyle, flex: 1, padding: '5px 4px' }}
+        >
+          <option value="">MM</option>
+          {['00','05','10','15','20','25','30','35','40','45','50','55'].map(mn => (
+            <option key={mn} value={mn}>{mn}</option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }
@@ -1457,8 +1524,8 @@ export default function ProspectDetailPage() {
                             <EditChip label="Rashi" value={editForm.rashi} onChange={v => setEdit('rashi', v)} />
                             <EditPills label="Manglik" options={['Yes', 'No', 'Partial', "Don't Know"]} value={editForm.manglik} onChange={v => setEdit('manglik', v)} />
                             <EditChip label="Gotra" value={editForm.gotra} onChange={v => setEdit('gotra', v)} />
-                            <EditChip label="DOB" type="date" value={editForm.dobDate} onChange={v => setEdit('dobDate', v)} />
-                            <EditChip label="Birth Time" type="time" value={editForm.dobTime} onChange={v => setEdit('dobTime', v)} />
+                            <EditDateChip label="DOB" value={editForm.dobDate} onChange={v => setEdit('dobDate', v)} />
+                            <EditTimeChip label="Birth Time" value={editForm.dobTime} onChange={v => setEdit('dobTime', v)} />
                             <EditChip label="Birth Place" value={editForm.dobPlace} onChange={v => setEdit('dobPlace', v)} />
                             <div style={{ gridColumn: '1 / -1' }}>
                               <button type="button" onClick={recalcEditKundli}
