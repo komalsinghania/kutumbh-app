@@ -502,8 +502,38 @@ textarea::placeholder {
   list-style: disc;
 }
 
+.legal-content ol {
+  margin: 0.5rem 0 0.7rem 1.25rem;
+  list-style: decimal;
+}
+
 .legal-content li {
   margin: 0.3rem 0;
+}
+
+.legal-content .table-wrap {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.legal-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.legal-content th,
+.legal-content td {
+  border: 1px solid #e8dece;
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.legal-content thead th {
+  background: #fbf3ea;
+  color: #1a1410;
+  font-weight: 700;
 }
 
 .legal-content a {
