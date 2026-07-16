@@ -5,14 +5,16 @@ import { useAuth } from '@/lib/auth-context';
 import { saveUserProfile } from '@/lib/firestore';
 import { track } from '@/lib/analytics';
 import {
-  NAKSHATRAS, DEALBREAKERS, DEALBREAKER_CATEGORIES, HOBBIES,
-  Gender, Diet, Manglik, Education, Income, IncomePref, FamilyType,
+  NAKSHATRAS, HOBBIES,
+  Gender, Diet, Manglik, Education, Income,
   ExtractedBiodata,
 } from '@/types';
 import { calculateKundli } from '@/lib/kundli';
 import { normalizeHobbies } from '@/lib/hobbies';
 import CitySearch from '@/components/CitySearch';
 import { resolveBirthPlace } from '@/lib/indian-cities';
+import PartnerPreferencesForm from '@/components/PartnerPreferencesForm';
+import { PartnerPreferences, PartnerQuestionId, deriveLegacyPreferenceFields } from '@/lib/partner-preferences';
 import toast from 'react-hot-toast';
 import { Logo } from '@/components/Logo';
 
@@ -95,25 +97,21 @@ export default function OnboardingPage() {
     name: '', gender: '' as Gender, age: '', city: '', education: '' as Education,
     profession: '', income: '' as Income, diet: '' as Diet, manglik: '' as Manglik,
     nakshatra: -1, rashiIndex: -1, dobDate: '', dobTime: '', dobPlace: '',
-    prefAgeMin: '', prefAgeMax: '', prefCities: '',
-    prefIncome: '' as IncomePref, prefFamily: '' as FamilyType, dealbreakers: [] as string[],
+    partnerPrefs: {} as PartnerPreferences,
     hobbies: [] as string[],
   });
   const [birthManualMode, setBirthManualMode] = useState(false);
   const [birthCalcDone, setBirthCalcDone] = useState(false);
-  const [customDealbreakerText, setCustomDealbreakerText] = useState('');
-  const [showCustomDealbreakerInput, setShowCustomDealbreakerInput] = useState(false);
   const [showPasteText, setShowPasteText] = useState(false);
   const [pasteText, setPasteText] = useState('');
 
   const set = (key: string, val: any) => setForm(f => ({ ...f, [key]: val }));
 
-  const toggleDealbreaker = (d: string) => setForm(f => ({
-    ...f,
-    dealbreakers: f.dealbreakers.includes(d)
-      ? f.dealbreakers.filter(x => x !== d)
-      : [...f.dealbreakers, d],
-  }));
+  const setPartnerPref = (id: PartnerQuestionId, option: string) => setForm(f => {
+    const next = { ...f.partnerPrefs };
+    if (option) next[id] = option; else delete next[id];
+    return { ...f, partnerPrefs: next };
+  });
 
   const toggleHobby = (h: string) => setForm(f => ({
     ...f,
@@ -168,13 +166,8 @@ export default function OnboardingPage() {
       case 8: return !!form.diet;
       case 9: return !!form.manglik;
       case 10: return form.nakshatra >= 0;
-      case 11: return Number(form.prefAgeMin) > 0;
-      case 12: return Number(form.prefAgeMax) > 0;
-      case 13: return true;
-      case 14: return !!form.prefIncome;
-      case 15: return !!form.prefFamily;
-      case 16: return true;
-      case 17: return true;
+      case 11: return true; // partner preferences — all optional
+      case 12: return true; // hobbies
       default: return false;
     }
   };
@@ -301,12 +294,8 @@ export default function OnboardingPage() {
         dobDate: form.dobDate || undefined,
         dobTime: form.dobTime || undefined,
         dobPlace: form.dobPlace || undefined,
-        prefAgeMin: Number(form.prefAgeMin),
-        prefAgeMax: Number(form.prefAgeMax),
-        prefCities: form.prefCities.split(',').map(c => c.trim()).filter(Boolean),
-        prefIncome: form.prefIncome,
-        prefFamily: form.prefFamily,
-        dealbreakers: form.dealbreakers,
+        partnerPreferences: form.partnerPrefs,
+        ...deriveLegacyPreferenceFields(form.partnerPrefs, { age: Number(form.age) || 0, city: form.city }),
         hobbies: form.hobbies.length > 0 ? form.hobbies : undefined,
       });
       await refreshProfile();
@@ -319,7 +308,7 @@ export default function OnboardingPage() {
     }
   };
 
-  const progress = step === 0 ? 0 : Math.round((step / 17) * 100);
+  const progress = step === 0 ? 0 : Math.round((step / 12) * 100);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#f5ede0',  }}>
@@ -333,12 +322,12 @@ export default function OnboardingPage() {
       )}
       {step > 0 && (
         <div className="text-right px-5 pt-2 text-xs font-semibold" style={{ color: '#c13e2a' }}>
-          {step} / 17
+          {step} / 12
         </div>
       )}
 
-      <div className="flex-1 flex flex-col items-center justify-center px-5 py-8">
-        <div className="w-full max-w-sm">
+      <div className={`flex-1 flex flex-col items-center px-5 py-8 ${step === 11 ? 'justify-start' : 'justify-center'}`}>
+        <div className={`w-full ${step === 11 ? 'max-w-lg' : 'max-w-sm'}`}>
           <div className="text-center mb-6"><Logo className="text-4xl" /></div>
 
           {/* Step 0: Upload biodata */}
@@ -642,164 +631,18 @@ export default function OnboardingPage() {
             </StepWrapper>
           )}
 
-          {/* Step 11: Min preferred age */}
+          {/* Step 11: What do you want in a partner */}
           {step === 11 && (
-            <StepWrapper title="Minimum preferred age of partner">
-              <input
-                type="number"
-                placeholder="e.g. 25"
-                value={form.prefAgeMin}
-                onChange={e => set('prefAgeMin', e.target.value)}
-                onKeyDown={handleEnter}
-                min={18}
-                max={60}
-                autoFocus
-              />
+            <StepWrapper title="What do you want in a partner">
+              <p className="text-sm mt-1 mb-6" style={{ color: '#6b5e4d' }}>
+                Pick what matters to you — skip anything that doesn&apos;t.
+              </p>
+              <PartnerPreferencesForm value={form.partnerPrefs} onChange={setPartnerPref} />
             </StepWrapper>
           )}
 
-          {/* Step 12: Max preferred age */}
+          {/* Step 12: Hobbies & Interests */}
           {step === 12 && (
-            <StepWrapper title="Maximum preferred age of partner">
-              <input
-                type="number"
-                placeholder="e.g. 32"
-                value={form.prefAgeMax}
-                onChange={e => set('prefAgeMax', e.target.value)}
-                onKeyDown={handleEnter}
-                min={18}
-                max={65}
-                autoFocus
-              />
-            </StepWrapper>
-          )}
-
-          {/* Step 13: Preferred cities */}
-          {step === 13 && (
-            <StepWrapper title="Preferred cities for partner">
-              <input
-                type="text"
-                placeholder="Mumbai, Delhi, Pune (comma separated)"
-                value={form.prefCities}
-                onChange={e => set('prefCities', e.target.value)}
-                onKeyDown={handleEnter}
-                autoFocus
-              />
-              <p className="text-gray-400 text-xs mt-2">Leave blank for no preference</p>
-            </StepWrapper>
-          )}
-
-          {/* Step 14: Min income preference */}
-          {step === 14 && (
-            <StepWrapper title="Minimum income preference">
-              <PillGroup
-                options={['No Preference', '5+', '10+', '20+', '35+', '50+']}
-                value={form.prefIncome}
-                onSelect={v => set('prefIncome', v)}
-              />
-            </StepWrapper>
-          )}
-
-          {/* Step 15: Family type preference */}
-          {step === 15 && (
-            <StepWrapper title="Preferred family type">
-              <PillGroup
-                options={['Joint', 'Nuclear', 'No Preference']}
-                value={form.prefFamily}
-                onSelect={v => set('prefFamily', v)}
-              />
-            </StepWrapper>
-          )}
-
-          {/* Step 16: Non-negotiables */}
-          {step === 16 && (
-            <StepWrapper title="Your non-negotiables">
-              <p className="text-sm mt-1 mb-4" style={{ color: '#6b5e4d' }}>Select all that apply</p>
-              <div className="space-y-4">
-                {DEALBREAKER_CATEGORIES.map(cat => (
-                  <div key={cat.label}>
-                    <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#c13e2a' }}>{cat.label}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {cat.items.map(d => (
-                        <button
-                          key={d}
-                          type="button"
-                          onClick={() => toggleDealbreaker(d)}
-                          className="px-3 py-1.5 rounded-full border text-xs font-medium transition-all"
-                          style={form.dealbreakers.includes(d)
-                            ? { background: '#c13e2a', color: 'white', borderColor: '#c13e2a' }
-                            : { background: 'white', color: '#6b5e4d', borderColor: '#d6c9b0' }}
-                        >
-                          {d}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-                {/* Custom non-negotiables */}
-                {form.dealbreakers.filter(d => !(DEALBREAKERS as readonly string[]).includes(d)).length > 0 && (
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#c13e2a' }}>Custom</p>
-                    <div className="flex flex-wrap gap-2">
-                      {form.dealbreakers.filter(d => !(DEALBREAKERS as readonly string[]).includes(d)).map(d => (
-                        <span key={d} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium" style={{ background: '#c13e2a', color: 'white', border: '1px solid #c13e2a' }}>
-                          {d}
-                          <button type="button" onClick={() => toggleDealbreaker(d)} style={{ marginLeft: 2, fontWeight: 700, lineHeight: 1 }}>×</button>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowCustomDealbreakerInput(v => !v)}
-                    className="px-3 py-1.5 rounded-full border text-xs font-medium transition-all"
-                    style={{ background: showCustomDealbreakerInput ? '#c13e2a' : 'white', color: showCustomDealbreakerInput ? 'white' : '#c13e2a', borderColor: '#c13e2a' }}
-                  >
-                    + Other
-                  </button>
-                </div>
-              </div>
-              {showCustomDealbreakerInput && (
-                <div className="flex gap-2 mt-3">
-                  <input
-                    type="text"
-                    value={customDealbreakerText}
-                    onChange={e => setCustomDealbreakerText(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && customDealbreakerText.trim()) {
-                        toggleDealbreaker(customDealbreakerText.trim());
-                        setCustomDealbreakerText('');
-                        setShowCustomDealbreakerInput(false);
-                      }
-                    }}
-                    placeholder="Type your dealbreaker…"
-                    className="flex-1"
-                    style={{ borderColor: '#c13e2a' }}
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    style={{ padding: '0.6rem 1rem', borderRadius: '0.75rem' }}
-                    disabled={!customDealbreakerText.trim()}
-                    onClick={() => {
-                      if (!customDealbreakerText.trim()) return;
-                      toggleDealbreaker(customDealbreakerText.trim());
-                      setCustomDealbreakerText('');
-                      setShowCustomDealbreakerInput(false);
-                    }}
-                  >
-                    Add
-                  </button>
-                </div>
-              )}
-            </StepWrapper>
-          )}
-
-          {/* Step 17: Hobbies & Interests */}
-          {step === 17 && (
             <StepWrapper title="Your hobbies & interests">
               <p className="text-sm mt-1 mb-4" style={{ color: '#6b5e4d' }}>Pick a few — or add your own</p>
               <HobbyPicker options={HOBBIES} selected={form.hobbies} onToggle={toggleHobby} />
@@ -816,7 +659,7 @@ export default function OnboardingPage() {
                 >
                   Back
                 </button>
-                {step < 17 ? (
+                {step < 12 ? (
                   <button
                     className="btn-primary flex-1 disabled:opacity-40"
                     disabled={!canContinue()}
@@ -834,7 +677,7 @@ export default function OnboardingPage() {
                   </button>
                 )}
               </div>
-              {step < 17 && (
+              {step < 12 && (
                 <button
                   type="button"
                   className="w-full text-center mt-3 text-xs underline"

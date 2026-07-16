@@ -1,3 +1,5 @@
+import type { PartnerPreferences } from '@/lib/partner-preferences';
+
 export type Gender = 'Female' | 'Male';
 export type Diet = 'Pure Veg' | 'Jain' | 'Eggetarian' | 'Non-Veg';
 export type Manglik = 'Yes' | 'No' | 'Partial' | "Don't Know";
@@ -163,6 +165,10 @@ export interface UserProfile {
   prefCities: string[];
   prefIncome: IncomePref;
   prefFamily: FamilyType;
+  // Structured "What do you want in a partner" answers (source of truth for the
+  // preference UI). The legacy fields above are derived from these on save so
+  // scoring keeps working — see src/lib/partner-preferences.ts.
+  partnerPreferences?: PartnerPreferences;
   dealbreakers: string[];
   hobbies?: string[];
   // Payment / subscription
