@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -138,7 +138,7 @@ export default function OnboardingPage() {
       const result = calculateKundli({ date: dobDate, time: dobTime, lat: city.lat, lng: city.lng, tzOffset: city.tz });
       setForm(f => ({ ...f, nakshatra: result.nakshatra, rashiIndex: result.rashi }));
       setBirthCalcDone(true);
-      toast.success(`Nakshatra calculated: ${result.nakshatraName} (${result.rashiName})`);
+      toast.success(`Nakshatra calculated: ${result.nakshatraName}`);
       return true;
     } catch {
       toast.error('Could not calculate — please enter nakshatra manually.');

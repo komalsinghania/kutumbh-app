@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { calculateAshtakoot, KootDetail, NAKSHATRA_NAMES, RASHI_SHORT } from '@/lib/kundli';
 import { UserProfile } from '@/types';
 
@@ -91,7 +91,7 @@ export default function KundliReport({
             <div key={i} className="min-w-0">
               <p className="text-[11px] text-gray-400 truncate">{p.label}</p>
               <p className="text-sm text-[#1a1410] font-medium mt-0.5">
-                {p.nak}{p.rashi ? <span className="text-gray-400 font-normal"> · {p.rashi}</span> : null}
+                {p.nak}
               </p>
               {p.meta.length > 0 && <p className="text-[11px] text-gray-400 mt-0.5 truncate">{p.meta.join(' · ')}</p>}
             </div>
