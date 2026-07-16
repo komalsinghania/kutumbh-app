@@ -17,6 +17,8 @@ import PartnerPreferencesForm from '@/components/PartnerPreferencesForm';
 import { PartnerPreferences, PartnerQuestionId, deriveLegacyPreferenceFields } from '@/lib/partner-preferences';
 import toast from 'react-hot-toast';
 import { Logo } from '@/components/Logo';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 function PillGroup({ options, value, onSelect }: {
   options: string[]; value: string; onSelect: (v: string) => void;
@@ -546,28 +548,78 @@ export default function OnboardingPage() {
               <p className="text-sm text-gray-500 mt-1 mb-4">We'll calculate your Nakshatra automatically.</p>
               {!birthManualMode ? (
                 <div className="space-y-3">
+                  {/* Date of Birth — react-datepicker (no native OS picker, works in Instagram WebView) */}
                   <div>
                     <label className="text-xs text-gray-500 font-medium block mb-1">Date of Birth</label>
-                    <input
-                      type="date"
-                      value={form.dobDate}
-                      onChange={e => {
-                        const dob = e.target.value;
-                        const computed = ageFromDob(dob);
-                        setForm(f => ({ ...f, dobDate: dob, age: computed ? String(computed) : f.age }));
+                    <DatePicker
+                      selected={form.dobDate ? new Date(form.dobDate) : null}
+                      onChange={(date: Date | null) => {
+                        if (!date) return;
+                        const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                        const computed = ageFromDob(iso);
+                        setForm(f => ({ ...f, dobDate: iso, age: computed ? String(computed) : f.age }));
                         setBirthCalcDone(false);
                       }}
-                      max={new Date().toISOString().split('T')[0]}
+                      maxDate={new Date()}
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      dateFormat="dd/MM/yyyy"
+                      placeholderText="Select date of birth"
+                      className="w-full rounded-xl border px-3 py-2.5 text-sm"
+                      wrapperClassName="w-full"
+                      calendarClassName="birth-datepicker"
+                      popperPlacement="bottom-start"
+                      showPopperArrow={false}
+                      yearDropdownItemNumber={100}
+                      scrollableYearDropdown
                     />
                   </div>
+
+                  {/* Time of Birth — custom selects (no native time picker, safe in Instagram WebView) */}
                   <div>
                     <label className="text-xs text-gray-500 font-medium block mb-1">Time of Birth (IST)</label>
-                    <input
-                      type="time"
-                      value={form.dobTime}
-                      onChange={e => { set('dobTime', e.target.value); setBirthCalcDone(false); }}
-                    />
+                    <div className="flex gap-2">
+                      {/* Hour */}
+                      <select
+                        value={form.dobTime ? form.dobTime.split(':')[0] : ''}
+                        onChange={e => {
+                          const h = e.target.value;
+                          const m = form.dobTime ? form.dobTime.split(':')[1] || '00' : '00';
+                          const newTime = h ? `${h}:${m}` : '';
+                          set('dobTime', newTime);
+                          setBirthCalcDone(false);
+                        }}
+                        className="flex-1 rounded-xl border px-3 py-2.5 text-sm"
+                        style={{ borderColor: 'rgba(193,62,42,0.35)', background: 'white', color: '#1a1410' }}
+                      >
+                        <option value="">HH</option>
+                        {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(h => (
+                          <option key={h} value={h}>{h}</option>
+                        ))}
+                      </select>
+                      <span className="flex items-center font-bold text-gray-400">:</span>
+                      {/* Minute */}
+                      <select
+                        value={form.dobTime ? form.dobTime.split(':')[1] || '' : ''}
+                        onChange={e => {
+                          const m = e.target.value;
+                          const h = form.dobTime ? form.dobTime.split(':')[0] || '00' : '00';
+                          const newTime = m ? `${h}:${m}` : h ? `${h}:00` : '';
+                          set('dobTime', newTime);
+                          setBirthCalcDone(false);
+                        }}
+                        className="flex-1 rounded-xl border px-3 py-2.5 text-sm"
+                        style={{ borderColor: 'rgba(193,62,42,0.35)', background: 'white', color: '#1a1410' }}
+                      >
+                        <option value="">MM</option>
+                        {['00','05','10','15','20','25','30','35','40','45','50','55'].map(m => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
+
                   <div>
                     <label className="text-xs text-gray-500 font-medium block mb-1">Place of Birth</label>
                     <CitySearch
