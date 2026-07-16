@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { pageOpenGraph } from '@/lib/og';
 import SiteHeader from '@/components/SiteHeader';
+import SiteFooter from '@/components/SiteFooter';
 import './page.css';
 
 export const metadata: Metadata = {
@@ -44,7 +45,7 @@ const LINKS = [
   {
     k: 'The cost',
     title: 'Pay once, till your roka',
-    body: "Free for 3 prospects. ₹499 once when you're ready to compare. No subscriptions.",
+    body: "Free for 3 prospects. ₹99 once when you're ready to compare. No subscriptions.",
     href: '/pricing',
   },
 ];
@@ -136,20 +137,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <footer>
-        <span className="f-wm">
-          Roka<em>Maybe</em>
-        </span>
-        The app for the maybe years
-        <div className="f-links">
-          <Link href="/features">Features</Link>
-          <Link href="/how-it-works">How it works</Link>
-          <Link href="/pricing">Pricing</Link>
-          <Link href="/mummy-mode">Mummy Mode</Link>
-          <Link href="/about">About</Link>
-          <Link href="/blog">Blog</Link>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

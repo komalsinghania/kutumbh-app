@@ -24,7 +24,7 @@ interface Props {
   style?: React.CSSProperties;
 }
 
-export default function RazorpayButton({ onSuccess, label = 'Unlock Compare — ₹499', style }: Props) {
+export default function RazorpayButton({ onSuccess, label = 'Unlock Compare — ₹99', style }: Props) {
   const { user, profile, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
 

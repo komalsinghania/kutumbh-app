@@ -7,6 +7,8 @@ import { useAuth } from '@/lib/auth-context';
 import { subscribeToProspects, saveUserProfile, recalcScoresIfStale, SCORING_VERSION } from '@/lib/firestore';
 import { Prospect, ProspectStage } from '@/types';
 import { hasCompareAccess, isTrialActive, isTrialExpired, trialDaysLeft, trialEndsAt } from '@/lib/trial';
+import { PAYMENTS_ENABLED } from '@/lib/config';
+import { MARKETING_LINKS } from '@/lib/marketing-links';
 import TrialStartedModal from '@/components/TrialStartedModal';
 import {
   calculateOverallScore, getCompatBreakdown, getAshtakootBreakdown, calculateCompatScore, getDealbreakersCheck,
@@ -210,6 +212,7 @@ export default function DashboardPage() {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const toggleExpand = (id: string) =>
     setExpanded(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -339,10 +342,12 @@ export default function DashboardPage() {
   const firstName = profile.name.split(' ')[0];
 
   // Compare access + trial state (derived from the profile).
+  // While payments are disabled, Compare is free for all and none of the
+  // trial / paywall UI should render.
   const compareAccess = hasCompareAccess(profile);
-  const trialActive = !profile.isPaid && isTrialActive(profile);
-  const trialExpired = !profile.isPaid && isTrialExpired(profile);
-  const trialNotStarted = !profile.isPaid && !profile.trialStartedAt;
+  const trialActive = PAYMENTS_ENABLED && !profile.isPaid && isTrialActive(profile);
+  const trialExpired = PAYMENTS_ENABLED && !profile.isPaid && isTrialExpired(profile);
+  const trialNotStarted = PAYMENTS_ENABLED && !profile.isPaid && !profile.trialStartedAt;
   const daysLeft = trialDaysLeft(profile);
 
   /* ── Sidebar nav items ─── */
@@ -430,6 +435,27 @@ export default function DashboardPage() {
                 </button>
               );
             })}
+
+            {/* Explore — marketing / info pages */}
+            <div style={{
+              margin: '14px 14px 8px', paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.06)',
+              fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.16em',
+              textTransform: 'uppercase', color: 'rgba(255,255,255,0.22)',
+            }}>Explore</div>
+            {MARKETING_LINKS.map(l => (
+              <Link key={l.href} href={l.href}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 11,
+                  padding: '9px 14px', borderRadius: 10, marginBottom: 2,
+                  color: 'rgba(255,255,255,0.4)', fontSize: '0.84rem', fontWeight: 400,
+                  textDecoration: 'none', transition: 'all 0.18s ease',
+                }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="rgba(255,255,255,0.3)" style={{ flexShrink: 0 }}>
+                  <path d="M9 5l7 7-7 7" stroke="rgba(255,255,255,0.3)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>{l.label}</span>
+              </Link>
+            ))}
           </nav>
 
           {/* User footer */}
@@ -483,17 +509,67 @@ export default function DashboardPage() {
             boxShadow: '0 2px 16px rgba(0,0,0,0.2)',
           }}>
             <Logo className="text-lg" dark />
-            <button onClick={() => setMainTab('profile')} style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }}>
-              <div style={{
-                width: 34, height: 34, borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(193,62,42,0.7), rgba(184,137,43,0.5))',
-                color: '#f5ede0', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.68rem', fontWeight: 800, border: '1.5px solid rgba(193,62,42,0.5)',
-              }}>
-                {initials(profile.name)}
-              </div>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button onClick={() => setMainTab('profile')} style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer' }} aria-label="Profile">
+                <div style={{
+                  width: 34, height: 34, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, rgba(193,62,42,0.7), rgba(184,137,43,0.5))',
+                  color: '#f5ede0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.68rem', fontWeight: 800, border: '1.5px solid rgba(193,62,42,0.5)',
+                }}>
+                  {initials(profile.name)}
+                </div>
+              </button>
+              {/* Hamburger → marketing / info pages menu */}
+              <button
+                onClick={() => setMenuOpen(o => !o)}
+                aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={menuOpen}
+                style={{
+                  width: 38, height: 38, borderRadius: 10, cursor: 'pointer', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: menuOpen ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f5ede0" strokeWidth="2" strokeLinecap="round">
+                  {menuOpen
+                    ? <><path d="M6 6l12 12" /><path d="M18 6L6 18" /></>
+                    : <><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></>}
+                </svg>
+              </button>
+            </div>
           </header>
+        )}
+
+        {/* ── Mobile: marketing / info menu (opened from the header hamburger) ── */}
+        {isMobile && menuOpen && (
+          <>
+            <div onClick={() => setMenuOpen(false)}
+              style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.45)' }} />
+            <div style={{
+              position: 'fixed', top: 62, right: 10, zIndex: 41, minWidth: 210,
+              background: 'linear-gradient(180deg, #241812 0%, #1e130c 100%)',
+              borderRadius: 14, padding: 8,
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
+            }}>
+              <div style={{
+                fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.16em',
+                textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', padding: '6px 12px 8px',
+              }}>Explore</div>
+              {MARKETING_LINKS.map(l => (
+                <Link key={l.href} href={l.href} onClick={() => setMenuOpen(false)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '11px 12px', borderRadius: 9, textDecoration: 'none',
+                    color: 'rgba(245,237,224,0.85)', fontSize: '0.9rem', fontWeight: 500,
+                  }}>
+                  {l.label}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.25)"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" /></svg>
+                </Link>
+              ))}
+            </div>
+          </>
         )}
 
         {/* ── Desktop Top Bar ── (hidden on the board — the Almanac has its own masthead) */}
@@ -869,7 +945,7 @@ export default function DashboardPage() {
                         {startingTrial ? 'Starting…' : 'Start Free Trial'}
                       </button>
                       <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.4)', marginTop: 12 }}>
-                        Then ₹499 once — no subscription, no auto-renewal.
+                        Then <span style={{ textDecoration: 'line-through' }}>₹999</span> ₹99 once (90% OFF) — no subscription, no auto-renewal.
                       </p>
                     </div>
                   </div>
@@ -924,12 +1000,15 @@ export default function DashboardPage() {
                           <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff6b4a', boxShadow: '0 0 6px rgba(255,107,74,0.8)' }} />
                           <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,200,180,0.9)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Roka Ready</span>
                         </div>
-                        <div style={{
-                          fontFamily: 'var(--font-fraunces, Fraunces, serif)',
-                          fontSize: '1.6rem', fontWeight: 800, color: 'white', lineHeight: 1,
-                        }}>
-                          ₹499
-                          <span style={{ fontSize: '0.65rem', fontWeight: 500, color: 'rgba(255,255,255,0.4)', marginLeft: 6, fontFamily: 'inherit' }}>once</span>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'flex-end', marginBottom: 2 }}>
+                            <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a8f0c8', background: 'rgba(168,240,200,0.15)', border: '1px solid rgba(168,240,200,0.3)', borderRadius: 20, padding: '2px 7px' }}>90% OFF</span>
+                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)', textDecoration: 'line-through' }}>₹999</span>
+                          </div>
+                          <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.6rem', fontWeight: 800, color: 'white', lineHeight: 1 }}>
+                            ₹99
+                            <span style={{ fontSize: '0.65rem', fontWeight: 500, color: 'rgba(255,255,255,0.4)', marginLeft: 6, fontFamily: 'inherit' }}>once</span>
+                          </div>
                         </div>
                       </div>
 
@@ -1001,23 +1080,23 @@ export default function DashboardPage() {
                         <div>
                           <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a89e92', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>You pay</div>
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                            <span style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '2.2rem', fontWeight: 800, color: '#c13e2a', lineHeight: 1 }}>₹499</span>
-                            <span style={{ fontSize: '0.75rem', color: '#a89e92', textDecoration: 'line-through' }}>₹2,000+/mo</span>
+                            <span style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '2.2rem', fontWeight: 800, color: '#c13e2a', lineHeight: 1 }}>₹99</span>
+                            <span style={{ fontSize: '0.75rem', color: '#a89e92', textDecoration: 'line-through' }}>₹999</span>
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#a89e92', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}></div>
-                          {/* <div style={{
+                          <div style={{
                             background: 'rgba(45,107,79,0.1)', border: '1px solid rgba(45,107,79,0.25)',
                             borderRadius: 20, padding: '4px 12px',
                             fontSize: '0.75rem', fontWeight: 700, color: '#2D6B4F',
-                          }}>Save ₹23,501/yr</div> */}
+                          }}>90% OFF</div>
                         </div>
                       </div>
 
                       <RazorpayButton
                         onSuccess={refreshProfile}
-                        label="Unlock Roka Ready — ₹499"
+                        label="Unlock Roka Ready — ₹99"
                         style={{ width: '100%', borderRadius: 14, padding: '15px 20px', fontSize: '0.95rem', letterSpacing: '0.01em' }}
                       />
 
@@ -1395,10 +1474,11 @@ export default function DashboardPage() {
             {/* Journey stats */}
             <div style={{ background: 'white', borderRadius: 16, padding: '18px 20px', border: '1px solid #ede4d4', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
               <p style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c13e2a', marginBottom: 16 }}>Your Journey</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, textAlign: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12, textAlign: 'center' }}>
                 {([
                   { label: 'Total', value: prospects.length, color: '#1a1410' },
                   { label: 'Active', value: prospects.filter(p => p.stage !== 'rejected' && p.stage !== 'on_hold').length, color: '#c13e2a' },
+                  { label: 'On Hold', value: prospects.filter(p => p.stage === 'on_hold').length, color: '#b8892b' },
                   { label: 'Interested', value: prospects.filter(p => p.stage === 'interested').length, color: '#2D6B4F' },
                 ] as { label: string; value: number; color: string }[]).map(({ label, value, color }) => (
                   <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

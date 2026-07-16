@@ -1,7 +1,7 @@
 ﻿'use client';
 import { CompatCriterion, DealbreakersCheckItem, MatchStatus } from '@/lib/scoring';
 
-const STATUS_ICON: Record<MatchStatus, string> = { full: '✅', partial: '🟡', miss: '❌' };
+const STATUS_ICON: Record<MatchStatus, string> = { full: '✅', partial: '🟠', miss: '🔴' };
 const STATUS_COLOR: Record<MatchStatus, string> = {
   full: 'text-green-700',
   partial: 'text-[#c13e2a]',

@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyFirebaseIdToken } from '@/lib/verify-firebase-token';
+import { PAYMENTS_ENABLED } from '@/lib/config';
 
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID!;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
 
-// Amount in paise (₹499 = 49900 paise)
-const AMOUNT_PAISE = 49900;
+// Amount in paise (₹99 = 9900 paise)
+const AMOUNT_PAISE = 9900;
 const CURRENCY = 'INR';
 
 export async function POST(req: NextRequest) {
+  // Payments are temporarily disabled — the app is free for everyone.
+  if (!PAYMENTS_ENABLED) {
+    return NextResponse.json({ error: 'Payments are disabled' }, { status: 403 });
+  }
+
   // Authenticate the caller
   const authHeader = req.headers.get('authorization');
   const uid = await verifyFirebaseIdToken(authHeader);

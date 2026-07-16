@@ -1,5 +1,6 @@
 'use client';
 import RazorpayButton from './RazorpayButton';
+import { PAYMENTS_ENABLED } from '@/lib/config';
 
 interface Props {
   isPaid?: boolean;
@@ -9,7 +10,8 @@ interface Props {
 }
 
 const FREE_FEATURES = [
-  'Track up to 3 prospects',
+  // No prospect cap is enforced while payments are disabled.
+  PAYMENTS_ENABLED ? 'Track up to 3 prospects' : 'Track all your prospects',
   'All 5 stages of the journey',
   'AI biodata extraction',
   'Full Kundli Milan (Ashtakoot · 36 guna)',
@@ -80,7 +82,7 @@ export default function PlanCard({ isPaid, paidAt, razorpayPaymentId, onUpgradeS
                 fontSize: '1.6rem', fontWeight: 800, lineHeight: 1,
                 color: isPaid ? '#a8f0c8' : '#f5ede0',
               }}>
-                {isPaid ? '₹499' : '₹0'}
+                {isPaid ? '₹99' : '₹0'}
               </div>
               <div style={{ fontSize: '0.6rem', color: isPaid ? 'rgba(168,240,200,0.5)' : 'rgba(245,237,224,0.35)', marginTop: 3 }}>
                 {isPaid ? 'paid once' : 'free forever'}
@@ -148,8 +150,8 @@ export default function PlanCard({ isPaid, paidAt, razorpayPaymentId, onUpgradeS
         </div>
       </div>
 
-      {/* ── Upgrade CTA — free users only ── */}
-      {!isPaid && (
+      {/* ── Upgrade CTA — free users only (hidden while payments are disabled) ── */}
+      {PAYMENTS_ENABLED && !isPaid && (
         <div style={{
           background: 'white', borderRadius: 18,
           border: '1.5px solid rgba(193,62,42,0.2)',
@@ -165,7 +167,11 @@ export default function PlanCard({ isPaid, paidAt, razorpayPaymentId, onUpgradeS
               <div style={{ fontSize: '0.72rem', color: '#a89e92', marginTop: 2 }}>One payment · no subscription · no auto-renewal</div>
             </div>
             <div style={{ marginLeft: 'auto', textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', fontSize: '1.5rem', fontWeight: 800, color: '#c13e2a', lineHeight: 1 }}>₹499</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end', marginBottom: 2 }}>
+                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#2D6B4F', background: 'rgba(45,107,79,0.1)', border: '1px solid rgba(45,107,79,0.25)', borderRadius: 20, padding: '2px 7px' }}>90% OFF</span>
+                <span style={{ fontSize: '0.85rem', color: '#a89e92', textDecoration: 'line-through' }}>₹999</span>
+              </div>
+              <div style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', fontSize: '1.5rem', fontWeight: 800, color: '#c13e2a', lineHeight: 1 }}>₹99</div>
               <div style={{ fontSize: '0.6rem', color: '#a89e92' }}>once</div>
             </div>
           </div>
@@ -175,7 +181,7 @@ export default function PlanCard({ isPaid, paidAt, razorpayPaymentId, onUpgradeS
           </div>
           <RazorpayButton
             onSuccess={onUpgradeSuccess}
-            label="Unlock Roka Ready — ₹499"
+            label="Unlock Roka Ready — ₹99"
             style={{ width: '100%', borderRadius: 14, padding: '14px 20px', fontSize: '0.9rem' }}
           />
         </div>

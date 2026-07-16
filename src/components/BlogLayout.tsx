@@ -1,4 +1,5 @@
 import SiteHeader from '@/components/SiteHeader';
+import SiteFooter from '@/components/SiteFooter';
 
 /**
  * Shared chrome for the blog index and individual posts. Uses the site-wide
@@ -15,6 +16,7 @@ export default function BlogLayout({
     <div style={{ minHeight: '100vh', background: '#f5ede0' }}>
       <SiteHeader />
       <main style={{ maxWidth, margin: '0 auto', padding: '28px 16px 64px' }}>{children}</main>
+      <SiteFooter />
     </div>
   );
 }

@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { saveUserProfile, recalcAllProspectScores, deleteAllUserData } from '@/lib/firestore';
-import { NAKSHATRAS, DEALBREAKERS, DEALBREAKER_CATEGORIES, HOBBIES, Gender, Diet, Manglik, Education, Income, IncomePref, FamilyType } from '@/types';
+import { NAKSHATRAS, HOBBIES, Gender, Diet, Manglik, Education, Income } from '@/types';
+import PartnerPreferencesForm from '@/components/PartnerPreferencesForm';
+import { PartnerPreferences, PartnerQuestionId, deriveLegacyPreferenceFields } from '@/lib/partner-preferences';
 import {
   deleteUser, reauthenticateWithPopup, reauthenticateWithCredential,
   EmailAuthProvider, GoogleAuthProvider,
@@ -85,8 +87,6 @@ export default function ProfilePage() {
   const { user, profile, refreshProfile } = useAuth();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [showCustomInput, setShowCustomInput] = useState(false);
-  const [customText, setCustomText] = useState('');
 
   // Account deletion
   const [showDelete, setShowDelete] = useState(false);
@@ -137,8 +137,8 @@ export default function ProfilePage() {
   const [form, setForm] = useState({
     name: '', gender: '' as Gender, age: '', city: '', education: '' as Education,
     profession: '', income: '' as Income, diet: '' as Diet, manglik: '' as Manglik,
-    nakshatra: -1, prefAgeMin: '', prefAgeMax: '', prefCities: '',
-    prefIncome: '' as IncomePref, prefFamily: '' as FamilyType, dealbreakers: [] as string[],
+    nakshatra: -1,
+    partnerPrefs: {} as PartnerPreferences,
     hobbies: [] as string[],
   });
 
@@ -155,24 +155,18 @@ export default function ProfilePage() {
         diet: profile.diet || '' as Diet,
         manglik: profile.manglik || '' as Manglik,
         nakshatra: profile.nakshatra ?? -1,
-        prefAgeMin: profile.prefAgeMin ? String(profile.prefAgeMin) : '',
-        prefAgeMax: profile.prefAgeMax ? String(profile.prefAgeMax) : '',
-        prefCities: profile.prefCities?.join(', ') || '',
-        prefIncome: profile.prefIncome || '' as IncomePref,
-        prefFamily: profile.prefFamily || '' as FamilyType,
-        dealbreakers: profile.dealbreakers || [],
+        partnerPrefs: profile.partnerPreferences || {},
         hobbies: profile.hobbies || [],
       });
     }
   }, [profile]);
 
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
-  const toggleDealbreaker = (d: string) => setForm(f => ({
-    ...f,
-    dealbreakers: f.dealbreakers.includes(d)
-      ? f.dealbreakers.filter(x => x !== d)
-      : [...f.dealbreakers, d],
-  }));
+  const setPartnerPref = (id: PartnerQuestionId, option: string) => setForm(f => {
+    const next = { ...f.partnerPrefs };
+    if (option) next[id] = option; else delete next[id];
+    return { ...f, partnerPrefs: next };
+  });
   const toggleHobby = (h: string) => setForm(f => ({
     ...f,
     hobbies: f.hobbies.includes(h) ? f.hobbies.filter(x => x !== h) : [...f.hobbies, h],
@@ -193,12 +187,8 @@ export default function ProfilePage() {
         diet: form.diet,
         manglik: form.manglik,
         nakshatra: form.nakshatra,
-        prefAgeMin: Number(form.prefAgeMin),
-        prefAgeMax: Number(form.prefAgeMax),
-        prefCities: form.prefCities.split(',').map(c => c.trim()).filter(Boolean),
-        prefIncome: form.prefIncome,
-        prefFamily: form.prefFamily,
-        dealbreakers: form.dealbreakers,
+        partnerPreferences: form.partnerPrefs,
+        ...deriveLegacyPreferenceFields(form.partnerPrefs, { age: Number(form.age) || 0, city: form.city }),
         hobbies: form.hobbies.length > 0 ? form.hobbies : undefined,
       });
       // Preferences feed every prospect's compatibility/kundli score — recompute them all.
@@ -253,75 +243,11 @@ export default function ProfilePage() {
         </div>
 
         <div className="card p-5 space-y-4">
-          <h3 className="section-label">Preferences</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Min Age Pref"><input type="number" value={form.prefAgeMin} onChange={e => set('prefAgeMin', e.target.value)} /></Field>
-            <Field label="Max Age Pref"><input type="number" value={form.prefAgeMax} onChange={e => set('prefAgeMax', e.target.value)} /></Field>
-          </div>
-          <Field label="Preferred Cities"><input type="text" value={form.prefCities} onChange={e => set('prefCities', e.target.value)} placeholder="Mumbai, Delhi (comma separated)" /></Field>
-          <Field label="Min Income Preference"><PillSelect options={['No Preference', '5+', '10+', '20+', '35+', '50+']} value={form.prefIncome} onSelect={v => set('prefIncome', v)} /></Field>
-          <Field label="Family Type Preference"><PillSelect options={['Joint', 'Nuclear', 'No Preference']} value={form.prefFamily} onSelect={v => set('prefFamily', v)} /></Field>
-          <Field label="Non-Negotiables">
-            <div className="space-y-4 mt-1">
-              {DEALBREAKER_CATEGORIES.map(cat => (
-                <div key={cat.label}>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#c13e2a' }}>{cat.label}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {cat.items.map(d => (
-                      <button key={d} type="button" onClick={() => toggleDealbreaker(d)}
-                        className="px-3 py-1.5 rounded-full border text-xs font-medium transition-all"
-                        style={form.dealbreakers.includes(d)
-                          ? { background: '#c13e2a', color: 'white', borderColor: '#c13e2a' }
-                          : { background: 'white', color: '#6b5e4d', borderColor: '#d6c9b0' }}>
-                        {d}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              {form.dealbreakers.filter(d => !(DEALBREAKERS as readonly string[]).includes(d)).length > 0 && (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#c13e2a' }}>Custom</p>
-                  <div className="flex flex-wrap gap-2">
-                    {form.dealbreakers.filter(d => !(DEALBREAKERS as readonly string[]).includes(d)).map(d => (
-                      <span key={d} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium" style={{ background: '#c13e2a', color: 'white', border: '1px solid #c13e2a' }}>
-                        {d}
-                        <button type="button" onClick={() => toggleDealbreaker(d)} style={{ marginLeft: 2, fontWeight: 700, lineHeight: 1 }}>×</button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="flex flex-wrap gap-2 pt-1">
-                <button type="button" onClick={() => setShowCustomInput(v => !v)}
-                  className="px-3 py-1.5 rounded-full border text-xs font-medium transition-all"
-                  style={{ background: showCustomInput ? '#c13e2a' : 'white', color: showCustomInput ? 'white' : '#c13e2a', borderColor: '#c13e2a' }}>
-                  + Other
-                </button>
-              </div>
-              {showCustomInput && (
-                <div className="flex gap-2">
-                  <input type="text" value={customText} onChange={e => setCustomText(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && customText.trim()) {
-                        toggleDealbreaker(customText.trim());
-                        setCustomText(''); setShowCustomInput(false);
-                      }
-                    }}
-                    placeholder="Type your non-negotiable…" className="flex-1" style={{ borderColor: '#c13e2a' }} autoFocus />
-                  <button type="button" className="btn-primary" style={{ padding: '0.6rem 1rem', borderRadius: '0.75rem' }}
-                    disabled={!customText.trim()}
-                    onClick={() => {
-                      if (!customText.trim()) return;
-                      toggleDealbreaker(customText.trim());
-                      setCustomText(''); setShowCustomInput(false);
-                    }}>
-                    Add
-                  </button>
-                </div>
-              )}
-            </div>
-          </Field>
+          <h3 className="section-label">What do you want in a partner</h3>
+          <p className="text-xs" style={{ color: '#9b8e7e', marginTop: -6 }}>
+            Pick what matters — tap a choice again to clear it.
+          </p>
+          <PartnerPreferencesForm value={form.partnerPrefs} onChange={setPartnerPref} dense />
         </div>
 
         <div className="sticky bottom-6">
