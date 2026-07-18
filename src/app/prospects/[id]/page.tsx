@@ -723,7 +723,6 @@ export default function ProspectDetailPage() {
   const redFlags = flags.filter(f => f.type === 'red');
   const alreadyFlaggedTexts = new Set(flags.map(f => f.text));
 
-  const isMeetingStage = prospect.stage === 'meeting_fixed';
   // The verdict to show in the Decision tab: the persisted `decision` if present,
   // otherwise the stage itself when the prospect is currently on a decision stage.
   // This keeps the decision visible even after moving back to a process stage.
@@ -2149,31 +2148,12 @@ export default function ProspectDetailPage() {
           </div>
         )}
 
-        {/* ── MEETING TAB — locked state before a meeting is fixed ── */}
-        {activeTab === 'meeting' && !isMeetingStage && (
-          <div style={{ background: 'white', borderRadius: 20, border: '1px solid #eee4d4', boxShadow: '0 4px 20px rgba(38,16,8,0.05)', padding: '38px 24px', textAlign: 'center' }}>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(193,62,42,0.08)', border: '1px solid rgba(193,62,42,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="3" stroke="#c13e2a" strokeWidth="1.6"/><path d="M16 2v4M8 2v4M3 10h18" stroke="#c13e2a" strokeWidth="1.6" strokeLinecap="round"/></svg>
-            </div>
-            <p style={{ fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)', fontSize: '1.05rem', fontWeight: 700, color: '#241209', margin: '0 0 6px' }}>No meeting yet</p>
-            <p style={{ fontSize: '0.82rem', color: '#a08b6e', margin: '0 auto 18px', maxWidth: 380, lineHeight: 1.55 }}>
-              Once a meeting is fixed with {prospect.name.split(' ')[0]}, this tab holds your prep questions, and after you meet — your feedback and ratings.
-            </p>
-            <button
-              onClick={() => changeStage('meeting_fixed')}
-              style={{ padding: '11px 22px', borderRadius: 14, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #c13e2a, #8B2A2A)', color: 'white', fontWeight: 800, fontSize: '0.84rem', boxShadow: '0 5px 16px rgba(193,62,42,0.3)' }}
-            >
-              Meeting Fixed — Start Prep
-            </button>
-          </div>
-        )}
-
         {/* ── MEETING TAB ── */}
-        {activeTab === 'meeting' && isMeetingStage && (
+        {activeTab === 'meeting' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-            {/* ── Meeting Fixed: pre-meeting prep ── */}
-            {prospect.stage === 'meeting_fixed' && (
+            {/* ── Pre-meeting prep — questions show as soon as the tab is opened ── */}
+            {(
               <>
                 {/* Date / location summary */}
                 {(meetingLocal.plannedDate || meetingLocal.location) && (
@@ -2303,8 +2283,8 @@ export default function ProspectDetailPage() {
               </>
             )}
 
-            {/* ── Post-meeting feedback (same stage as prep) ── */}
-            {prospect.stage === 'meeting_fixed' && (
+            {/* ── Post-meeting feedback ── */}
+            {(
               <>
                 {/* ── Meeting selector ── */}
                 <div style={{
