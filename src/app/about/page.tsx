@@ -6,9 +6,13 @@ import SiteFooter from '@/components/SiteFooter';
 import './page.css';
 
 export const metadata: Metadata = {
-  title: 'About — RokaMaybe',
+  title: 'About',
   description:
     'Why RokaMaybe exists: one place for every biodata, call, kundli, and decision in your rishta search. Built by someone who was living the chaos.',
+  keywords: ['about rokamaybe', 'arranged marriage tracker', 'komal singhania', 'rishta search tool'],
+  alternates: {
+    canonical: '/about',
+  },
   openGraph: pageOpenGraph(
     'About RokaMaybe',
     'Why RokaMaybe exists: one place for every biodata, call, kundli, and decision in your rishta search. Built by someone who was living the chaos.',

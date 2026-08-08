@@ -4,8 +4,12 @@ import { LEGAL } from '@/lib/legal';
 import { pageOpenGraph } from '@/lib/og';
 
 export const metadata: Metadata = {
-  title: 'Terms & Conditions — RokaMaybe',
+  title: 'Terms & Conditions',
   description: 'The terms governing your use of the RokaMaybe service.',
+  keywords: ['rokamaybe terms', 'terms & conditions', 'legal', 'arranged marriage app terms'],
+  alternates: {
+    canonical: '/terms',
+  },
   openGraph: pageOpenGraph(
     'Terms & Conditions — RokaMaybe',
     'The terms governing your use of the RokaMaybe service.',

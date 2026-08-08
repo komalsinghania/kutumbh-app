@@ -4,8 +4,12 @@ import { LEGAL } from '@/lib/legal';
 import { pageOpenGraph } from '@/lib/og';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — RokaMaybe',
+  title: 'Privacy Policy',
   description: 'How RokaMaybe collects, uses, stores, and protects your personal data.',
+  keywords: ['rokamaybe privacy', 'privacy policy', 'data protection', 'arranged marriage privacy'],
+  alternates: {
+    canonical: '/privacy',
+  },
   openGraph: pageOpenGraph(
     'Privacy Policy — RokaMaybe',
     'How RokaMaybe collects, uses, stores, and protects your personal data.',

@@ -28,8 +28,12 @@ export async function generateMetadata({
   const post = getBlogPost(slug);
   if (!post) return { title: 'Not found — RokaMaybe' };
   return {
-    title: `${post.title} — RokaMaybe`,
+    title: post.title,
     description: post.excerpt,
+    keywords: [post.category.toLowerCase(), 'arranged marriage', 'rishta', 'rokamaybe blog'],
+    alternates: {
+      canonical: `/blog/${slug}`,
+    },
     openGraph: pageOpenGraph(post.title, post.excerpt, 'article'),
   };
 }
