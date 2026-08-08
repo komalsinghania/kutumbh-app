@@ -33,8 +33,24 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://rokamaybe.com'),
-  title: 'RokaMaybe — Your Arranged Marriage Tracker',
+  title: {
+    default: 'RokaMaybe — Your Arranged Marriage Tracker',
+    template: '%s | RokaMaybe',
+  },
   description: 'The calm, private dashboard for your rishta search. Track every prospect, kundli, and conversation in one place.',
+  applicationName: 'RokaMaybe',
+  authors: [{ name: 'Komal Singhania' }],
+  generator: 'Next.js',
+  keywords: ['arranged marriage', 'rishta', 'tracker', 'kundli', 'kundli milan', 'marriage dashboard', 'Indian marriage', 'matrimonial tracker'],
+  creator: 'Komal Singhania',
+  publisher: 'RokaMaybe',
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   icons: {
     icon: '/icon.svg',
     shortcut: '/icon.svg',
@@ -51,6 +67,7 @@ export const metadata: Metadata = {
   twitter: {
     // Text falls back to og:title / og:description, so each page stays specific.
     card: 'summary_large_image',
+    creator: '@rokamaybe',
   },
 };
 

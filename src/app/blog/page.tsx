@@ -5,9 +5,13 @@ import BlogList from '@/components/BlogList';
 import { BLOG_POSTS_SORTED } from '@/lib/blogs';
 
 export const metadata: Metadata = {
-  title: 'Blog — RokaMaybe',
+  title: 'Blog',
   description:
     'Honest, practical writing on the rishta search — staying organized, spotting red flags, and making a calm decision.',
+  keywords: ['arranged marriage blog', 'rishta tips', 'kundli matching guide', 'red flags in arranged marriage'],
+  alternates: {
+    canonical: '/blog',
+  },
   openGraph: pageOpenGraph(
     'Blog — RokaMaybe',
     'Honest, practical writing on the rishta search — staying organized, spotting red flags, and making a calm decision.',

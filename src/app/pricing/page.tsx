@@ -7,9 +7,13 @@ import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 
 export const metadata: Metadata = {
-  title: 'Pricing — RokaMaybe',
+  title: 'Pricing',
   description:
     'Free during early access — every feature unlocked, including Compare. No card, no subscription, no auto-renew.',
+  keywords: ['rokamaybe pricing', 'arranged marriage app cost', 'free early access', 'no subscription'],
+  alternates: {
+    canonical: '/pricing',
+  },
   openGraph: pageOpenGraph(
     'Pricing — RokaMaybe',
     'Free during early access — every feature unlocked, including Compare. No card, no subscription, no auto-renew.',
