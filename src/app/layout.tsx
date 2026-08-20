@@ -7,6 +7,8 @@ import CookieConsent from '@/components/CookieConsent';
 import AnalyticsProvider from '@/components/AnalyticsProvider';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import JsonLd from '@/components/JsonLd';
+import { organizationJsonLd, websiteJsonLd } from '@/lib/structured-data';
 
 const fraunces = Fraunces({
   weight: ['300', '400', '500', '600', '700'],
@@ -75,6 +77,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${fraunces.variable} ${instrumentSerif.variable} ${dmSans.variable}`} suppressHydrationWarning>
       <body className="min-h-screen" suppressHydrationWarning>
+        {/* Site-wide structured data: tells search engines and AI crawlers who
+            publishes this site and what it is, on every page. */}
+        <JsonLd data={organizationJsonLd} />
+        <JsonLd data={websiteJsonLd} />
         <AuthProvider>
           {children}
           <AnalyticsProvider />

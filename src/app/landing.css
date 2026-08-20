@@ -106,6 +106,17 @@ html {
   opacity: 1;
   transform: none;
 }
+/* The reveal is driven by an IntersectionObserver, so without JavaScript every
+   revealed section would stay at opacity 0. Crawlers and readability parsers
+   that skip scripts must still see the page as visible content, not a blank
+   sheet — so show everything up front when scripting is unavailable. */
+@media (scripting: none) {
+  .lp-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
 
 /* ── Nav ───────────────────────────────────────────────────────────────── */
 
