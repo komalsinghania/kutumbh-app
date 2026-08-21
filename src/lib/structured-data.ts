@@ -21,7 +21,7 @@ const ORG_ID = `${SITE_URL}/#organization`;
 const SITE_ID = `${SITE_URL}/#website`;
 
 const DESCRIPTION =
-  'RokaMaybe is a private tracker for an arranged-marriage (rishta) search. ' +
+  'RokaMaybe is a private arranged marriage tracker for an Indian rishta search. ' +
   'It reads biodatas with AI, runs full 36-point Ashtakoot kundli matching, ' +
   'logs calls and meetings, records red flags, and compares prospects side by side.';
 
@@ -89,6 +89,7 @@ export const webApplicationJsonLd = {
   browserRequirements: 'Requires JavaScript. Works on modern mobile and desktop browsers.',
   description: DESCRIPTION,
   inLanguage: 'en-IN',
+  author: { '@type': 'Person', name: 'Komal Singhania' },
   publisher: { '@id': ORG_ID },
   isPartOf: { '@id': SITE_ID },
   featureList: [
