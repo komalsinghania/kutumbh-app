@@ -4,11 +4,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { Logo } from '@/components/Logo';
 import { track } from '@/lib/analytics';
 import AuthModal from '@/components/AuthModal';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import JsonLd from '@/components/JsonLd';
+import { webApplicationJsonLd, faqPageJsonLd } from '@/lib/structured-data';
 import './landing.css';
 
 // ── Scroll reveal ────────────────────────────────────────────────────────────
@@ -102,6 +103,12 @@ function Petals() {
 
 // ── Rotating mandala backdrop ────────────────────────────────────────────────
 
+// Node and the browser can disagree on the last bits of a Math.cos/sin result,
+// which React reports as a hydration mismatch now that the hero is server
+// rendered. Three decimals is far finer than an 800-unit viewBox can show, and
+// it makes the coordinates byte-identical on both sides.
+const svgCoord = (n: number) => Math.round(n * 1000) / 1000;
+
 function Mandala() {
   return (
     <div className="lp-mandala" aria-hidden="true">
@@ -111,8 +118,8 @@ function Mandala() {
           <circle cx="400" cy="400" r="330" stroke="rgba(193,62,42,0.16)" strokeWidth="1" strokeDasharray="1 10" />
           {Array.from({ length: 24 }).map((_, i) => {
             const a = (i * 15 * Math.PI) / 180;
-            const x1 = 400 + Math.cos(a) * 340, y1 = 400 + Math.sin(a) * 340;
-            const x2 = 400 + Math.cos(a) * 360, y2 = 400 + Math.sin(a) * 360;
+            const x1 = svgCoord(400 + Math.cos(a) * 340), y1 = svgCoord(400 + Math.sin(a) * 340);
+            const x2 = svgCoord(400 + Math.cos(a) * 360), y2 = svgCoord(400 + Math.sin(a) * 360);
             return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(232,200,112,0.18)" strokeWidth="1.5" />;
           })}
         </g>
@@ -120,7 +127,7 @@ function Mandala() {
           <circle cx="400" cy="400" r="255" stroke="rgba(232,200,112,0.10)" strokeWidth="1" strokeDasharray="2 12" />
           {Array.from({ length: 12 }).map((_, i) => {
             const a = (i * 30 * Math.PI) / 180;
-            const x = 400 + Math.cos(a) * 255, y = 400 + Math.sin(a) * 255;
+            const x = svgCoord(400 + Math.cos(a) * 255), y = svgCoord(400 + Math.sin(a) * 255);
             return <circle key={i} cx={x} cy={y} r="3" fill="rgba(193,62,42,0.28)" />;
           })}
         </g>
@@ -580,32 +587,42 @@ export default function LandingPage() {
   const [showModal, setShowModal] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
+  // A CTA pressed before Firebase has restored the session is parked here and
+  // replayed once we know who the visitor is, so an already-signed-in user is
+  // never shown the sign-in modal by mistake.
+  const pendingCta = useRef(false);
+
+  // Never gate the marketing page on this. The landing copy must be in the
+  // server-rendered HTML: search engines and AI crawlers read the first
+  // response without running JavaScript, so anything behind an auth-loading
+  // splash is invisible to them (and the site reads as an empty page).
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, user => {
       setLoggedIn(!!user);
       setAuthLoading(false);
+      if (pendingCta.current) {
+        pendingCta.current = false;
+        if (user) router.push('/dashboard');
+        else setShowModal(true);
+      }
     });
     return unsub;
-  }, []);
+  }, [router]);
 
   const openAuth = (placement: string) => {
     track('cta_clicked', { placement });
+    if (authLoading) { pendingCta.current = true; return; }
     if (loggedIn) router.push('/dashboard');
     else setShowModal(true);
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#1a1410' }}>
-        <div style={{ animation: 'lpBlink 1.6s ease infinite' }}>
-          <Logo dark style={{ fontSize: '2.5rem' }} />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
+      {/* Homepage structured data — what the product is, and the same FAQs
+          rendered below in a form answer engines can quote directly. */}
+      <JsonLd data={webApplicationJsonLd} />
+      <JsonLd data={faqPageJsonLd(FAQS)} />
+
       {showModal && (
         <AuthModal
           onClose={() => setShowModal(false)}
