@@ -39,7 +39,11 @@ export const metadata: Metadata = {
     default: 'RokaMaybe — Your Arranged Marriage Tracker',
     template: '%s | RokaMaybe',
   },
-  description: 'The calm, private dashboard for your rishta search. Track every prospect, kundli, and conversation in one place.',
+  // Keep "arranged marriage" in here, near the front. This is the text shown
+  // under the search result and in link previews, so it has to match how the
+  // title is phrased — the two disagreed until now, the title saying
+  // "Arranged Marriage Tracker" while every description said "rishta search".
+  description: 'The private arranged marriage tracker for your rishta search — every prospect, kundli match, call and red flag in one calm dashboard.',
   applicationName: 'RokaMaybe',
   authors: [{ name: 'Komal Singhania' }],
   generator: 'Next.js',
@@ -60,7 +64,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'RokaMaybe — Your Arranged Marriage Tracker',
-    description: 'The calm, private dashboard for your rishta search. Track every prospect, kundli, and conversation in one place.',
+    description: 'The private arranged marriage tracker for your rishta search — every prospect, kundli match, call and red flag in one calm dashboard.',
     url: 'https://rokamaybe.com',
     siteName: 'RokaMaybe',
     locale: 'en_US',

@@ -33,7 +33,7 @@ export const CHAOS_CARDS: {
 }[] = [
   { cls: 'lp-chaos-wa', tag: 'WhatsApp · Bua ji', text: '📄 Rishabh_FINAL_biodata_v3 (2).pdf', pos: { top: 0, left: '2%' }, rot: -3, dur: 7, delay: 0 },
   { cls: 'lp-chaos-wa', tag: 'WhatsApp · Mummy', text: 'Beta, call his mother today only. They are waiting 🙏', pos: { top: '10%', right: '4%' }, rot: 2.5, dur: 8, delay: 0.8 },
-  { cls: 'lp-chaos-note', tag: 'Sticky note · You', text: 'Aarav?? Arnav?? — the Bengaluru one 🤔', pos: { top: '38%', left: '18%' }, rot: -1.5, dur: 6.5, delay: 1.6 },
+  { cls: 'lp-chaos-note', tag: 'Sticky note · You', text: 'Samarth?? Sumanth?? — the Bengaluru one 🤔', pos: { top: '38%', left: '18%' }, rot: -1.5, dur: 6.5, delay: 1.6 },
   { cls: 'lp-chaos-wa', tag: 'WhatsApp · Pandit ji', text: '🖼️ kundli_photo_blurry_final.jpg', pos: { top: '46%', right: '16%' }, rot: 3.5, dur: 7.5, delay: 0.4 },
   { cls: 'lp-chaos-flag', tag: 'Screenshot · ??', text: '"I don\'t have anger issues. People make me angry." — wait, WHO said this one?!', pos: { bottom: '4%', left: '6%' }, rot: 2, dur: 8.5, delay: 1.2 },
   { cls: 'lp-chaos-note', tag: 'Calendar · Doom', text: 'Sunday 4 p.m. — family Zoom. Prepare answers.', pos: { bottom: 0, right: '6%' }, rot: -2.5, dur: 7, delay: 2 },

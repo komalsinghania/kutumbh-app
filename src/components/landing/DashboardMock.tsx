@@ -87,11 +87,11 @@ export default function DashboardMock() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: 'var(--font-fraunces, serif)', fontSize: 22, fontWeight: 600, color: '#c98876',
               }}>
-                AM
+                NC
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--font-fraunces, serif)', fontSize: 17, fontWeight: 700, color: '#1a1410', lineHeight: 1.15 }}>
-                  Aarav Mehta
+                  Nirbhay Chaturvedi
                 </div>
                 <div style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 10.5, color: '#6b5e4d', marginTop: 3 }}>
                   30 · Mumbai · Product Manager at a fintech
@@ -131,8 +131,8 @@ export default function DashboardMock() {
               Also in the diary
             </div>
             {[
-              { name: 'Rohan Kapoor', pct: '58%', meta: '32 · Pune · Chartered Accountant', note: 'On hold — paused 16 days ago.' },
-              { name: 'Kabir Iyer', pct: '54%', meta: '29 · Bengaluru · UX Designer', note: 'New biodata — first look pending.' },
+              { name: 'Prateek Wadhwa', pct: '58%', meta: '32 · Pune · Chartered Accountant', note: 'On hold — paused 16 days ago.' },
+              { name: 'Samarth Bhatnagar', pct: '54%', meta: '29 · Bengaluru · UX Designer', note: 'New biodata — first look pending.' },
             ].map((d, i) => (
               <div key={d.name} style={{
                 paddingBottom: 9, marginBottom: 9,
