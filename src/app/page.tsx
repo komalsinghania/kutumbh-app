@@ -18,6 +18,7 @@
  * a Client Component again.
  */
 
+import Link from 'next/link';
 import './landing.css';
 
 import SiteHeader from '@/components/SiteHeader';
@@ -141,6 +142,49 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
+
+        {/* ── WHAT THIS IS ─────────────────────────────────────────────── */}
+        {/* Plain prose, high on the page. Search and AI systems answer "what is
+            RokaMaybe" by quoting text like this; before it existed the most
+            substantial copy on the homepage was a decorative mockup. */}
+        <section className="lp-section" style={{ paddingBottom: 0 }}>
+          <div className="lp-container">
+            <Reveal>
+              <p className="lp-eyebrow">What this actually is</p>
+              <h2 className="lp-h2">
+                An arranged marriage tracker,
+                <br />not a <em>matrimonial site.</em>
+              </h2>
+              <div className="lp-prose">
+                <p>
+                  RokaMaybe is an{' '}
+                  <Link href="/arranged-marriage-tracker">arranged marriage tracker</Link> — a
+                  private dashboard for the rishta search you are already having. It shows you
+                  no new matches, introduces you to nobody, and puts your profile in front of
+                  no one. The people in it are the ones already coming to you: from matrimonial
+                  sites, from the family pandit, from a cousin who knows someone nice.
+                </p>
+                <p>
+                  What it does is hold all of it in one place. Upload a biodata as a PDF, a Word
+                  file, or a photo off WhatsApp and AI fills in the details in about thirty
+                  seconds. Kundli matching runs the full 36-point Ashtakoot from real birth
+                  details, flagging Nadi, Bhakut and Gana dosha where they appear. Every call
+                  gets a note, every family gets a scorecard of its own, and every red flag you
+                  spot at eleven at night is still there next month when Mummy asks why you went
+                  off that one.
+                </p>
+                <p>
+                  Each rishta moves through five stages — new, call, meet, met, decision — so you
+                  always know where things stand without scrolling back through three WhatsApp
+                  threads. When it comes down to a final few, Compare puts up to three of them
+                  side by side across eighteen dimensions. Your notes stay yours: nothing is
+                  shared between users, nothing is sold, and you can delete all of it in one
+                  click.
+                </p>
+              </div>
+            </Reveal>
+          </div>
+        </section>
 
         {/* ── CHAOS ────────────────────────────────────────────────────── */}
         <section className="lp-section" id="chaos">
