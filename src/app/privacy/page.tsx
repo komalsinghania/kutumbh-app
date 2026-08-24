@@ -257,6 +257,18 @@ export default function PrivacyPage() {
         <strong>On analytics.</strong> PostHog is hosted in the European Union. It only runs if you accept analytics
         cookies. It identifies you only by an internal account identifier — never your name, email, or phone number.
       </p>
+      <p>
+        <strong>Mummy Mode (sharing with your family).</strong> If you invite a family member, they get their own
+        account and can see <em>only</em> the prospects you choose to share, one at a time. What they see is a
+        separate, reduced copy of the prospect: name, age, biodata details, family details, photos, the kundli
+        milan score, and the current stage — plus the birth details only if you switch that on for that prospect.
+        Your notes, flags, call logs, meeting ratings, family scorecard and Compare matrix are never copied into
+        that record and are therefore never available to them. They can leave a verdict and a comment, which only
+        you and the other family members you invited can see. You can stop sharing a prospect, or remove a family
+        member entirely, at any time from within the app — both take effect immediately, and their copies and
+        verdicts are deleted. Remember that a shared prospect includes another person’s details and photographs:
+        share only with family who genuinely need to see them.
+      </p>
       <p>We may also disclose data where required by law, court order, or a lawful government request.</p>
 
       <h2>7. Transfers outside India</h2>

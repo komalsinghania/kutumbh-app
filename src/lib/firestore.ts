@@ -10,6 +10,7 @@ import {
   MeetingData, ActivityEntry, ActivityType, migrateStage,
 } from '@/types';
 import { calculateGunaScore, calculateCompatScore } from './scoring';
+import { unshareProspect, deleteAllFamilyDataForOwner } from './family-share';
 
 // Firestore rejects undefined values — strip them before any write
 function stripUndefined<T extends object>(obj: T): T {
@@ -142,6 +143,14 @@ export async function updateProspect(uid: string, prospectId: string, data: Part
 }
 
 export async function deleteProspect(uid: string, prospectId: string): Promise<void> {
+  // Drop the family's copy first — a deleted rishta must not linger in Mummy
+  // Mode. Failure here must not block the delete the user actually asked for;
+  // the reconciler sweeps up orphaned shares on the next load.
+  try {
+    await unshareProspect(uid, prospectId);
+  } catch (err) {
+    console.error('[firestore] deleteProspect | unshare failed', err);
+  }
   await deleteDoc(doc(db, 'users', uid, 'prospects', prospectId));
 }
 
@@ -155,10 +164,16 @@ async function deleteRefsInBatches(refs: DocumentReference[]): Promise<void> {
 }
 
 // Permanently erase ALL data for a user: every prospect and its subcollections
-// (notes, conversations, flags, meta), the activity log, and the profile doc.
-// Firestore does not cascade, so each subcollection is deleted explicitly.
+// (notes, conversations, flags, meta), the activity log, everything shared with
+// their family, and the profile doc. Firestore does not cascade, so each
+// subcollection is deleted explicitly.
 // Must run while the user is still authenticated (rules require it).
 export async function deleteAllUserData(uid: string): Promise<void> {
+  // Family-shared copies live outside /users/{uid} and would otherwise survive
+  // the account deletion — including photos of third parties. Delete them
+  // first, while the profile (and therefore the user's own access) still exists.
+  await deleteAllFamilyDataForOwner(uid);
+
   const prospectsSnap = await getDocs(collection(db, 'users', uid, 'prospects'));
   for (const p of prospectsSnap.docs) {
     for (const sub of ['notes', 'conversations', 'flags', 'meta']) {
@@ -235,6 +250,23 @@ export function subscribeToActivityLog(
   return onSnapshot(q, snap => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() } as ActivityEntry)));
   });
+}
+
+/**
+ * Record a family member's verdict in the owner's activity feed.
+ *
+ * The verdict itself is written by the family member, who has no access to the
+ * owner's activityLog — so the entry has to be created here, on the owner's
+ * client, when it first notices the verdict. `familyVerdictsLoggedAt` on the
+ * profile is the high-water mark that stops the same verdict being logged twice.
+ */
+export async function logFamilyVerdict(
+  uid: string,
+  prospectId: string,
+  prospectName: string,
+  summary: string,
+): Promise<void> {
+  await addActivityEntry(uid, prospectId, prospectName, 'family_verdict', summary);
 }
 
 export async function logStageChange(

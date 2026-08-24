@@ -178,6 +178,11 @@ export interface UserProfile {
   razorpayPaymentId?: string;
   // Compare trial — set (once) the first time the user opens Compare
   trialStartedAt?: number;
+  // Mummy Mode: high-water marks for family verdicts. `Seen` clears the unread
+  // badge; `Logged` stops the same verdict being written to the activity feed
+  // twice. Both are epoch ms.
+  familyVerdictsSeenAt?: number;
+  familyVerdictsLoggedAt?: number;
   // Version of the scoring engine that produced this user's stored prospect
   // scores. When it lags SCORING_VERSION, scores are recomputed once on load.
   scoringVersion?: number;
@@ -229,6 +234,10 @@ export interface Prospect {
   familyScore?: number;       // average 1-5
   conversationCount?: number;
   lastActivityAt?: number;    // epoch ms
+  // Mummy Mode: true while a sanitised copy of this rishta is visible to the
+  // user's family. Owner-only field — it drives the reconciler that keeps the
+  // shared copy fresh. See src/lib/family-share.ts.
+  isShared?: boolean;
 }
 
 export interface Note {
@@ -468,7 +477,7 @@ export interface MeetingData {
 
 export type ActivityType =
   | 'added' | 'stage_change' | 'conversation' | 'flag_green' | 'flag_red'
-  | 'family_score' | 'meeting' | 'note' | 'kundli';
+  | 'family_score' | 'meeting' | 'note' | 'kundli' | 'family_verdict';
 
 export interface ActivityEntry {
   id: string;

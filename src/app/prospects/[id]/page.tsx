@@ -24,6 +24,11 @@ import {
   MEETING_QUESTIONS, GUT_FEELING_OPTIONS,
   STAGE_PROMPT_CONFIG,
 } from '@/types';
+import type { FamilyLink, FamilyVerdict } from '@/types/family';
+import { VERDICT_INFO } from '@/types/family';
+import { subscribeToFamilyMembers, subscribeToVerdicts, shareId, syncShare } from '@/lib/family-share';
+import { canUseFamilySharing } from '@/lib/trial';
+import ShareSheet from '@/components/family/ShareSheet';
 import KundliReport from '@/components/KundliReport';
 import ConversationTimeline from '@/components/ConversationTimeline';
 import StarRating from '@/components/StarRating';
@@ -397,6 +402,36 @@ export default function ProspectDetailPage() {
 
   const photoRef = useRef<HTMLInputElement>(null);
 
+  // ── Mummy Mode ──
+  const [shareOpen, setShareOpen] = useState(false);
+  const [familyMembers, setFamilyMembers] = useState<FamilyLink[]>([]);
+  const [verdicts, setVerdicts] = useState<FamilyVerdict[]>([]);
+  const familyEnabled = canUseFamilySharing(profile);
+
+  useEffect(() => {
+    if (!user || !familyEnabled) return;
+    const u1 = subscribeToFamilyMembers(user.uid, setFamilyMembers);
+    const u2 = subscribeToVerdicts(shareId(user.uid, id), setVerdicts);
+    return () => { u1(); u2(); };
+  }, [user, id, familyEnabled]);
+
+  /**
+   * Refresh the family's copy after a change they can see.
+   *
+   * The dashboard runs a reconciler over every shared rishta, but this page is
+   * where the stage moves, the biodata gets edited and photos are added — and
+   * waiting for the next dashboard visit would leave mummy looking at a stale
+   * card. No-ops when the rishta isn't shared.
+   */
+  const syncFamilyCopy = async (updated: Prospect) => {
+    if (!user || !profile || !updated.isShared) return;
+    try {
+      await syncShare(user.uid, profile.name, updated);
+    } catch (err) {
+      console.error('[prospect] syncShare failed', err);
+    }
+  };
+
   // ── Overview edit mode ──
   type EditForm = {
     age: string; city: string; height: string; diet: string; source: string;
@@ -480,6 +515,7 @@ export default function ProspectDetailPage() {
       const payload = { ...base, gunaScore, compatScore };
       await updateProspect(user.uid, id, payload);
       setProspect(p => p ? { ...p, ...payload } : p);
+      await syncFamilyCopy({ ...prospect, ...payload, updatedAt: Date.now() } as Prospect);
       toast.success('Details updated');
       setEditing(false); setEditForm(null);
     } catch {
@@ -523,6 +559,7 @@ export default function ProspectDetailPage() {
     const patch: Partial<Prospect> = isDecision ? { stage, decision: stage as ProspectDecision } : { stage };
     await updateProspect(user.uid, id, patch);
     setProspect(p => p ? { ...p, ...patch } : p);
+    await syncFamilyCopy({ ...prospect, ...patch, updatedAt: Date.now() });
     await logStageChange(user.uid, id, prospect.name, STAGE_LABELS[stage]);
     if (stage === 'new') openTab('overview');
     if (stage === 'kundli_matched') openTab('kundli');
@@ -569,6 +606,7 @@ export default function ProspectDetailPage() {
       const updated = [...existing, ...compressed];
       await updateProspect(user.uid, id, { photos: updated });
       setProspect(p => p ? { ...p, photos: updated } : p);
+      await syncFamilyCopy({ ...prospect, photos: updated, updatedAt: Date.now() });
       toast.success(`${compressed.length} photo${compressed.length > 1 ? 's' : ''} added`);
     } catch { toast.error('Failed to add photo.'); }
     finally { setAddingPhoto(false); if (photoRef.current) photoRef.current.value = ''; }
@@ -579,6 +617,7 @@ export default function ProspectDetailPage() {
     const updated = (prospect.photos ?? []).filter((_, i) => i !== index);
     await updateProspect(user.uid, id, { photos: updated });
     setProspect(p => p ? { ...p, photos: updated } : p);
+    await syncFamilyCopy({ ...prospect, photos: updated, updatedAt: Date.now() });
   };
 
   const handleDelete = async () => {
@@ -775,6 +814,19 @@ export default function ProspectDetailPage() {
         </div>
       )}
 
+      {/* Share with family */}
+      {shareOpen && user && profile && (
+        <ShareSheet
+          uid={user.uid}
+          ownerName={profile.name}
+          prospect={prospect}
+          members={familyMembers}
+          onClose={() => setShareOpen(false)}
+          onInviteFirst={() => { setShareOpen(false); router.push('/dashboard?invite=1'); }}
+          onSharedChange={isShared => setProspect(p => p ? { ...p, isShared } : p)}
+        />
+      )}
+
       {/* ── Cinematic dossier hero ── */}
       <div style={{
         background: 'linear-gradient(150deg, #1a0c07 0%, #3d1309 55%, #64200f 100%)',
@@ -834,21 +886,47 @@ export default function ProspectDetailPage() {
           }}>
             Prospect Dossier
           </span>
-          <button
-            onClick={handleDelete}
-            aria-label="Delete prospect"
-            title="Delete prospect"
-            style={{
-              width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'rgba(255,203,190,0.9)', background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255,255,255,0.14)', cursor: 'pointer', borderRadius: 12,
-              transition: 'background 0.18s',
-            }}
-          >
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-              <path d="M2 4h12M5 4V2.5A.5.5 0 015.5 2h5a.5.5 0 01.5.5V4M6.5 7v5M9.5 7v5M3 4l.867 9.143A1 1 0 004.86 14h6.28a1 1 0 00.994-.857L13 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Mummy Mode — share this one rishta with the family */}
+            {familyEnabled && (
+              <button
+                onClick={() => setShareOpen(true)}
+                aria-label={prospect.isShared ? 'Shared with family — change' : 'Share with family'}
+                title={prospect.isShared ? 'Shared with family' : 'Share with family'}
+                style={{
+                  height: 38, padding: prospect.isShared ? '0 12px' : 0, width: prospect.isShared ? 'auto' : 38,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  color: prospect.isShared ? '#d6f0e0' : '#f3e7d3',
+                  background: prospect.isShared ? 'rgba(45,107,79,0.42)' : 'rgba(255,255,255,0.07)',
+                  backdropFilter: 'blur(8px)',
+                  border: `1px solid ${prospect.isShared ? 'rgba(120,200,160,0.4)' : 'rgba(255,255,255,0.14)'}`,
+                  cursor: 'pointer', borderRadius: 12, transition: 'background 0.18s',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+                </svg>
+                {prospect.isShared && (
+                  <span style={{ fontSize: '0.66rem', fontWeight: 700, letterSpacing: '0.04em' }}>Shared</span>
+                )}
+              </button>
+            )}
+            <button
+              onClick={handleDelete}
+              aria-label="Delete prospect"
+              title="Delete prospect"
+              style={{
+                width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'rgba(255,203,190,0.9)', background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.14)', cursor: 'pointer', borderRadius: 12,
+                transition: 'background 0.18s',
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                <path d="M2 4h12M5 4V2.5A.5.5 0 015.5 2h5a.5.5 0 01.5.5V4M6.5 7v5M9.5 7v5M3 4l.867 9.143A1 1 0 004.86 14h6.28a1 1 0 00.994-.857L13 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Identity + score gauges */}
@@ -2675,6 +2753,57 @@ export default function ProspectDetailPage() {
         {/* ── DECISION TAB ── */}
         {activeTab === 'decision' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* ── What ghar wale said ──
+                Deliberately here rather than on the Family tab: that one is his
+                family's scorecard. This is your family's opinion, and it belongs
+                to the deliberation. Advisory only — the buttons below are yours. */}
+            {familyEnabled && verdicts.length > 0 && (
+              <div style={{
+                background: 'white', borderRadius: 18, border: '1px solid #e8dece',
+                boxShadow: '0 2px 14px rgba(0,0,0,0.05)', overflow: 'hidden',
+              }}>
+                <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid #f0ebe2' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#c13e2a', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+                    What your family said
+                  </span>
+                </div>
+                <div style={{ padding: '6px 16px 14px' }}>
+                  {verdicts.map(v => {
+                    const info = VERDICT_INFO[v.verdict];
+                    return (
+                      <div key={v.viewerUid} style={{
+                        display: 'flex', gap: 12, padding: '12px 0',
+                        borderBottom: '1px solid #f5f0e7',
+                      }}>
+                        <div style={{
+                          width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                          background: info.bg, border: `1.5px solid ${info.border}`,
+                          color: info.color, display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', fontSize: '0.95rem',
+                        }}>{info.icon}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1a1410', margin: 0 }}>
+                            {v.relationLabel}
+                            <span style={{ fontWeight: 400, color: '#9b8e7e' }}> · {v.viewerName}</span>
+                            <span style={{ color: info.color, fontWeight: 700 }}> — {info.en}</span>
+                          </p>
+                          {v.comment && (
+                            <p style={{
+                              fontSize: '0.85rem', color: '#4a4038', margin: '5px 0 0',
+                              lineHeight: 1.55, fontStyle: 'italic',
+                            }}>&ldquo;{v.comment}&rdquo;</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <p style={{ fontSize: '0.72rem', color: '#9b8e7e', margin: '10px 0 0', lineHeight: 1.5 }}>
+                    Their take, not their call. The decision below is yours.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {hasDecision && (
               <div style={{
                 background: 'white', borderRadius: 18, border: `1.5px solid ${DECISION_INFO[currentDecision!].border}`,
