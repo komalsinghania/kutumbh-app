@@ -26,6 +26,7 @@ import SiteFooter from '@/components/SiteFooter';
 import JsonLd from '@/components/JsonLd';
 import { webApplicationJsonLd, faqPageJsonLd } from '@/lib/structured-data';
 import { TICKER_1, TICKER_2, CHAOS_CARDS, RED_FLAGS, FAQS } from '@/lib/landing-content';
+import { PRICING_BADGE, PRICING_LINE } from '@/lib/pricing';
 
 // Server pieces — pure markup, never shipped as JavaScript.
 import Mandala from '@/components/landing/Mandala';
@@ -69,7 +70,7 @@ export default function LandingPage() {
           <div className="lp-hero-inner">
             <div className="lp-hero-badge">
               <span className="lp-dot" />
-              Early access — every feature free, no card needed
+              {PRICING_BADGE}
             </div>
 
             <h1 className="lp-hero-title">
@@ -441,9 +442,7 @@ export default function LandingPage() {
               The shaadi is a <em>maybe.</em>
               <br />Your sanity shouldn&apos;t be.
             </h2>
-            <p className="lp-final-sub">
-              Free forever for the basics. Set up before your chai gets cold.
-            </p>
+            <p className="lp-final-sub">{PRICING_LINE}</p>
             <LandingCta placement="final" className="lp-btn-final">
               Start Free — Find Your Maybe
             </LandingCta>

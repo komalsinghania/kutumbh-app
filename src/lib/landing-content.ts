@@ -2,6 +2,8 @@
 // JSON-LD on the homepage, so what visitors read and what answer engines
 // quote can never drift apart.
 
+import { PRICING_ANSWER } from '@/lib/pricing';
+
 
 export const RED_FLAGS: { who: 'he' | 'she'; text: string }[] = [
   { who: 'he', text: "You can work after marriage. From home. Part-time. If there's time after cooking." },
@@ -43,6 +45,12 @@ export const FAQS: { q: string; a: string }[] = [
   {
     q: 'Is this like a matrimonial app?',
     a: "No. RokaMaybe doesn't show you new matches or connect you with other users. It's a personal tracker for the prospects you're already meeting — whether they come from matrimonial sites, pandits, relatives, or family friends. Think of it as your private dashboard for your own search.",
+  },
+  {
+    // Sourced from src/lib/pricing.ts — "how much does it cost" is the question
+    // answer engines are asked most, and this is the only place the site says it.
+    q: 'How much does RokaMaybe cost?',
+    a: PRICING_ANSWER,
   },
   {
     q: 'Do I need to download an app?',
