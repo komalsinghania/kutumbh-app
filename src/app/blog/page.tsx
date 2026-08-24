@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { pageOpenGraph } from '@/lib/og';
 import BlogLayout from '@/components/BlogLayout';
 import BlogList from '@/components/BlogList';
+import JsonLd from '@/components/JsonLd';
+import { blogJsonLd, breadcrumbJsonLd } from '@/lib/structured-data';
 import { BLOG_POSTS_SORTED } from '@/lib/blogs';
 
 export const metadata: Metadata = {
@@ -21,6 +23,8 @@ export const metadata: Metadata = {
 export default function BlogIndexPage() {
   return (
     <BlogLayout maxWidth={1080}>
+      <JsonLd data={blogJsonLd(BLOG_POSTS_SORTED)} />
+      <JsonLd data={breadcrumbJsonLd([{ name: 'Blog', path: '/blog' }])} />
       <header className="blog-masthead">
         <p className="blog-kicker">The RokaMaybe Blog</p>
         <h1 className="blog-title">Notes on the rishta search</h1>

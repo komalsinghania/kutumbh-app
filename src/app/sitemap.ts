@@ -4,7 +4,7 @@ import { BLOG_POSTS_SORTED } from '@/lib/blogs';
 
 // Date of the last meaningful content update on static pages.
 // Update this string whenever a static page copy or structure changes.
-const STATIC_LAST_MODIFIED = new Date('2026-07-14');
+const STATIC_LAST_MODIFIED = new Date('2026-08-24');
 
 /**
  * Generates /sitemap.xml for RokaMaybe.

@@ -21,3 +21,42 @@ export function pageOpenGraph(
 ): Metadata['openGraph'] {
   return { title, description, type, images: [OG_IMAGE] };
 }
+
+/**
+ * Open Graph for an article, with the dates and byline that `type: 'article'`
+ * implies.
+ *
+ * `pageOpenGraph(..., 'article')` emits `og:type=article` and nothing else, so
+ * blog posts declared themselves articles while omitting
+ * `article:published_time` and `article:author` entirely — the two properties
+ * every reader of that type looks for. Anything setting `type: 'article'`
+ * should use this instead.
+ */
+export function articleOpenGraph(
+  title: string,
+  description: string,
+  article: {
+    /** ISO date the post was published (YYYY-MM-DD is fine). */
+    publishedTime: string;
+    /** ISO date of the last meaningful edit, if there has been one. */
+    modifiedTime?: string;
+    authors: string[];
+    /** The post's category, emitted as article:section. */
+    section?: string;
+    tags?: string[];
+  },
+): Metadata['openGraph'] {
+  return {
+    title,
+    description,
+    type: 'article',
+    images: [OG_IMAGE],
+    publishedTime: new Date(article.publishedTime).toISOString(),
+    ...(article.modifiedTime
+      ? { modifiedTime: new Date(article.modifiedTime).toISOString() }
+      : {}),
+    authors: article.authors,
+    ...(article.section ? { section: article.section } : {}),
+    ...(article.tags ? { tags: article.tags } : {}),
+  };
+}
