@@ -11,3 +11,14 @@
 // this flag — the landing hero badge and the /pricing page — would need to be
 // reverted by hand.)
 export const PAYMENTS_ENABLED = false;
+
+// ── Mummy Mode ─────────────────────────────────────────────────────────────
+//
+// Family sharing: the owner mirrors a sanitised copy of chosen rishtas into a
+// separate collection that invited family members can read, and they leave a
+// verdict. Flip to `false` to hide every entry point (the share button, the
+// Family access card, the /family routes) without removing the code.
+//
+// Turning this off does NOT revoke access already granted — deploy the rules
+// change or delete the familyLinks documents for that.
+export const FAMILY_SHARING_ENABLED = true;

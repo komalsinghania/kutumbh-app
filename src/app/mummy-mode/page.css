@@ -99,6 +99,8 @@
   .mkt-mummy .wait-form input:focus-visible { outline: 2px solid var(--gold-soft); outline-offset: 2px; }
   .mkt-mummy .wait-form button { background: var(--ink); color: var(--paper); border: 0; border-radius: 100px; padding: 16px 28px; font-family: var(--font-dm-sans), sans-serif; font-weight: 600; font-size: 13.5px; cursor: pointer; transition: transform .15s; }
   .mkt-mummy .wait-form button:hover { transform: translateY(-1px); }
+  .mkt-mummy .wait-cta { display: inline-block; margin: 38px auto 0; background: var(--paper); color: var(--ink); border-radius: 100px; padding: 17px 34px; font-family: var(--font-dm-sans), sans-serif; font-weight: 600; font-size: 14px; text-decoration: none; position: relative; z-index: 1; transition: transform .15s; }
+  .mkt-mummy .wait-cta:hover { transform: translateY(-1px); }
   .mkt-mummy .wait-fine { margin-top: 18px; font-family: var(--font-dm-sans), sans-serif; font-weight: 600; font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,237,224,0.6); position: relative; }
   .mkt-mummy .wait-alt { margin-top: 34px; font-family: var(--font-instrument), serif; font-style: italic; font-size: 16px; color: var(--gold-soft); position: relative; }
   .mkt-mummy .wait-alt a { color: inherit; }
@@ -110,7 +112,7 @@
   .mkt-mummy .f-links a { text-decoration: none; color: var(--muted); }
   .mkt-mummy .f-links a:hover { color: var(--sindoor); }
 
-  @media (prefers-reduced-motion: reduce) { .mkt-mummy { scroll-behavior: auto; } .mkt-mummy .wait-form button:hover { transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .mkt-mummy { scroll-behavior: auto; } .mkt-mummy .wait-form button:hover, .mkt-mummy .wait-cta:hover { transform: none; } }
   @media (max-width: 900px) {
     .mkt-mummy .nav-links { gap: 14px; font-size: 9.5px; }
     .mkt-mummy .nav-links .hide-m { display: none; }

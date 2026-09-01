@@ -12,6 +12,7 @@ const TYPE_ICON: Record<ActivityType, string> = {
   meeting: '🤝',
   note: '📝',
   kundli: '🔯',
+  family_verdict: '👩🏽',
 };
 
 const TYPE_COLOR: Record<ActivityType, { bg: string; color: string }> = {
@@ -24,6 +25,7 @@ const TYPE_COLOR: Record<ActivityType, { bg: string; color: string }> = {
   meeting: { bg: 'rgba(193,62,42,0.08)', color: '#c13e2a' },
   note: { bg: '#f5ede0', color: '#6b5e4d' },
   kundli: { bg: 'rgba(193,62,42,0.15)', color: '#c13e2a' },
+  family_verdict: { bg: 'rgba(45,107,79,0.12)', color: '#2D6B4F' },
 };
 
 interface Props {

@@ -2,9 +2,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { subscribeToProspects, saveUserProfile, recalcScoresIfStale, SCORING_VERSION } from '@/lib/firestore';
+import { subscribeToProspects, saveUserProfile, recalcScoresIfStale, SCORING_VERSION, logFamilyVerdict } from '@/lib/firestore';
 import { Prospect, ProspectStage } from '@/types';
-import { hasCompareAccess, isTrialActive, isTrialExpired, trialDaysLeft, trialEndsAt } from '@/lib/trial';
+import type { FamilyLink, FamilyVerdictWithShare, SharedProspect } from '@/types/family';
+import { VERDICT_INFO } from '@/types/family';
+import { subscribeToSharedProspects, subscribeToFamilyMembers, subscribeToAllVerdicts } from '@/lib/family-share';
+import { resolveHome } from '@/lib/family-guard';
+import { useShareSync } from '@/lib/use-share-sync';
+import FamilyMembersCard from '@/components/family/FamilyMembersCard';
+import { hasCompareAccess, isTrialActive, isTrialExpired, trialDaysLeft, trialEndsAt, canUseFamilySharing } from '@/lib/trial';
 import { PAYMENTS_ENABLED } from '@/lib/config';
 import { MARKETING_LINKS } from '@/lib/marketing-links';
 import TrialStartedModal from '@/components/TrialStartedModal';
@@ -213,6 +219,17 @@ export default function DashboardPage() {
   const [showTrialModal, setShowTrialModal] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // ── Mummy Mode ──
+  const [shares, setShares] = useState<SharedProspect[]>([]);
+  const [familyMembers, setFamilyMembers] = useState<FamilyLink[]>([]);
+  const [familyVerdicts, setFamilyVerdicts] = useState<FamilyVerdictWithShare[]>([]);
+  const [familyReady, setFamilyReady] = useState(false);
+  const [prospectsReady, setProspectsReady] = useState(false);
+  const [openInvite, setOpenInvite] = useState(false);
+  const unseenVerdicts = familyVerdicts.filter(
+    v => v.updatedAt > (profile?.familyVerdictsSeenAt ?? 0),
+  ).length;
+
   const toggleExpand = (id: string) =>
     setExpanded(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
@@ -242,6 +259,18 @@ export default function DashboardPage() {
     setMainTab(tab);
   };
 
+  // Arriving from "Invite family" on a rishta: open Profile with the relation
+  // picker already up. Read from location rather than useSearchParams so the
+  // page needs no Suspense boundary.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('invite') === '1') {
+      setMainTab('profile');
+      setOpenInvite(true);
+      window.history.replaceState({}, '', '/dashboard');
+    }
+  }, []);
+
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
@@ -249,19 +278,85 @@ export default function DashboardPage() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
+  // Two guards, in the order they can fire:
+  //
+  //  • Signed out (or back here via the browser's back button after signing
+  //    out) — the render below would otherwise sit on the spinner forever.
+  //  • Signed in with no profile — normally someone who hasn't onboarded, but
+  //    possibly a family member (Mummy Mode) who has never had a profile and
+  //    never will. resolveHome() checks for family access first, so a mummy is
+  //    never dropped into an onboarding flow asking for her own nakshatra.
   useEffect(() => {
     if (loading) return;
-    // Signed out (or arriving here after sign-out via the back button) — the
-    // render below would otherwise sit on the spinner forever.
-    if (!user) router.replace('/');
-    else if (!profile) router.replace('/onboarding');
+    if (!user) { router.replace('/'); return; }
+    if (profile) return;
+    let cancelled = false;
+    resolveHome(user.uid, false).then(home => {
+      if (!cancelled) router.replace(home);
+    });
+    return () => { cancelled = true; };
   }, [loading, user, profile, router]);
 
   useEffect(() => {
     if (!user) return;
-    const u1 = subscribeToProspects(user.uid, setProspects);
+    const u1 = subscribeToProspects(user.uid, p => { setProspects(p); setProspectsReady(true); });
     return () => { u1(); };
   }, [user]);
+
+  // Mummy Mode: what's shared, who can see it, and what they said.
+  useEffect(() => {
+    if (!user || !canUseFamilySharing(profile)) return;
+    let gotShares = false, gotMembers = false;
+    const markReady = () => { if (gotShares && gotMembers) setFamilyReady(true); };
+    const u1 = subscribeToSharedProspects(user.uid, s => { setShares(s); gotShares = true; markReady(); });
+    const u2 = subscribeToFamilyMembers(user.uid, m => { setFamilyMembers(m); gotMembers = true; markReady(); });
+    const u3 = subscribeToAllVerdicts(user.uid, setFamilyVerdicts);
+    return () => { u1(); u2(); u3(); setFamilyReady(false); };
+  }, [user, profile]);
+
+  // Keep the family's copies in step with the real prospects.
+  useShareSync({
+    uid: user?.uid,
+    ownerName: profile?.name,
+    prospects,
+    shares,
+    members: familyMembers,
+    ready: familyReady && prospectsReady,
+  });
+
+  // Fold new verdicts into the activity feed. The family member who left the
+  // verdict cannot write to the owner's activityLog, so the owner's client does
+  // it on first sight; the ref plus the persisted high-water mark keep it from
+  // logging the same verdict twice.
+  const loggedUpto = useRef(0);
+  useEffect(() => {
+    if (!user || !profile || familyVerdicts.length === 0) return;
+    const since = Math.max(profile.familyVerdictsLoggedAt ?? 0, loggedUpto.current);
+    const fresh = familyVerdicts.filter(v => v.updatedAt > since);
+    if (fresh.length === 0) return;
+
+    const highest = Math.max(...fresh.map(v => v.updatedAt));
+    loggedUpto.current = highest;
+
+    (async () => {
+      for (const v of fresh) {
+        const name = prospects.find(p => p.id === v.prospectId)?.name ?? 'a rishta';
+        const word = VERDICT_INFO[v.verdict]?.en ?? v.verdict;
+        await logFamilyVerdict(user.uid, v.prospectId, name,
+          `${v.relationLabel} said "${word}"${v.comment ? ` — ${v.comment}` : ''}`);
+      }
+      await saveUserProfile(user.uid, { familyVerdictsLoggedAt: highest });
+      await refreshProfile();
+    })().catch(err => console.error('[dashboard] logging family verdicts failed', err));
+  }, [user, profile, familyVerdicts, prospects, refreshProfile]);
+
+  // Opening Profile is where the verdicts are read, so that clears the badge.
+  useEffect(() => {
+    if (mainTab !== 'profile' || !user || !profile || unseenVerdicts === 0) return;
+    saveUserProfile(user.uid, { familyVerdictsSeenAt: Date.now() })
+      .then(refreshProfile)
+      .catch(err => console.error('[dashboard] marking verdicts seen failed', err));
+  }, [mainTab, user, profile, unseenVerdicts, refreshProfile]);
 
   // One-time recompute after a scoring-engine change: if this user's stored
   // scores predate the current SCORING_VERSION, recompute them all once. The
@@ -480,8 +575,19 @@ export default function DashboardPage() {
               }}>{initials(profile.name)}</div>
               <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                 <p style={{ color: '#f0ebe2', fontSize: '0.82rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{firstName}</p>
-                <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.6rem', marginTop: 1 }}>View Profile</p>
+                <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.6rem', marginTop: 1 }}>
+                  {unseenVerdicts > 0
+                    ? `${unseenVerdicts} new from ghar wale`
+                    : 'View Profile'}
+                </p>
               </div>
+              {unseenVerdicts > 0 && (
+                <span style={{
+                  background: '#2D6B4F', color: 'white', borderRadius: 20, flexShrink: 0,
+                  padding: '2px 8px', fontSize: '0.58rem', fontWeight: 800,
+                  boxShadow: '0 2px 6px rgba(45,107,79,0.45)',
+                }}>{unseenVerdicts}</span>
+              )}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.2)"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
             </button>
             <SignOutButton variant="sidebar" />
@@ -1494,6 +1600,17 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* Mummy Mode — family access */}
+            {canUseFamilySharing(profile) && user && (
+              <FamilyMembersCard
+                uid={user.uid}
+                ownerName={profile.name}
+                sharedCount={shares.length}
+                autoOpenInvite={openInvite}
+                onInviteHandled={() => setOpenInvite(false)}
+              />
+            )}
+
             {/* Plan status */}
             <PlanCard
               isPaid={profile.isPaid}
@@ -1583,6 +1700,15 @@ export default function DashboardPage() {
                       fontSize: '0.55rem', fontWeight: 800, lineHeight: '16px',
                       background: '#c13e2a', color: 'white', textAlign: 'center',
                     }}>{totalDecisions}</span>
+                  )}
+                  {/* Ghar wale have said something you haven't read yet. */}
+                  {tab === 'profile' && unseenVerdicts > 0 && (
+                    <span style={{
+                      position: 'absolute', top: 4, right: '50%', transform: 'translateX(calc(50% + 9px))',
+                      minWidth: 16, height: 16, borderRadius: 8, padding: '0 4px',
+                      fontSize: '0.55rem', fontWeight: 800, lineHeight: '16px',
+                      background: '#2D6B4F', color: 'white', textAlign: 'center',
+                    }}>{unseenVerdicts}</span>
                   )}
                 </button>
               );

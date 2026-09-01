@@ -1,8 +1,9 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { saveUserProfile } from '@/lib/firestore';
+import { getMyAccess } from '@/lib/family-share';
 import { track } from '@/lib/analytics';
 import {
   NAKSHATRAS, HOBBIES,
@@ -87,13 +88,25 @@ function HobbyPicker({ options, selected, onToggle }: {
 }
 
 export default function OnboardingPage() {
-  const { user, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
+
+  // A Mummy Mode viewer has no profile and never will — she must not end up in
+  // a flow that asks for her own age, gender and nakshatra. If she has family
+  // access, send her to her own view instead.
+  useEffect(() => {
+    if (!user || profile) return;
+    let cancelled = false;
+    getMyAccess(user.uid)
+      .then(links => { if (!cancelled && links.length > 0) router.replace('/family'); })
+      .catch(err => console.error('[onboarding] family access check failed', err));
+    return () => { cancelled = true; };
+  }, [user, profile, router]);
 
   const [form, setForm] = useState({
     name: '', gender: '' as Gender, age: '', city: '', education: '' as Education,

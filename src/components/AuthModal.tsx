@@ -28,7 +28,17 @@ function GoogleIcon() {
   );
 }
 
-export default function AuthModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+interface AuthModalProps {
+  onClose: () => void;
+  onSuccess: () => void;
+  /** Replaces "Welcome back" — used by the Mummy Mode invite, where the person
+   *  signing in has never heard of the app and needs to know why they're here. */
+  subtitle?: string;
+  /** Render inline instead of as a dismissable overlay (the invite page). */
+  inline?: boolean;
+}
+
+export default function AuthModal({ onClose, onSuccess, subtitle, inline = false }: AuthModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -88,28 +98,25 @@ export default function AuthModal({ onClose, onSuccess }: { onClose: () => void;
     } finally { setSubmitting(false); }
   };
 
-  return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-      style={{ background: 'rgba(20,16,12,0.72)', backdropFilter: 'blur(6px)' }}
-      onClick={onClose}
-    >
+  const card = (
       <div
         className="w-full max-w-sm bg-white rounded-3xl p-7 relative"
         style={{ border: '1px solid #d6c9b0', boxShadow: '0 30px 80px rgba(0,0,0,0.35)', animation: 'lpRise 0.35s cubic-bezier(0.22,1,0.36,1) both' }}
         onClick={e => e.stopPropagation()}
       >
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-2xl leading-none"
-          style={{ color: '#6b5e4d' }}
-          aria-label="Close"
-        >×</button>
+        {!inline && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-2xl leading-none"
+            style={{ color: '#6b5e4d' }}
+            aria-label="Close"
+          >×</button>
+        )}
 
         <div className="text-center mb-6">
-          <Logo style={{ fontSize: '2rem' }} />
+          {!inline && <Logo style={{ fontSize: '2rem' }} />}
           <p style={{ fontFamily: 'var(--font-instrument, serif)', fontSize: '1rem', color: '#6b5e4d', fontStyle: 'italic' }}>
-            {isSignUp ? 'Create your account' : 'Welcome back'}
+            {subtitle ?? (isSignUp ? 'Create your account' : 'Welcome back')}
           </p>
         </div>
 
@@ -169,6 +176,17 @@ export default function AuthModal({ onClose, onSuccess }: { onClose: () => void;
           </button>
         </p>
       </div>
+  );
+
+  if (inline) return card;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      style={{ background: 'rgba(20,16,12,0.72)', backdropFilter: 'blur(6px)' }}
+      onClick={onClose}
+    >
+      {card}
     </div>
   );
 }

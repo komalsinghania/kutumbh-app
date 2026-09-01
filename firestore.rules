@@ -18,6 +18,18 @@ rules_version = '2';
 //   users/{uid}/prospects/{prospectId}/flags/{id}
 //   users/{uid}/prospects/{prospectId}/meta/{id}      (familyScorecard, meeting)
 //   users/{uid}/activityLog/{id}
+//
+// Mummy Mode adds cross-user reads, but NOT under /users/{uid} — that subtree
+// stays owner-only, untouched. Instead the owner mirrors a sanitised copy of a
+// prospect into its own top-level collection, and only that copy is readable by
+// the family. The private material (flags, call logs, meeting ratings, family
+// scorecard, Compare) is physically absent from those documents, so no mistake
+// in these rules can expose it:
+//   familyInvites/{code}                            (code = unguessable secret)
+//   familyLinks/{ownerUid}__{viewerUid}             (an accepted invitation)
+//   sharedProspects/{ownerUid}__{prospectId}        (the sanitised snapshot)
+//   sharedProspects/{shareId}/media/photos
+//   sharedProspects/{shareId}/verdicts/{viewerUid}
 // ─────────────────────────────────────────────────────────────────────────────
 
 service cloud.firestore {
@@ -44,6 +56,134 @@ service cloud.firestore {
       }
     }
 
-    // Everything outside /users/{uid} is denied by default — no rule = no access.
+    // ─────────────────────────────────────────────────────────────────────────
+    // Mummy Mode — family sharing
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // A viewer may read an owner's shared material only while an accepted
+    // invitation exists. Deleting that one document revokes every read at once.
+    function isLinked(owner) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/familyLinks/$(owner + '__' + request.auth.uid));
+    }
+
+    // Share and link ids are `{ownerUid}__{otherId}`. Firebase uids never
+    // contain '_', so the first segment is always the owner.
+    function ownerOf(id) {
+      return id.split('__')[0];
+    }
+
+    // ── Invites ──────────────────────────────────────────────────────────────
+    // The document id is a 32-char random code delivered out of band (WhatsApp).
+    // The code IS the secret, so `get` is open — the invitee has to read who
+    // invited her BEFORE signing in, or she meets an unexplained login screen,
+    // which is exactly where a first-time user of this app gives up. What leaks
+    // to a holder of the code is a first name and a relation label. `list` stays
+    // denied, so codes can never be discovered by enumeration.
+    match /familyInvites/{code} {
+      allow get: if true;
+      allow list: if signedIn() && request.auth.uid == resource.data.ownerUid;
+
+      allow create: if signedIn()
+                    && request.resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.status == 'pending';
+
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+
+      // The owner may edit their own invite. An invitee may only flip a live,
+      // pending invite to 'claimed', stamping their OWN uid and nothing else.
+      allow update: if signedIn() && (
+           resource.data.ownerUid == request.auth.uid
+        || (resource.data.status == 'pending'
+            && request.time.toMillis() < resource.data.expiresAt
+            && request.resource.data.status == 'claimed'
+            && request.resource.data.claimedByUid == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status', 'claimedByUid', 'claimedByName', 'claimedAt']))
+      );
+    }
+
+    // ── Links (an accepted invitation) ───────────────────────────────────────
+    match /familyLinks/{linkId} {
+      allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid
+                                 || resource.data.viewerUid == request.auth.uid);
+
+      // Creatable only by the invitee, only against an invite they have already
+      // claimed, and only at the derived id — so nobody can grant themselves
+      // access to an owner who never invited them.
+      //
+      // The claim must also be RECENT. Without that window, an invite stamped
+      // months ago stays a permanent key: a family member the owner removed
+      // could re-run the claim and silently restore their own access, because
+      // every other condition here would still hold.
+      allow create: if signedIn()
+        && linkId == request.resource.data.ownerUid + '__' + request.auth.uid
+        && request.resource.data.viewerUid == request.auth.uid
+        && exists(/databases/$(database)/documents/familyInvites/$(request.resource.data.inviteCode))
+        && get(/databases/$(database)/documents/familyInvites/$(request.resource.data.inviteCode))
+             .data.claimedByUid == request.auth.uid
+        && get(/databases/$(database)/documents/familyInvites/$(request.resource.data.inviteCode))
+             .data.ownerUid == request.resource.data.ownerUid
+        && get(/databases/$(database)/documents/familyInvites/$(request.resource.data.inviteCode))
+             .data.claimedAt > request.time.toMillis() - 1800000;
+
+      // The viewer may correct their own display name / stamp "last opened".
+      allow update: if signedIn()
+        && resource.data.viewerUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['viewerName', 'lastSeenAt']);
+
+      // Either side can end the arrangement.
+      allow delete: if signedIn() && (resource.data.ownerUid == request.auth.uid
+                                   || resource.data.viewerUid == request.auth.uid);
+    }
+
+    // ── The sanitised snapshots ──────────────────────────────────────────────
+    match /sharedProspects/{shareId} {
+      allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid
+                                 || isLinked(resource.data.ownerUid));
+
+      // Only the owner named in the id may write, and they cannot write a
+      // document claiming a different owner. (create/update and delete are
+      // split because `request.resource` does not exist on a delete.)
+      allow create, update: if signedIn()
+                            && ownerOf(shareId) == request.auth.uid
+                            && request.resource.data.ownerUid == request.auth.uid;
+      allow delete: if signedIn() && ownerOf(shareId) == request.auth.uid;
+
+      // Photos — same audience, kept in their own document so the list view
+      // does not have to download ~800 KB of base64 per rishta.
+      match /media/{docId} {
+        allow read: if signedIn() && (ownerOf(shareId) == request.auth.uid
+                                   || isLinked(ownerOf(shareId)));
+        allow write: if signedIn() && ownerOf(shareId) == request.auth.uid;
+      }
+
+      // Verdicts — a family member writes only their own, keyed by their uid.
+      // Everyone in the family can read them all: "verdicts sit side by side".
+      match /verdicts/{viewerUid} {
+        allow read: if signedIn() && (ownerOf(shareId) == request.auth.uid
+                                   || isLinked(ownerOf(shareId)));
+        allow create, update: if signedIn()
+          && viewerUid == request.auth.uid
+          && isLinked(ownerOf(shareId))
+          && request.resource.data.viewerUid == request.auth.uid
+          && request.resource.data.ownerUid == ownerOf(shareId)
+          && request.resource.data.verdict in ['yes', 'no', 'discuss'];
+        allow delete: if signedIn() && (viewerUid == request.auth.uid
+                                     || ownerOf(shareId) == request.auth.uid);
+      }
+    }
+
+    // Collection-group read of `verdicts`, so the owner can watch every verdict
+    // across all their rishtas in one subscription. Read-only: writes still go
+    // through the nested rule above, which pins the document to its author.
+    match /{path=**}/verdicts/{viewerUid} {
+      allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid
+                                 || isLinked(resource.data.ownerUid));
+    }
+
+    // Everything outside the blocks above is denied by default — no rule = no
+    // access.
   }
 }

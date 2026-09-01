@@ -10,10 +10,13 @@ import { SITE_URL } from '@/lib/og';
  *   All marketing and public-content pages are open to crawlers so they
  *   show up in search results — home, about, pricing, features, blog, etc.
  *
- * Disallow '/dashboard', '/prospects', '/profile', '/onboarding'
+ * Disallow '/dashboard', '/prospects', '/profile', '/onboarding', '/family'
  *   These are authenticated app pages that contain private user data.
  *   Indexing them is both a privacy risk and useless to visitors who are
  *   not logged in (they would just hit a redirect or empty state).
+ *   '/family' (Mummy Mode) additionally shows a THIRD party's biodata and
+ *   photos to a named, invited audience — it must never be crawled. The
+ *   route also sets robots: noindex in its layout, belt and braces.
  *
  * Disallow '/api/'
  *   API routes serve JSON, never user-readable HTML, so there is nothing
@@ -28,7 +31,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/dashboard', '/prospects', '/profile', '/onboarding', '/compare', '/api/'],
+      disallow: ['/dashboard', '/prospects', '/profile', '/onboarding', '/compare', '/family', '/api/'],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };
