@@ -33,6 +33,13 @@ function formatDate(ts: number) {
 }
 
 export default function PlanCard({ isPaid, paidAt, razorpayPaymentId, onUpgradeSuccess }: Props) {
+  // While payments are off there is no plan to choose and nothing to upgrade,
+  // so the card is just a large dark block of noise on an otherwise quiet page.
+  // Gated here rather than at the call sites so both surfaces stay in step, and
+  // it comes back on its own the moment PAYMENTS_ENABLED flips — the same way
+  // /pricing reappears in the nav (see lib/marketing-links.ts).
+  if (!PAYMENTS_ENABLED) return null;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* ── Plan header badge ── */}

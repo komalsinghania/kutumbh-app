@@ -13,6 +13,7 @@ import {
 import { track } from '@/lib/analytics';
 import toast from 'react-hot-toast';
 import PlanCard from '@/components/PlanCard';
+import { PAYMENTS_ENABLED } from '@/lib/config';
 import SignOutButton from '@/components/SignOutButton';
 
 function PillSelect({ options, value, onSelect }: { options: string[]; value: string; onSelect: (v: string) => void }) {
@@ -263,16 +264,20 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        {/* ── Plan / Subscription ── */}
-        <div>
-          <h3 className="section-label" style={{ marginBottom: 12 }}>Your Plan</h3>
-          <PlanCard
-            isPaid={profile?.isPaid}
-            paidAt={profile?.paidAt}
-            razorpayPaymentId={profile?.razorpayPaymentId}
-            onUpgradeSuccess={refreshProfile}
-          />
-        </div>
+        {/* ── Plan / Subscription ──
+             Hidden with the card itself while payments are off, otherwise the
+             heading is left stranded above nothing. */}
+        {PAYMENTS_ENABLED && (
+          <div>
+            <h3 className="section-label" style={{ marginBottom: 12 }}>Your Plan</h3>
+            <PlanCard
+              isPaid={profile?.isPaid}
+              paidAt={profile?.paidAt}
+              razorpayPaymentId={profile?.razorpayPaymentId}
+              onUpgradeSuccess={refreshProfile}
+            />
+          </div>
+        )}
 
         {/* ── Account ── */}
         <div>
