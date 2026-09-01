@@ -13,22 +13,16 @@
 import { useState } from 'react';
 import type { SharedProspect } from '@/types/family';
 import { FAMILY_COPY, familyStageLabel, gunaVerdictWord, type FamilyLang } from '@/lib/family-copy';
+import { C, BODY, title as titleStyle, heading, label as labelStyle, meta, card, numeral } from '@/components/ui';
 
-const CARD: React.CSSProperties = {
-  background: 'white', borderRadius: 18, border: '1px solid #e8dece',
-  boxShadow: '0 2px 14px rgba(0,0,0,0.05)', overflow: 'hidden',
-};
-
-const SECTION_TITLE: React.CSSProperties = {
-  fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.12em',
-  textTransform: 'uppercase', color: '#c13e2a', margin: 0,
-};
+const CARD = card;
+const SECTION_TITLE = labelStyle;
 
 function scoreColor(score: number): string {
-  if (score >= 28) return '#2D6B4F';
+  if (score >= 28) return C.success;
   if (score >= 21) return '#7a8b3f';
-  if (score >= 18) return '#b8892b';
-  return '#8B2A2A';
+  if (score >= 18) return C.gold;
+  return C.danger;
 }
 
 /** The app stores income as a bare band ("20-35"). On its own that reads as
@@ -51,12 +45,13 @@ function Row({ label, value }: { label: string; value?: string | number | null }
   return (
     <div style={{
       display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-      gap: 14, padding: '12px 0', borderBottom: '1px solid #f4efe6',
+      gap: 16, padding: '13px 0', borderBottom: '1px solid ' + C.lineSoft,
     }}>
-      <span style={{ fontSize: '0.95rem', color: '#6b5e4d', flexShrink: 0 }}>{label}</span>
-      <span style={{ fontSize: '1rem', fontWeight: 600, color: '#1a1410', textAlign: 'right' }}>
-        {String(value)}
-      </span>
+      <span style={{ ...meta, flexShrink: 0 }}>{label}</span>
+      <span style={{
+        fontFamily: BODY, fontSize: '0.95rem', fontWeight: 500,
+        color: C.ink, textAlign: 'right',
+      }}>{String(value)}</span>
     </div>
   );
 }
@@ -111,10 +106,10 @@ export default function SharedRishtaView({
               onClick={() => setLightbox(src)}
               style={{
                 flex: photos.length === 1 ? '1 1 100%' : '0 0 78%',
-                scrollSnapAlign: 'start', border: 'none', padding: 0,
-                borderRadius: 18, overflow: 'hidden', cursor: 'zoom-in',
-                background: '#e8dece', aspectRatio: '4 / 5',
-                boxShadow: '0 4px 18px rgba(0,0,0,0.10)',
+                scrollSnapAlign: 'start', padding: 0,
+                border: `1px solid ${C.line}`,
+                borderRadius: 12, overflow: 'hidden', cursor: 'zoom-in',
+                background: C.cardQuiet, aspectRatio: '4 / 5',
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -126,14 +121,10 @@ export default function SharedRishtaView({
 
       {/* ── Name + headline ── */}
       <div style={{ ...CARD, padding: '20px 20px 16px' }}>
-        <h1 style={{
-          fontFamily: 'var(--font-fraunces, Fraunces, Georgia, serif)',
-          fontSize: '1.75rem', fontWeight: 700, color: '#1a1410', lineHeight: 1.2, margin: 0,
-        }}>
-          {share.name}{share.age ? `, ${share.age}` : ''}
-        </h1>
-        <p style={{ fontSize: '1.05rem', color: '#6b5e4d', margin: '8px 0 0', lineHeight: 1.5 }}>
-          {[share.profession, share.city, share.gotra, share.diet].filter(Boolean).join(' · ')}
+        <h1 style={titleStyle}>{share.name}</h1>
+        <p style={{ ...meta, fontSize: '0.98rem', marginTop: 7 }}>
+          {[share.age ? `${share.age} yrs` : null, share.profession, share.city, share.gotra, share.diet]
+            .filter(Boolean).join(' · ')}
         </p>
       </div>
 
@@ -143,27 +134,22 @@ export default function SharedRishtaView({
           <p style={SECTION_TITLE}>{t.kundliMilan}</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 14 }}>
             <div style={{
-              width: 84, height: 84, borderRadius: '50%', flexShrink: 0,
+              width: 76, height: 76, borderRadius: '50%', flexShrink: 0,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              border: `3px solid ${scoreColor(share.gunaScore)}`,
-              background: `${scoreColor(share.gunaScore)}14`,
+              border: `1.5px solid ${scoreColor(share.gunaScore)}`,
+              background: C.card,
             }}>
               <span style={{
-                fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.7rem',
-                fontWeight: 800, lineHeight: 1, color: scoreColor(share.gunaScore),
+                ...numeral, fontSize: '1.55rem', lineHeight: 1,
+                color: scoreColor(share.gunaScore),
               }}>{share.gunaScore}</span>
-              <span style={{ fontSize: '0.7rem', color: '#6b5e4d', marginTop: 2 }}>/ 36</span>
+              <span style={{ fontFamily: BODY, fontSize: '0.68rem', color: C.faint, marginTop: 3 }}>/ 36</span>
             </div>
             <div>
-              <p style={{
-                fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.3rem',
-                fontWeight: 700, color: scoreColor(share.gunaScore), margin: 0,
-              }}>
+              <p style={{ ...heading, color: scoreColor(share.gunaScore) }}>
                 {gunaVerdictWord(share.gunaScore, lang)}
               </p>
-              <p style={{ fontSize: '0.9rem', color: '#6b5e4d', margin: '6px 0 0', lineHeight: 1.5 }}>
-                {t.kundliDisclaimer}
-              </p>
+              <p style={{ ...meta, marginTop: 6 }}>{t.kundliDisclaimer}</p>
             </div>
           </div>
         </div>
@@ -210,12 +196,7 @@ export default function SharedRishtaView({
       {/* ── Where things stand ── */}
       <div style={{ ...CARD, padding: '18px 20px 20px' }}>
         <p style={SECTION_TITLE}>{t.whereThingsStand}</p>
-        <p style={{
-          fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.2rem',
-          fontWeight: 700, color: '#1a1410', margin: '10px 0 0',
-        }}>
-          {familyStageLabel(share.stage, lang)}
-        </p>
+        <p style={{ ...heading, marginTop: 10 }}>{familyStageLabel(share.stage, lang)}</p>
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ import { subscribeToSharedProspects, subscribeToFamilyMembers, subscribeToAllVer
 import { resolveHome } from '@/lib/family-guard';
 import { useShareSync } from '@/lib/use-share-sync';
 import FamilyMembersCard from '@/components/family/FamilyMembersCard';
+import { Section, DataRow, LinkRow, IdentityCard, JourneyStats } from '@/components/ProfileSections';
 import { hasCompareAccess, isTrialActive, isTrialExpired, trialDaysLeft, trialEndsAt, canUseFamilySharing } from '@/lib/trial';
 import { PAYMENTS_ENABLED } from '@/lib/config';
 import { MARKETING_LINKS } from '@/lib/marketing-links';
@@ -22,7 +23,7 @@ import CompatBreakdown from '@/components/CompatBreakdown';
 import AshtakootBreakdown from '@/components/AshtakootBreakdown';
 import RazorpayButton from '@/components/RazorpayButton';
 import PlanCard from '@/components/PlanCard';
-import SignOutButton from '@/components/SignOutButton';
+import SignOutButton, { useSignOut } from '@/components/SignOutButton';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 
@@ -225,6 +226,9 @@ export default function DashboardPage() {
   const [familyVerdicts, setFamilyVerdicts] = useState<FamilyVerdictWithShare[]>([]);
   const [familyReady, setFamilyReady] = useState(false);
   const [prospectsReady, setProspectsReady] = useState(false);
+  // Same sign-out behaviour as every other surface, rendered as a plain row so
+  // it matches the row above it instead of nesting a card inside a card.
+  const { runSignOut, signingOut } = useSignOut();
   const [openInvite, setOpenInvite] = useState(false);
   const unseenVerdicts = familyVerdicts.filter(
     v => v.updatedAt > (profile?.familyVerdictsSeenAt ?? 0),
@@ -705,7 +709,7 @@ export default function DashboardPage() {
                 {mainTab === 'matches' ? 'Sorted by overall compatibility and kundli scores' :
                  mainTab === 'decision' ? `${totalDecisions} total decisions recorded` :
                  mainTab === 'compare' ? 'Pick 2 or 3 prospects to compare side by side' :
-                 `${profile.profession} · ${profile.city}`}
+                 [profile.profession, profile.city].filter(Boolean).join(' · ')}
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1511,94 +1515,48 @@ export default function DashboardPage() {
              PROFILE TAB
         ═══════════════════════════════════════════════════════ */}
         {mainTab === 'profile' && (
-          <div style={{ padding: `22px ${isMobile ? 16 : 28}px`, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{
+            padding: `24px ${isMobile ? 16 : 28}px`,
+            display: 'flex', flexDirection: 'column', gap: 26,
+            maxWidth: 620,
+          }}>
 
-            {/* Profile hero card */}
-            <div style={{
-              background: 'white', borderRadius: 18, overflow: 'hidden',
-              border: '1px solid #ede4d4', boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-            }}>
-              <div style={{ background: 'linear-gradient(135deg, #1c1108 0%, #2a1a0e 100%)', padding: '24px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{
-                  width: 56, height: 56, borderRadius: '50%', flexShrink: 0,
-                  background: 'linear-gradient(135deg, rgba(193,62,42,0.7), rgba(184,137,43,0.5))',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.1rem', fontWeight: 800, color: '#f5ede0',
-                  border: '2px solid rgba(193,62,42,0.5)',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-                }}>{initials(profile.name)}</div>
-                <div>
-                  <h2 style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.3rem', color: '#f5ede0', fontWeight: 700 }}>{profile.name}</h2>
-                  <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>
-                    {[profile.age && `${profile.age} yrs`, profile.city, profile.profession].filter(Boolean).join(' · ')}
-                  </p>
-                </div>
-              </div>
-              <div style={{ padding: '16px 20px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-                {([
-                  ['Education', profile.education],
-                  ['Income', profile.income],
-                  ['Diet', profile.diet],
-                  ['Manglik', profile.manglik],
-                ] as [string, string | undefined][]).filter(([, v]) => v).map(([l, v]) => (
-                  <div key={l} style={{ background: '#f5ede0', borderRadius: 10, padding: '10px 12px' }}>
-                    <p style={{ fontSize: '0.62rem', color: '#9b8e7e', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{l}</p>
-                    <p style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1a1410', marginTop: 3 }}>{v}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <IdentityCard
+              name={profile.name}
+              initials={initials(profile.name)}
+              meta={[profile.age && `${profile.age} yrs`, profile.city, profile.profession]
+                .filter(Boolean).join(' · ')}
+              rows={[
+                { name: 'Education', value: profile.education },
+                { name: 'Income', value: profile.income },
+                { name: 'Diet', value: profile.diet },
+                { name: 'Manglik', value: profile.manglik },
+              ]}
+            />
 
-            {/* Preferences */}
+            <Section title="Your journey">
+              <JourneyStats
+                stats={[
+                  { label: 'Total', value: prospects.length },
+                  { label: 'Active', value: prospects.filter(p => p.stage !== 'rejected' && p.stage !== 'on_hold').length },
+                  { label: 'On hold', value: prospects.filter(p => p.stage === 'on_hold').length },
+                  { label: 'Interested', value: prospects.filter(p => p.stage === 'interested').length, highlight: true },
+                ]}
+              />
+            </Section>
+
             {(profile.prefAgeMin || profile.prefCities?.length) && (
-              <div style={{ background: 'white', borderRadius: 16, padding: '18px 20px', border: '1px solid #ede4d4', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-                <p style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c13e2a', marginBottom: 14 }}>Preferences</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <Section title="What you're looking for">
+                <div style={{ paddingTop: 5 }}>
                   {profile.prefAgeMin && profile.prefAgeMax && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.82rem', color: '#6b5e4d' }}>Age range</span>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1a1410' }}>{profile.prefAgeMin}–{profile.prefAgeMax} yrs</span>
-                    </div>
+                    <DataRow name="Age range" value={`${profile.prefAgeMin}–${profile.prefAgeMax} yrs`} />
                   )}
-                  {profile.prefCities?.length > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.82rem', color: '#6b5e4d' }}>Cities</span>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1a1410', textAlign: 'right', maxWidth: '60%' }}>{profile.prefCities.join(', ')}</span>
-                    </div>
-                  )}
-                  {profile.prefIncome && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.82rem', color: '#6b5e4d' }}>Min income</span>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1a1410' }}>{profile.prefIncome} LPA</span>
-                    </div>
-                  )}
-                  {profile.prefFamily && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.82rem', color: '#6b5e4d' }}>Family type</span>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1a1410' }}>{profile.prefFamily}</span>
-                    </div>
-                  )}
+                  <DataRow name="Cities" value={profile.prefCities?.length ? profile.prefCities.join(', ') : undefined} />
+                  <DataRow name="Minimum income" value={profile.prefIncome ? `${profile.prefIncome} LPA` : undefined} />
+                  <DataRow name="Family type" value={profile.prefFamily} />
                 </div>
-              </div>
+              </Section>
             )}
-
-            {/* Journey stats */}
-            <div style={{ background: 'white', borderRadius: 16, padding: '18px 20px', border: '1px solid #ede4d4', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-              <p style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c13e2a', marginBottom: 16 }}>Your Journey</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12, textAlign: 'center' }}>
-                {([
-                  { label: 'Total', value: prospects.length, color: '#1a1410' },
-                  { label: 'Active', value: prospects.filter(p => p.stage !== 'rejected' && p.stage !== 'on_hold').length, color: '#c13e2a' },
-                  { label: 'On Hold', value: prospects.filter(p => p.stage === 'on_hold').length, color: '#b8892b' },
-                  { label: 'Interested', value: prospects.filter(p => p.stage === 'interested').length, color: '#2D6B4F' },
-                ] as { label: string; value: number; color: string }[]).map(({ label, value, color }) => (
-                  <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <span style={{ fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '2rem', fontWeight: 800, color, lineHeight: 1 }}>{value}</span>
-                    <span style={{ fontSize: '0.65rem', color: '#9b8e7e', fontWeight: 600, letterSpacing: '0.06em' }}>{label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
 
             {/* Mummy Mode — family access */}
             {canUseFamilySharing(profile) && user && (
@@ -1611,7 +1569,6 @@ export default function DashboardPage() {
               />
             )}
 
-            {/* Plan status */}
             <PlanCard
               isPaid={profile.isPaid}
               paidAt={profile.paidAt}
@@ -1619,22 +1576,12 @@ export default function DashboardPage() {
               onUpgradeSuccess={refreshProfile}
             />
 
-            <Link href="/profile" style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: 'white', borderRadius: 14, padding: '16px 20px',
-              border: '1px solid #ede4d4', textDecoration: 'none',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(193,62,42,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#c13e2a"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm17.71-10.21a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg>
-                </div>
-                <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#1a1410' }}>Edit Profile & Preferences</span>
-              </div>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="#c13e2a"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
-            </Link>
+            <Section title="Account">
+              <LinkRow href="/profile">Edit profile &amp; preferences</LinkRow>
+              <div style={{ height: 1, background: '#f0e9dc' }} />
+              <LinkRow onClick={runSignOut}>{signingOut ? 'Signing out…' : 'Sign out'}</LinkRow>
+            </Section>
 
-            <SignOutButton variant="card" />
           </div>
         )}
 

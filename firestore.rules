@@ -73,6 +73,10 @@ service cloud.firestore {
       return id.split('__')[0];
     }
 
+    function viewerOf(id) {
+      return id.split('__')[1];
+    }
+
     // ── Invites ──────────────────────────────────────────────────────────────
     // The document id is a 32-char random code delivered out of band (WhatsApp).
     // The code IS the secret, so `get` is open — the invitee has to read who
@@ -105,7 +109,13 @@ service cloud.firestore {
 
     // ── Links (an accepted invitation) ───────────────────────────────────────
     match /familyLinks/{linkId} {
-      allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid
+      // `get` is derived from the id, never from resource.data: claimInvite
+      // probes for a link that may not exist, and a null resource would make the
+      // condition error out — a permission-denied where the honest answer is
+      // "not found". `list` stays resource-based; a query has real documents.
+      allow get: if signedIn() && (ownerOf(linkId) == request.auth.uid
+                                || viewerOf(linkId) == request.auth.uid);
+      allow list: if signedIn() && (resource.data.ownerUid == request.auth.uid
                                  || resource.data.viewerUid == request.auth.uid);
 
       // Creatable only by the invitee, only against an invite they have already
@@ -140,7 +150,16 @@ service cloud.firestore {
 
     // ── The sanitised snapshots ──────────────────────────────────────────────
     match /sharedProspects/{shareId} {
-      allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid
+      // `get` is derived from the id: reading a mirror that does not exist yet
+      // is routine — the share sheet does it every time it opens on an unshared
+      // rishta — and a resource.data check errors on the null document and
+      // denies, instead of answering "not found".
+      allow get: if signedIn() && (ownerOf(shareId) == request.auth.uid
+                                || isLinked(ownerOf(shareId)));
+      // `list` reads the stored ownerUid instead: a query returns real
+      // documents, and the id-derived form does not hold up under query
+      // evaluation.
+      allow list: if signedIn() && (resource.data.ownerUid == request.auth.uid
                                  || isLinked(resource.data.ownerUid));
 
       // Only the owner named in the id may write, and they cannot write a

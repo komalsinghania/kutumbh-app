@@ -34,6 +34,22 @@ function bad(name, extra) { fail++; console.log('  FAIL  ' + name + (extra ? ' -
 async function allowed(name, fn) {
   try { await fn(); ok(name); } catch (e) { bad(name, 'expected allowed, got ' + (e.code || e.message)); }
 }
+/**
+ * Assert a read of a MISSING document succeeds — the rules must answer "not
+ * found", not "permission denied".
+ *
+ * Rules that lean on `resource.data` get this wrong: on a document that does
+ * not exist `resource` is null, the condition errors, and the read is refused.
+ * That shipped once already, and broke the share sheet on first open.
+ */
+async function allowedMissing(name, fn) {
+  try {
+    const snap = await fn();
+    if (snap.exists()) { bad(name, 'document unexpectedly exists'); return; }
+    ok(name);
+  } catch (e) { bad(name, 'expected allowed-but-missing, got ' + (e.code || e.message)); }
+}
+
 /** Assert an operation is rejected by the rules. */
 async function denied(name, fn) {
   try { await fn(); bad(name, 'expected DENIED, but it succeeded'); }
@@ -118,6 +134,23 @@ await denied('mummy CANNOT read the owner flags', () =>
   getDocs(collection(mummy.db, 'users', O.uid, 'prospects', PROSPECT, 'flags')));
 await denied('mummy CANNOT read the owner activity log', () =>
   getDocs(collection(mummy.db, 'users', O.uid, 'activityLog')));
+
+console.log('\n-- Reads of documents that do not exist -----------------------');
+// The share sheet reads the mirror for a rishta that has never been shared, and
+// claimInvite probes for a link that may not exist. Both must come back empty
+// rather than denied, or the feature fails on its very first use.
+await allowedMissing('owner reads a mirror that does not exist yet', () =>
+  getDoc(doc(owner.db, 'sharedProspects', O.uid + '__never-shared')));
+await allowedMissing('linked viewer reads a mirror that does not exist', () =>
+  getDoc(doc(mummy.db, 'sharedProspects', O.uid + '__never-shared')));
+await denied('stranger still cannot read a non-existent mirror', () =>
+  getDoc(doc(stranger.db, 'sharedProspects', O.uid + '__never-shared')));
+await allowedMissing('owner reads a link that does not exist', () =>
+  getDoc(doc(owner.db, 'familyLinks', O.uid + '__nobody')));
+await allowedMissing('viewer probes her own link before it exists', () =>
+  getDoc(doc(mummy.db, 'familyLinks', S.uid + '__' + M.uid)));
+await denied('viewer cannot probe a link that is not hers', () =>
+  getDoc(doc(mummy.db, 'familyLinks', O.uid + '__' + S.uid)));
 
 console.log('\n-- Sharing one rishta ----------------------------------------');
 await allowed('owner writes the sanitised mirror', () =>
