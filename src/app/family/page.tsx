@@ -2,9 +2,17 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // The shortlist, as the family sees it.
 //
-// One list. No tabs, no filters, no search, no infinite scroll — the whole
-// surface is this page and the detail page behind each card. Every number
-// carries a word, because "26/36" on its own means nothing to the reader.
+// One list. No tabs, no filters, no search — this page and the detail page
+// behind each card are the whole surface.
+//
+// Layout notes, because the first pass got these wrong:
+//  • The card puts the kundli score on the same baseline as the name, on the
+//    right. Previously the text column stopped halfway and left a dead gap
+//    exactly where the eye goes looking for the score.
+//  • The verdict strip carries real colour weight. At a 10% tint it read as
+//    disabled — the opposite of "she has answered".
+//  • Account actions sit in a bordered block. Grey text floating at the bottom
+//    of a page reads as unfinished.
 // ─────────────────────────────────────────────────────────────────────────────
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -21,12 +29,15 @@ import { FAMILY_COPY, familyStageLabel, gunaVerdictWord } from '@/lib/family-cop
 import { useFamilyLang, FamilyHeader, FamilyPage } from '@/components/family/FamilyShell';
 import { track } from '@/lib/analytics';
 import { useSignOut } from '@/components/SignOutButton';
+import {
+  C, BODY, title, heading, meta, faint, card, numeral, btnQuiet,
+} from '@/components/ui';
 
 function scoreColor(score: number): string {
-  if (score >= 28) return '#2D6B4F';
+  if (score >= 28) return C.success;
   if (score >= 21) return '#7a8b3f';
-  if (score >= 18) return '#b8892b';
-  return '#8B2A2A';
+  if (score >= 18) return C.gold;
+  return C.danger;
 }
 
 /** One card per rishta, with her own verdict on it if she has left one. */
@@ -51,80 +62,79 @@ function RishtaCard({ share, lang, mine }: {
   }, [share.id, share.photoCount]);
 
   const info = mine ? VERDICT_INFO[mine.verdict] : null;
+  const hasScore = share.gunaScore !== null && share.gunaScore !== undefined;
+  const sc = hasScore ? scoreColor(share.gunaScore as number) : C.faint;
+  // Age rides in the meta line rather than the heading: on a phone
+  // "Rohan Agarwal, 29" wraps and strands the age on a line of its own.
+  const line = [share.age ? `${share.age} yrs` : null, share.profession, share.city, share.gotra]
+    .filter(Boolean).join(' · ');
 
   return (
-    <Link
-      href={`/family/${share.id}`}
-      style={{
-        display: 'block', textDecoration: 'none',
-        background: 'white', borderRadius: 20, overflow: 'hidden',
-        border: '1px solid #e8dece', boxShadow: '0 3px 16px rgba(0,0,0,0.06)',
-      }}
-    >
-      <div style={{ display: 'flex', gap: 14, padding: 16 }}>
+    <Link href={`/family/${share.id}`} style={{ ...card, display: 'block', textDecoration: 'none' }}>
+      <div style={{ display: 'flex', gap: 16, padding: 16, alignItems: 'flex-start' }}>
+        {/* Portrait */}
         <div style={{
-          width: 88, height: 108, borderRadius: 14, flexShrink: 0, overflow: 'hidden',
-          background: 'linear-gradient(145deg, #4a1a0d, #2a0f08)',
+          width: 76, height: 92, borderRadius: 8, flexShrink: 0, overflow: 'hidden',
+          background: C.cardQuiet, border: `1px solid ${C.line}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           {photo ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            <span style={{
-              fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '2rem',
-              fontWeight: 700, color: '#f3e7d3',
-            }}>{share.name[0]}</span>
+            <span style={{ ...numeral, fontSize: '1.5rem', color: C.faint }}>{share.name[0]}</span>
           )}
         </div>
 
+        {/* Content fills the remaining width; the score takes the right edge. */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h2 style={{
-            fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.3rem',
-            fontWeight: 700, color: '#1a1410', margin: 0, lineHeight: 1.25,
-          }}>
-            {share.name}{share.age ? `, ${share.age}` : ''}
-          </h2>
-          <p style={{ fontSize: '0.95rem', color: '#6b5e4d', margin: '5px 0 0', lineHeight: 1.45 }}>
-            {[share.profession, share.city, share.gotra].filter(Boolean).join(' · ')}
-          </p>
-
-          {share.gunaScore !== null && share.gunaScore !== undefined && (
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 9,
-              padding: '5px 11px', borderRadius: 999,
-              background: `${scoreColor(share.gunaScore)}15`,
-              border: `1px solid ${scoreColor(share.gunaScore)}44`,
-            }}>
-              <span style={{ fontSize: '0.9rem', fontWeight: 800, color: scoreColor(share.gunaScore) }}>
-                {share.gunaScore}/36
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+            <h2 style={{ ...heading, flex: 1, minWidth: 0 }}>{share.name}</h2>
+            {hasScore && (
+              <span style={{
+                ...numeral, fontSize: '1.05rem', color: sc, flexShrink: 0,
+                display: 'flex', alignItems: 'baseline', gap: 3,
+              }}>
+                {share.gunaScore}
+                <span style={{ fontFamily: BODY, fontSize: '0.72rem', fontWeight: 500, color: C.faint }}>/36</span>
               </span>
-              <span style={{ fontSize: '0.85rem', color: scoreColor(share.gunaScore) }}>
+            )}
+          </div>
+
+          {line && <p style={{ ...meta, marginTop: 5 }}>{line}</p>}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 11, flexWrap: 'wrap' }}>
+            <span style={{ ...faint, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <span aria-hidden style={{
+                width: 5, height: 5, borderRadius: '50%', background: C.gold, flexShrink: 0,
+              }} />
+              {familyStageLabel(share.stage, lang)}
+            </span>
+            {hasScore && (
+              <span style={{ ...faint, color: sc, fontWeight: 600 }}>
                 {gunaVerdictWord(share.gunaScore, lang)}
               </span>
-            </div>
-          )}
-
-          <p style={{ fontSize: '0.9rem', color: '#9b8e7e', margin: '9px 0 0' }}>
-            {familyStageLabel(share.stage, lang)}
-          </p>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Her verdict — or the ask. */}
       <div style={{
-        padding: '13px 16px',
-        borderTop: '1px solid #f2ece1',
-        background: info ? info.bg : 'rgba(193,62,42,0.05)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        padding: '12px 16px',
+        borderTop: `1px solid ${C.lineSoft}`,
+        background: info ? info.bg : C.cardQuiet,
       }}>
         <span style={{
-          fontSize: '0.95rem', fontWeight: 700,
-          color: info ? info.color : '#c13e2a',
+          fontFamily: BODY, fontSize: '0.88rem', fontWeight: 600,
+          color: info ? info.color : C.sindoor,
+          display: 'inline-flex', alignItems: 'center', gap: 8,
         }}>
-          {info ? `${t.yourVerdict}: ${info.icon} ${lang === 'hi' ? info.hi : info.en}` : t.verdictPrompt}
+          {info && <span aria-hidden>{info.icon}</span>}
+          {info ? `${t.yourVerdict}: ${lang === 'hi' ? info.hi : info.en}` : t.verdictPrompt}
         </span>
-        <svg width="19" height="19" viewBox="0 0 24 24" fill={info ? info.color : '#c13e2a'}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill={info ? info.color : C.sindoor} aria-hidden>
           <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
         </svg>
       </div>
@@ -204,8 +214,8 @@ export default function FamilyHomePage() {
       <>
         <FamilyHeader lang={lang} onLang={setLang} />
         <FamilyPage>
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '70px 0' }}>
-            <div className="gold-spinner" style={{ width: 30, height: 30 }} />
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
+            <div className="gold-spinner" style={{ width: 28, height: 28 }} />
           </div>
         </FamilyPage>
       </>
@@ -216,70 +226,52 @@ export default function FamilyHomePage() {
     <>
       <FamilyHeader lang={lang} onLang={setLang} />
       <FamilyPage>
-        {/* Whose shortlist — only shown when she has access to more than one. */}
+
+        {/* Whose shortlist — only when she has access to more than one. */}
         {links.length > 1 && (
-          <div style={{ marginBottom: 16 }}>
-            <p style={{ fontSize: '0.85rem', color: '#6b5e4d', margin: '0 0 8px' }}>{t.switchOwner}</p>
+          <div style={{ marginBottom: 24 }}>
+            <p style={{ ...faint, marginBottom: 8 }}>{t.switchOwner}</p>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {links.map(l => (
-                <button
-                  key={l.id}
-                  onClick={() => setActiveOwner(l.ownerUid)}
-                  style={{
-                    minHeight: 46, padding: '0 18px', borderRadius: 999, cursor: 'pointer',
-                    fontSize: '0.95rem', fontWeight: 700,
-                    border: `1.5px solid ${l.ownerUid === activeOwner ? '#c13e2a' : '#e2d5bf'}`,
-                    background: l.ownerUid === activeOwner ? 'rgba(193,62,42,0.1)' : 'white',
-                    color: l.ownerUid === activeOwner ? '#c13e2a' : '#6b5e4d',
-                  }}
-                >
-                  {l.ownerName.split(' ')[0]}
-                </button>
-              ))}
+              {links.map(l => {
+                const on = l.ownerUid === activeOwner;
+                return (
+                  <button
+                    key={l.id}
+                    onClick={() => setActiveOwner(l.ownerUid)}
+                    style={{
+                      fontFamily: BODY, fontSize: '0.88rem', fontWeight: 600,
+                      minHeight: 42, padding: '0 16px', borderRadius: 8, cursor: 'pointer',
+                      border: `1px solid ${on ? C.sindoor : C.line}`,
+                      background: on ? C.sindoorSoft : C.card,
+                      color: on ? C.sindoor : C.muted,
+                    }}
+                  >
+                    {l.ownerName.split(' ')[0]}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
-        <h1 style={{
-          fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.7rem',
-          fontWeight: 700, color: '#1a1410', margin: '0 0 4px', lineHeight: 1.2,
-        }}>
-          {t.listTitle(ownerFirstName)}
-        </h1>
-        <p style={{ fontSize: '0.95rem', color: '#9b8e7e', margin: '0 0 16px' }}>
-          {t.rishtaCount(shares.length)}
-        </p>
-
-        {/* The expectation-setter. Prevents "why can't I see the other one?" */}
-        <div style={{
-          display: 'flex', gap: 10, alignItems: 'flex-start',
-          background: 'rgba(45,107,79,0.07)', border: '1px solid rgba(45,107,79,0.18)',
-          borderRadius: 14, padding: '13px 15px', marginBottom: 18,
-        }}>
-          <span style={{ fontSize: '1rem', lineHeight: 1.4 }}>🔒</span>
-          <p style={{ fontSize: '0.9rem', color: '#3d5a4a', margin: 0, lineHeight: 1.55 }}>
-            {t.trustBanner(ownerFirstName)}
+        {/* Title block. The trust line rides with the count instead of sitting
+            in its own filled box competing with the rishtas. */}
+        <header style={{ marginBottom: 24 }}>
+          <h1 style={title}>{t.listTitle(ownerFirstName)}</h1>
+          <p style={{ ...meta, marginTop: 7 }}>
+            {t.rishtaCount(shares.length)}
+            <span aria-hidden style={{ color: C.line, padding: '0 8px' }}>·</span>
+            <span style={{ color: C.faint }}>{t.trustBanner(ownerFirstName)}</span>
           </p>
-        </div>
+        </header>
 
         {shares.length === 0 ? (
-          <div style={{
-            background: 'white', borderRadius: 20, border: '1px solid #e8dece',
-            padding: '38px 24px', textAlign: 'center',
-          }}>
-            <div style={{ fontSize: '2.2rem', lineHeight: 1 }}>🫖</div>
-            <p style={{
-              fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.2rem',
-              fontWeight: 700, color: '#1a1410', margin: '14px 0 8px', lineHeight: 1.35,
-            }}>
-              {t.listEmpty(ownerFirstName)}
-            </p>
-            <p style={{ fontSize: '0.95rem', color: '#6b5e4d', margin: 0, lineHeight: 1.6 }}>
-              {t.listEmptyHelp}
-            </p>
+          <div style={{ ...card, padding: '48px 24px', textAlign: 'center' }}>
+            <h2 style={{ ...heading, marginBottom: 8 }}>{t.listEmpty(ownerFirstName)}</h2>
+            <p style={{ ...meta, maxWidth: '38ch', margin: '0 auto' }}>{t.listEmptyHelp}</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {user && shares.map(s => (
               <RishtaCard
                 key={s.id}
@@ -291,31 +283,30 @@ export default function FamilyHomePage() {
           </div>
         )}
 
-        {/* Account actions, deliberately quiet and at the very bottom. */}
-        <div style={{
-          marginTop: 30, paddingTop: 18, borderTop: '1px solid #e8dece',
-          display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start',
-        }}>
+        {/* Account, in a block of its own so it reads as deliberate. */}
+        <section style={{ ...card, marginTop: 36 }}>
           <button
             onClick={runSignOut}
             disabled={signingOut}
             style={{
-              border: 'none', background: 'none', cursor: 'pointer', padding: '10px 0',
-              fontSize: '0.9rem', color: '#6b5e4d',
+              ...btnQuiet, width: '100%', textAlign: 'left', padding: '15px 16px',
+              color: C.ink, fontSize: '0.9rem', fontWeight: 500,
             }}
           >
-            {t.signOut}
+            {signingOut ? '…' : t.signOut}
           </button>
+          <div style={{ height: 1, background: C.lineSoft }} />
           <button
             onClick={leave}
             style={{
-              border: 'none', background: 'none', cursor: 'pointer', padding: '10px 0',
-              fontSize: '0.9rem', color: '#9b8e7e',
+              ...btnQuiet, width: '100%', textAlign: 'left', padding: '15px 16px',
+              color: C.muted, fontSize: '0.9rem',
             }}
           >
             {t.removeAccess}
           </button>
-        </div>
+        </section>
+
       </FamilyPage>
     </>
   );

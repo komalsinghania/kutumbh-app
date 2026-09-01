@@ -5,6 +5,10 @@
 // Invites go out over WhatsApp, not email: there is no mail infrastructure in
 // this app, and WhatsApp is where this conversation actually happens anyway.
 // The link is single-use, expires in a week, and can be revoked from here.
+//
+// Styling follows the shared system in components/ui.ts. Notably the primary
+// action is no longer a full-width sindoor slab — on a page of quiet cards that
+// read as a siren, and it competed with the actual content.
 // ─────────────────────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -15,6 +19,9 @@ import {
   subscribeToFamilyMembers, subscribeToPendingInvites, MAX_FAMILY_MEMBERS,
 } from '@/lib/family-share';
 import { track } from '@/lib/analytics';
+import {
+  C, BODY, heading, label, meta, faint, card, btnPrimary, btnSecondary,
+} from '@/components/ui';
 
 function joinUrl(code: string): string {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -26,7 +33,7 @@ function inviteMessage(ownerName: string, relation: string, url: string): string
 }
 
 function timeAgo(ts?: number): string {
-  if (!ts) return 'never';
+  if (!ts) return 'not yet';
   const d = Math.floor((Date.now() - ts) / 86400000);
   if (d === 0) return 'today';
   if (d === 1) return 'yesterday';
@@ -34,9 +41,8 @@ function timeAgo(ts?: number): string {
   return `${Math.floor(d / 30)} mo ago`;
 }
 
-const CARD: React.CSSProperties = {
-  background: 'white', borderRadius: 16, border: '1px solid #ede4d4',
-  boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+const ROW: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px',
 };
 
 export default function FamilyMembersCard({
@@ -66,6 +72,7 @@ export default function FamilyMembersCard({
   }, [autoOpenInvite, onInviteHandled]);
 
   const atCapacity = members.length + invites.length >= MAX_FAMILY_MEMBERS;
+  const isEmpty = members.length === 0 && invites.length === 0 && !fresh;
 
   const makeInvite = async (relation: RelationLabel) => {
     if (atCapacity) {
@@ -121,198 +128,177 @@ export default function FamilyMembersCard({
   };
 
   return (
-    <div style={{ ...CARD, padding: '18px 20px 20px' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
-        <p style={{
-          fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.14em',
-          textTransform: 'uppercase', color: '#c13e2a', margin: 0,
-        }}>
-          Mummy Mode
-        </p>
+    <section>
+      <div style={{
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+        gap: 12, marginBottom: 10,
+      }}>
+        <h2 style={label}>Mummy Mode</h2>
         {members.length > 0 && (
-          <span style={{ fontSize: '0.7rem', color: '#9b8e7e' }}>
+          <span style={faint}>
             {sharedCount === 0
-              ? 'No rishta shared yet'
+              ? 'Nothing shared yet'
               : `${sharedCount} rishta${sharedCount === 1 ? '' : 's'} shared`}
           </span>
         )}
       </div>
 
-      {members.length === 0 && invites.length === 0 && !fresh ? (
-        /* ── Empty state ── */
-        <div style={{ marginTop: 12 }}>
-          <p style={{
-            fontFamily: 'var(--font-fraunces, Fraunces, serif)', fontSize: '1.1rem',
-            fontWeight: 700, color: '#1a1410', margin: 0,
-          }}>
-            Mummy poochti rehti hai?
-          </p>
-          <p style={{ fontSize: '0.85rem', color: '#6b5e4d', lineHeight: 1.6, margin: '6px 0 0' }}>
-            Give her a login of her own. She sees the rishtas you choose — biodata, photos,
-            kundli score, family details — and can leave her verdict. Your notes, flags,
-            call logs and ratings stay yours.
-          </p>
-        </div>
-      ) : (
-        /* ── Member list ── */
-        <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {members.map(m => (
-            <div key={m.id} style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              background: '#f9f6f0', borderRadius: 12, padding: '12px 14px',
-            }}>
-              <div style={{
-                width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-                background: 'rgba(193,62,42,0.1)', color: '#c13e2a',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, fontSize: '0.85rem',
+      <div style={card}>
+
+        {isEmpty ? (
+          <div style={{ padding: 18 }}>
+            <h3 style={heading}>Mummy poochti rehti hai?</h3>
+            <p style={{ ...meta, marginTop: 6, maxWidth: '52ch' }}>
+              Give her a login of her own. She sees the rishtas you choose — biodata, photos,
+              kundli score, family details — and can leave her verdict. Your notes, flags,
+              call logs and ratings stay yours.
+            </p>
+          </div>
+        ) : (
+          <>
+            {members.map((m, i) => (
+              <div key={m.id} style={{
+                ...ROW,
+                borderTop: i === 0 ? 'none' : `1px solid ${C.lineSoft}`,
               }}>
-                {m.viewerName.trim()[0]?.toUpperCase() ?? '?'}
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                  background: C.sindoorSoft, color: C.sindoor,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: BODY, fontWeight: 600, fontSize: '0.82rem',
+                }}>
+                  {m.viewerName.trim()[0]?.toUpperCase() ?? '?'}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{
+                    fontFamily: BODY, fontSize: '0.92rem', fontWeight: 600, color: C.ink, margin: 0,
+                  }}>
+                    {m.relationLabel}
+                    <span style={{ fontWeight: 400, color: C.muted }}> · {m.viewerName}</span>
+                  </p>
+                  <p style={{ ...faint, marginTop: 2 }}>Last opened {timeAgo(m.lastSeenAt)}</p>
+                </div>
+                <button
+                  onClick={() => drop(m)}
+                  style={{
+                    fontFamily: BODY, fontSize: '0.82rem', fontWeight: 500, color: C.muted,
+                    background: 'none', border: 0, padding: '6px 2px', cursor: 'pointer',
+                  }}
+                >
+                  Remove
+                </button>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1410', margin: 0 }}>
-                  {m.relationLabel}
-                  <span style={{ fontWeight: 400, color: '#6b5e4d' }}> · {m.viewerName}</span>
-                </p>
-                <p style={{ fontSize: '0.72rem', color: '#9b8e7e', margin: '2px 0 0' }}>
-                  Last opened {timeAgo(m.lastSeenAt)}
-                </p>
+            ))}
+
+            {invites.map(i => (
+              <div key={i.code} style={{ ...ROW, borderTop: `1px solid ${C.lineSoft}` }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                  background: C.cardQuiet, border: `1px dashed ${C.line}`,
+                }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{
+                    fontFamily: BODY, fontSize: '0.92rem', fontWeight: 600, color: C.ink, margin: 0,
+                  }}>
+                    {i.relationLabel}
+                  </p>
+                  <p style={{ ...faint, marginTop: 2 }}>Invite sent — not opened yet</p>
+                </div>
+                <button
+                  onClick={() => shareOnWhatsApp(i.code, i.relationLabel)}
+                  style={{
+                    fontFamily: BODY, fontSize: '0.82rem', fontWeight: 600, color: C.success,
+                    background: 'none', border: 0, padding: '6px 8px', cursor: 'pointer',
+                  }}
+                >
+                  Resend
+                </button>
+                <button
+                  onClick={() => cancelInvite(i.code)}
+                  style={{
+                    fontFamily: BODY, fontSize: '0.82rem', fontWeight: 500, color: C.muted,
+                    background: 'none', border: 0, padding: '6px 2px', cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
               </div>
-              <button
-                onClick={() => drop(m)}
-                style={{
-                  border: 'none', background: 'none', cursor: 'pointer', padding: '6px 4px',
-                  fontSize: '0.75rem', fontWeight: 600, color: '#8B2A2A',
-                }}
-              >
-                Remove
+            ))}
+          </>
+        )}
+
+        {/* Freshly created invite — the one moment that deserves emphasis. */}
+        {fresh && (
+          <div style={{
+            padding: 18, borderTop: `1px solid ${C.lineSoft}`, background: C.cardQuiet,
+          }}>
+            <p style={{ fontFamily: BODY, fontSize: '0.92rem', fontWeight: 600, color: C.ink, margin: 0 }}>
+              Invite ready for {fresh.relation}
+            </p>
+            <p style={{ ...faint, margin: '4px 0 14px' }}>
+              Works once, expires in 7 days.
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={() => shareOnWhatsApp(fresh.code, fresh.relation)} style={btnPrimary}>
+                Send on WhatsApp
+              </button>
+              <button onClick={() => copyLink(fresh.code)} style={btnSecondary}>
+                Copy link
               </button>
             </div>
-          ))}
+          </div>
+        )}
 
-          {invites.map(i => (
-            <div key={i.code} style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              background: 'rgba(184,137,43,0.07)', border: '1px dashed rgba(184,137,43,0.4)',
-              borderRadius: 12, padding: '12px 14px',
-            }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1a1410', margin: 0 }}>
-                  {i.relationLabel} · invite sent
-                </p>
-                <p style={{ fontSize: '0.72rem', color: '#9b8e7e', margin: '2px 0 0' }}>
-                  Waiting for them to open the link
-                </p>
+        {/* Relation picker / invite action */}
+        <div style={{ padding: 18, borderTop: `1px solid ${C.lineSoft}` }}>
+          {picking ? (
+            <>
+              <p style={{ ...meta, marginBottom: 10 }}>Who are you inviting?</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {RELATION_LABELS.map(r => (
+                  <button
+                    key={r}
+                    disabled={creating}
+                    onClick={() => makeInvite(r)}
+                    style={{
+                      ...btnSecondary,
+                      padding: '9px 14px',
+                      fontSize: '0.85rem',
+                      cursor: creating ? 'wait' : 'pointer',
+                    }}
+                  >
+                    {r}
+                  </button>
+                ))}
               </div>
               <button
-                onClick={() => shareOnWhatsApp(i.code, i.relationLabel)}
+                onClick={() => setPicking(false)}
                 style={{
-                  border: 'none', background: 'none', cursor: 'pointer', padding: '6px 4px',
-                  fontSize: '0.75rem', fontWeight: 700, color: '#2D6B4F',
-                }}
-              >
-                Resend
-              </button>
-              <button
-                onClick={() => cancelInvite(i.code)}
-                style={{
-                  border: 'none', background: 'none', cursor: 'pointer', padding: '6px 4px',
-                  fontSize: '0.75rem', fontWeight: 600, color: '#8B2A2A',
+                  fontFamily: BODY, fontSize: '0.84rem', color: C.faint,
+                  background: 'none', border: 0, padding: '12px 0 0', cursor: 'pointer',
                 }}
               >
                 Cancel
               </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── Freshly created invite: send it ── */}
-      {fresh && (
-        <div style={{
-          marginTop: 14, background: 'rgba(45,107,79,0.06)',
-          border: '1px solid rgba(45,107,79,0.22)', borderRadius: 14, padding: '16px 16px 18px',
-        }}>
-          <p style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1a1410', margin: 0 }}>
-            Invite ready for {fresh.relation}
-          </p>
-          <p style={{ fontSize: '0.78rem', color: '#6b5e4d', margin: '4px 0 12px', lineHeight: 1.5 }}>
-            Send it to her. The link works once and expires in 7 days.
-          </p>
-          <div style={{ display: 'flex', gap: 8 }}>
+            </>
+          ) : (
             <button
-              onClick={() => shareOnWhatsApp(fresh.code, fresh.relation)}
+              onClick={() => setPicking(true)}
+              disabled={atCapacity}
               style={{
-                flex: 1, padding: '13px 16px', borderRadius: 12, border: 'none',
-                cursor: 'pointer', color: 'white', fontSize: '0.88rem', fontWeight: 700,
-                background: '#25D366', boxShadow: '0 4px 14px rgba(37,211,102,0.3)',
+                ...(isEmpty ? btnPrimary : btnSecondary),
+                opacity: atCapacity ? 0.5 : 1,
+                cursor: atCapacity ? 'not-allowed' : 'pointer',
               }}
             >
-              Send on WhatsApp
+              {atCapacity
+                ? `Limit reached (${MAX_FAMILY_MEMBERS})`
+                : members.length === 0 ? 'Invite mummy' : 'Invite someone else'}
             </button>
-            <button
-              onClick={() => copyLink(fresh.code)}
-              style={{
-                padding: '13px 16px', borderRadius: 12, cursor: 'pointer',
-                border: '1.5px solid #d6c9b0', background: 'white',
-                fontSize: '0.88rem', fontWeight: 700, color: '#1a1410',
-              }}
-            >
-              Copy link
-            </button>
-          </div>
+          )}
         </div>
-      )}
 
-      {/* ── Relation picker ── */}
-      {picking ? (
-        <div style={{ marginTop: 14 }}>
-          <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#6b5e4d', margin: '0 0 10px' }}>
-            Who are you inviting?
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {RELATION_LABELS.map(r => (
-              <button
-                key={r}
-                disabled={creating}
-                onClick={() => makeInvite(r)}
-                style={{
-                  padding: '10px 16px', borderRadius: 999, cursor: creating ? 'wait' : 'pointer',
-                  border: '1.5px solid #e2d5bf', background: 'white',
-                  fontSize: '0.85rem', fontWeight: 600, color: '#1a1410',
-                }}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => setPicking(false)}
-            style={{
-              marginTop: 12, border: 'none', background: 'none', cursor: 'pointer',
-              fontSize: '0.8rem', color: '#9b8e7e', padding: 0,
-            }}
-          >
-            Cancel
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => setPicking(true)}
-          disabled={atCapacity}
-          style={{
-            width: '100%', marginTop: 16, padding: '14px 20px', borderRadius: 13,
-            border: 'none', cursor: atCapacity ? 'not-allowed' : 'pointer',
-            color: 'white', fontSize: '0.9rem', fontWeight: 700,
-            background: atCapacity ? '#c9bda9' : 'linear-gradient(135deg, #d44d36, #b83521)',
-            boxShadow: atCapacity ? 'none' : '0 5px 18px rgba(193,62,42,0.28)',
-          }}
-        >
-          {atCapacity
-            ? `Limit reached (${MAX_FAMILY_MEMBERS})`
-            : members.length === 0 ? 'Invite mummy' : 'Invite someone else'}
-        </button>
-      )}
-    </div>
+      </div>
+    </section>
   );
 }
