@@ -25,8 +25,12 @@ interface Args {
   prospects: Prospect[];
   shares: SharedProspect[];
   members: FamilyLink[];
-  /** False until both subscriptions have delivered at least once — reconciling
-   *  against empty arrays would delete every share on first paint. */
+  /**
+   * False until the prospects, shares AND members subscriptions have each
+   * delivered at least once. All three matter: if shares arrive before
+   * prospects, every share looks like an orphan and step 2 below deletes the
+   * lot — silently un-sharing everything the family could see.
+   */
   ready: boolean;
 }
 
@@ -40,6 +44,13 @@ export function useShareSync({ uid, ownerName, prospects, shares, members, ready
 
     const run = async () => {
       const byProspectId = new Map(prospects.map(p => [p.id, p]));
+
+      // Belt and braces on top of `ready`: never interpret an empty prospect
+      // list as “every rishta was deleted” while shares still exist.
+      if (prospects.length === 0 && shares.length > 0) {
+        console.warn('[share-sync] prospects empty while shares exist — skipping');
+        return;
+      }
 
       // 1. No family left → nothing should be shared with anyone.
       if (members.length === 0) {
@@ -72,13 +83,15 @@ export function useShareSync({ uid, ownerName, prospects, shares, members, ready
           console.error('[share-sync] syncShare failed', err));
       }
 
-      // 4. Repair: a rishta flagged as shared whose copy no longer exists
-      //    (e.g. a half-finished unshare). Clear the flag so the UI is honest.
+      // 4. Repair the isShared flag in BOTH directions. It drives the share
+      //    chip on the rishta page and the family-sync check there, so a flag
+      //    that disagrees with reality is not cosmetic: a false negative means
+      //    edits silently stop reaching the family.
       const sharedIds = new Set(shares.map(s => s.prospectId));
       for (const p of prospects) {
-        if (p.isShared && !sharedIds.has(p.id)) {
-          await updateProspect(uid, p.id, { isShared: false }).catch(() => {});
-        }
+        const shared = sharedIds.has(p.id);
+        if (!!p.isShared === shared) continue;
+        await updateProspect(uid, p.id, { isShared: shared }).catch(() => {});
       }
     };
 

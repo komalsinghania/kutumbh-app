@@ -225,6 +225,7 @@ export default function DashboardPage() {
   const [familyMembers, setFamilyMembers] = useState<FamilyLink[]>([]);
   const [familyVerdicts, setFamilyVerdicts] = useState<FamilyVerdictWithShare[]>([]);
   const [familyReady, setFamilyReady] = useState(false);
+  const [prospectsReady, setProspectsReady] = useState(false);
   const [openInvite, setOpenInvite] = useState(false);
   const unseenVerdicts = familyVerdicts.filter(
     v => v.updatedAt > (profile?.familyVerdictsSeenAt ?? 0),
@@ -293,7 +294,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!user) return;
-    const u1 = subscribeToProspects(user.uid, setProspects);
+    const u1 = subscribeToProspects(user.uid, p => { setProspects(p); setProspectsReady(true); });
     return () => { u1(); };
   }, [user]);
 
@@ -315,7 +316,7 @@ export default function DashboardPage() {
     prospects,
     shares,
     members: familyMembers,
-    ready: familyReady,
+    ready: familyReady && prospectsReady,
   });
 
   // Fold new verdicts into the activity feed. The family member who left the

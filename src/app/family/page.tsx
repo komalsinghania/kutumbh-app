@@ -6,7 +6,7 @@
 // surface is this page and the detail page behind each card. Every number
 // carries a word, because "26/36" on its own means nothing to the reader.
 // ─────────────────────────────────────────────────────────────────────────────
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
@@ -165,13 +165,24 @@ export default function FamilyHomePage() {
     if (!activeOwner) return;
     setSharesReady(false);
     track('family_view_opened');
-    const link = links?.find(l => l.ownerUid === activeOwner);
-    if (link) touchLastSeen(link.id);
     // One collection-group subscription for every verdict on this shortlist,
     // rather than one per card.
     const u1 = subscribeToSharedProspects(activeOwner, s => { setShares(s); setSharesReady(true); });
     const u2 = subscribeToAllVerdicts(activeOwner, setVerdicts);
     return () => { u1(); u2(); };
+  }, [activeOwner]);
+
+  // Stamp "last opened" once per shortlist per visit. This MUST NOT depend
+  // on `links`: touchLastSeen writes lastSeenAt, the subscription above fires
+  // with a fresh array, and an effect watching `links` would stamp again — an
+  // unbounded write loop. The ref pins it to one write per owner.
+  const stampedOwner = useRef<string | null>(null);
+  useEffect(() => {
+    if (!activeOwner || !links || stampedOwner.current === activeOwner) return;
+    const link = links.find(l => l.ownerUid === activeOwner);
+    if (!link) return;
+    stampedOwner.current = activeOwner;
+    touchLastSeen(link.id);
   }, [activeOwner, links]);
 
   const link = links?.find(l => l.ownerUid === activeOwner) ?? null;

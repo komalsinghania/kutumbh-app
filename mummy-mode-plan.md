@@ -1,6 +1,31 @@
 # Mummy Mode — Implementation Plan
 
-Status: **built** (all six phases). `next build` and `tsc --noEmit` pass.
+Status: **built and verified** (all six phases). `next build` and `tsc --noEmit` pass.
+
+The security rules and the full owner → family → verdict flow have now been
+exercised against the Firebase emulators (Auth + Firestore), with the real
+`firestore.rules` enforcing every step:
+
+- `scripts/verify-family-rules.mjs` — **32 assertions, 0 failures**, covering the
+  negative cases that carry the promise (the family cannot reach the real
+  prospect doc, the flags, the call logs or the activity log; a stranger can
+  reach nothing; a removed member cannot restore access with the old invite).
+- A UI walkthrough of invite link → sign-in → name → shortlist → verdict, ending
+  with the verdict rendered on the owner's Decision tab.
+
+That live run found three defects a build could not:
+
+1. **Infinite write loop on `/family`.** `touchLastSeen` wrote `lastSeenAt`, the
+   `subscribeToMyAccess` snapshot fired, `links` changed identity, and the effect
+   holding `links` in its deps stamped again — unbounded writes, and the page
+   never rendered. Now stamped once per owner via a ref.
+2. **Reconciler data loss.** `useShareSync` gated on shares + members but not
+   prospects. If shares resolved first, every share looked like an orphan and was
+   deleted — silently un-sharing everything. Now gated on all three, plus a guard
+   against acting on an empty prospect list.
+3. **`isShared` repaired in one direction only.** A share could exist while the
+   flag read false, which hides the chip *and* makes the rishta page skip syncing
+   edits to the family. The repair is now bidirectional.
 
 **Before this works in production, two things must be deployed to Firebase —
 the app will fail with `permission-denied` until they are:**
@@ -9,9 +34,10 @@ the app will fail with `permission-denied` until they are:**
 npx firebase deploy --only firestore:rules,firestore:indexes
 ```
 
-The security rules could not be emulator-tested during implementation (the
-Firestore emulator needs Java, which is not installed on this machine), so
-§10's rules test suite is still worth running before this reaches real users.
+To run the emulators locally you need a JRE on PATH (the Firestore emulator is a
+Java process). Then `npx firebase emulators:start --only auth,firestore`, set
+`NEXT_PUBLIC_FIREBASE_EMULATOR=1` in `.env.local`, and the app talks to the local
+instances instead of the real project.
 
 Deviations from the plan as written below, all deliberate:
 
@@ -458,22 +484,37 @@ partial work can merge to main safely.
 
 ## 10. Testing
 
-There is no test infrastructure in the repo today. The rules are the one place
-where a mistake is catastrophic and un-noticeable, so:
+The rules are the one place where a mistake is catastrophic and un-noticeable,
+so they get a runnable check rather than a documented intention.
 
-- **Strongly recommended:** add `@firebase/rules-unit-testing` (dev dependency
-  only) with a focused suite. Minimum cases:
-  - a stranger cannot read any `sharedProspects` doc
-  - a linked viewer **cannot** read the owner's `users/{uid}/prospects/*`
-  - a viewer cannot write a verdict as another viewer
-  - a viewer cannot create a `familyLinks` doc without a claimed invite
-  - a revoked/expired invite cannot be claimed
-  - after link deletion, reads fail immediately
+**`scripts/verify-family-rules.mjs`** — 32 assertions against the emulators,
+through the real client SDK with real auth tokens. Needs a JRE on PATH:
+
+```bash
+npx firebase emulators:start --only auth,firestore
+node scripts/verify-family-rules.mjs
+```
+
+It uses the `firebase` package the app already depends on, so it adds nothing to
+`package.json`, and it never touches the real project. Covered:
+
+- a stranger can read no `sharedProspects` doc and cannot list the shortlist
+- a linked viewer **cannot** read the owner's `users/{uid}/prospects/*`, profile,
+  flags or activity log
+- a viewer cannot write a verdict as another viewer, or an invalid verdict value
+- a viewer cannot forge a `familyLinks` doc off someone else's claim
+- an invite cannot be claimed in another person's name
+- after removal: reads fail, verdicts fail, and the old invite cannot re-create
+  the link
+
+Still worth adding:
+
 - **Snapshot allowlist test:** feed a `Prospect` with every private field
   populated into `buildShareSnapshot()` and assert none appear in the output.
   This is the regression guard for future field additions.
-- **Manual QA:** run the whole flow on a real second Google account on a phone,
-  including revoke-while-she-has-the-page-open.
+- **Manual QA on a phone:** the flow has been walked in a desktop browser
+  against the emulators, but not on a real handset with a real Google account,
+  and not with revoke-while-she-has-the-page-open.
 
 ---
 
