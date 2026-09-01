@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import type { FamilyLink, FamilyVerdict, FamilyVerdictWithShare, SharedProspect } from '@/types/family';
 import { VERDICT_INFO } from '@/types/family';
@@ -20,6 +20,7 @@ import {
 import { FAMILY_COPY, familyStageLabel, gunaVerdictWord } from '@/lib/family-copy';
 import { useFamilyLang, FamilyHeader, FamilyPage } from '@/components/family/FamilyShell';
 import { track } from '@/lib/analytics';
+import { useSignOut } from '@/components/SignOutButton';
 
 function scoreColor(score: number): string {
   if (score >= 28) return '#2D6B4F';
@@ -135,6 +136,9 @@ export default function FamilyHomePage() {
   const router = useRouter();
   const [lang, setLang] = useFamilyLang();
   const t = FAMILY_COPY[lang];
+  // Shared with every other signed-in surface: analytics, toast, and a guard
+  // against a double tap firing two sign-outs.
+  const { runSignOut, signingOut } = useSignOut();
 
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
@@ -293,7 +297,8 @@ export default function FamilyHomePage() {
           display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start',
         }}>
           <button
-            onClick={() => signOut(auth).then(() => router.replace('/'))}
+            onClick={runSignOut}
+            disabled={signingOut}
             style={{
               border: 'none', background: 'none', cursor: 'pointer', padding: '10px 0',
               fontSize: '0.9rem', color: '#6b5e4d',

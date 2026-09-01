@@ -7,6 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Logo } from '@/components/Logo';
 import AuthModal from '@/components/AuthModal';
+import SignOutButton from '@/components/SignOutButton';
 import { track } from '@/lib/analytics';
 import { MARKETING_LINKS as LINKS } from '@/lib/marketing-links';
 import '@/app/landing.css';
@@ -90,7 +91,10 @@ export default function SiteHeader({ overHero = false }: { overHero?: boolean })
             </Link>
           ))}
           {loggedIn ? (
-            <button className="lp-btn-nav" onClick={() => router.push('/dashboard')}>Go to Dashboard</button>
+            <>
+              <SignOutButton variant="nav" />
+              <button className="lp-btn-nav" onClick={() => router.push('/dashboard')}>Go to Dashboard</button>
+            </>
           ) : (
             <>
               <button className="lp-btn-signin" onClick={() => openAuth('nav_signin')}>Sign In</button>
@@ -126,7 +130,10 @@ export default function SiteHeader({ overHero = false }: { overHero?: boolean })
             ))}
             <div className="lp-nav-mobile-actions">
               {loggedIn ? (
-                <button className="lp-btn-nav" onClick={() => { setMenuOpen(false); router.push('/dashboard'); }}>Go to Dashboard</button>
+                <>
+                  <button className="lp-btn-nav" onClick={() => { setMenuOpen(false); router.push('/dashboard'); }}>Go to Dashboard</button>
+                  <SignOutButton variant="nav-mobile" />
+                </>
               ) : (
                 <>
                   <button className="lp-btn-signin lp-nav-mobile-signin" onClick={() => openAuth('nav_signin')}>Sign In</button>

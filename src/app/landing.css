@@ -106,6 +106,17 @@ html {
   opacity: 1;
   transform: none;
 }
+/* The reveal is driven by an IntersectionObserver, so without JavaScript every
+   revealed section would stay at opacity 0. Crawlers and readability parsers
+   that skip scripts must still see the page as visible content, not a blank
+   sheet — so show everything up front when scripting is unavailable. */
+@media (scripting: none) {
+  .lp-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
 
 /* ── Nav ───────────────────────────────────────────────────────────────── */
 
@@ -668,6 +679,25 @@ html {
   color: #6b5e4d;
   max-width: 600px;
 }
+
+/* Running prose. The homepage needs real paragraphs an AI can quote, not only
+   headlines and feature labels — this is the block that gets read aloud when
+   someone asks an assistant what RokaMaybe is. */
+.lp-prose { max-width: 720px; margin-top: 26px; }
+.lp-prose p {
+  font-family: var(--font-dm-sans, sans-serif);
+  font-size: clamp(15px, 1.65vw, 16.5px);
+  line-height: 1.85;
+  color: #6b5e4d;
+}
+.lp-prose p + p { margin-top: 17px; }
+.lp-prose a {
+  color: #c13e2a;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+.lp-prose a:hover { color: #8f2a1b; }
 
 /* ── Chaos section ─────────────────────────────────────────────────────── */
 

@@ -42,6 +42,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     {
+      // The page targeting the "arranged marriage tracker" search phrase.
+      url: `${SITE_URL}/arranged-marriage-tracker`,
+      lastModified: STATIC_LAST_MODIFIED,
+      changeFrequency: 'monthly',
+      priority: 0.9,
+    },
+    {
       url: `${SITE_URL}/about`,
       lastModified: STATIC_LAST_MODIFIED,
       changeFrequency: 'monthly',

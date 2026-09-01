@@ -1,8 +1,6 @@
 ﻿'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { useAuth } from '@/lib/auth-context';
 import { subscribeToProspects, saveUserProfile, recalcScoresIfStale, SCORING_VERSION, logFamilyVerdict } from '@/lib/firestore';
 import { Prospect, ProspectStage } from '@/types';
@@ -24,6 +22,7 @@ import CompatBreakdown from '@/components/CompatBreakdown';
 import AshtakootBreakdown from '@/components/AshtakootBreakdown';
 import RazorpayButton from '@/components/RazorpayButton';
 import PlanCard from '@/components/PlanCard';
+import SignOutButton from '@/components/SignOutButton';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 
@@ -279,12 +278,18 @@ export default function DashboardPage() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // A signed-in user with no profile is normally someone who hasn't onboarded —
-  // but they may instead be a family member (Mummy Mode) who has never had a
-  // profile and never will. resolveHome() checks before sending anyone into an
-  // onboarding flow that would ask a mummy for her own nakshatra.
+  // Two guards, in the order they can fire:
+  //
+  //  • Signed out (or back here via the browser's back button after signing
+  //    out) — the render below would otherwise sit on the spinner forever.
+  //  • Signed in with no profile — normally someone who hasn't onboarded, but
+  //    possibly a family member (Mummy Mode) who has never had a profile and
+  //    never will. resolveHome() checks for family access first, so a mummy is
+  //    never dropped into an onboarding flow asking for her own nakshatra.
   useEffect(() => {
-    if (loading || !user || profile) return;
+    if (loading) return;
+    if (!user) { router.replace('/'); return; }
+    if (profile) return;
     let cancelled = false;
     resolveHome(user.uid, false).then(home => {
       if (!cancelled) router.replace(home);
@@ -585,16 +590,7 @@ export default function DashboardPage() {
               )}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.2)"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
             </button>
-            <button onClick={() => signOut(auth).then(() => router.replace('/'))} className="w-full"
-              style={{
-                display: 'flex', alignItems: 'center', gap: 11,
-                padding: '9px 14px', borderRadius: 10, cursor: 'pointer',
-                color: 'rgba(255,255,255,0.25)', fontSize: '0.78rem',
-                transition: 'color 0.15s ease',
-              }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
-              <span>Sign Out</span>
-            </button>
+            <SignOutButton variant="sidebar" />
           </div>
         </aside>
       )}
@@ -672,6 +668,17 @@ export default function DashboardPage() {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.25)"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" /></svg>
                 </Link>
               ))}
+
+              {/* Account — the only place to sign out on mobile. */}
+              <div style={{
+                marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.08)',
+              }}>
+                <div style={{
+                  fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.16em',
+                  textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', padding: '6px 12px 4px',
+                }}>Account</div>
+                <SignOutButton variant="menu" />
+              </div>
             </div>
           </>
         )}
@@ -1626,6 +1633,8 @@ export default function DashboardPage() {
               </div>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="#c13e2a"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
             </Link>
+
+            <SignOutButton variant="card" />
           </div>
         )}
 

@@ -13,6 +13,7 @@ import {
 import { track } from '@/lib/analytics';
 import toast from 'react-hot-toast';
 import PlanCard from '@/components/PlanCard';
+import SignOutButton from '@/components/SignOutButton';
 
 function PillSelect({ options, value, onSelect }: { options: string[]; value: string; onSelect: (v: string) => void }) {
   return (
@@ -84,9 +85,15 @@ function HobbyPicker({ options, selected, onToggle }: {
 }
 
 export default function ProfilePage() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+
+  // Never leave a signed-out visitor on an editable (but empty) profile form —
+  // reachable by hitting back after signing out from this page.
+  useEffect(() => {
+    if (!loading && !user) router.replace('/');
+  }, [loading, user, router]);
 
   // Account deletion
   const [showDelete, setShowDelete] = useState(false);
@@ -265,6 +272,12 @@ export default function ProfilePage() {
             razorpayPaymentId={profile?.razorpayPaymentId}
             onUpgradeSuccess={refreshProfile}
           />
+        </div>
+
+        {/* ── Account ── */}
+        <div>
+          <h3 className="section-label" style={{ marginBottom: 12 }}>Account</h3>
+          <SignOutButton variant="card" />
         </div>
 
         {/* ── Danger Zone ── */}

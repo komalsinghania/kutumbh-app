@@ -7,6 +7,8 @@ import CookieConsent from '@/components/CookieConsent';
 import AnalyticsProvider from '@/components/AnalyticsProvider';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import JsonLd from '@/components/JsonLd';
+import { organizationJsonLd, websiteJsonLd } from '@/lib/structured-data';
 
 const fraunces = Fraunces({
   weight: ['300', '400', '500', '600', '700'],
@@ -37,7 +39,11 @@ export const metadata: Metadata = {
     default: 'RokaMaybe — Your Arranged Marriage Tracker',
     template: '%s | RokaMaybe',
   },
-  description: 'The calm, private dashboard for your rishta search. Track every prospect, kundli, and conversation in one place.',
+  // Keep "arranged marriage" in here, near the front. This is the text shown
+  // under the search result and in link previews, so it has to match how the
+  // title is phrased — the two disagreed until now, the title saying
+  // "Arranged Marriage Tracker" while every description said "rishta search".
+  description: 'The private arranged marriage tracker for your rishta search — every prospect, kundli match, call and red flag in one calm dashboard.',
   applicationName: 'RokaMaybe',
   authors: [{ name: 'Komal Singhania' }],
   generator: 'Next.js',
@@ -58,7 +64,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'RokaMaybe — Your Arranged Marriage Tracker',
-    description: 'The calm, private dashboard for your rishta search. Track every prospect, kundli, and conversation in one place.',
+    description: 'The private arranged marriage tracker for your rishta search — every prospect, kundli match, call and red flag in one calm dashboard.',
     url: 'https://rokamaybe.com',
     siteName: 'RokaMaybe',
     locale: 'en_US',
@@ -75,6 +81,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${fraunces.variable} ${instrumentSerif.variable} ${dmSans.variable}`} suppressHydrationWarning>
       <body className="min-h-screen" suppressHydrationWarning>
+        {/* Site-wide structured data: tells search engines and AI crawlers who
+            publishes this site and what it is, on every page. */}
+        <JsonLd data={organizationJsonLd} />
+        <JsonLd data={websiteJsonLd} />
         <AuthProvider>
           {children}
           <AnalyticsProvider />
