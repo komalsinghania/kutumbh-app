@@ -47,32 +47,64 @@ function prettyDate(iso?: string): string | undefined {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+/**
+ * A biodata row.
+ *
+ * Short values sit on the same line, right-aligned — the classic two-column
+ * read. Long ones do NOT: a right-aligned value that wraps produces a ragged
+ * block drifting back toward its own label, which is genuinely hard to scan.
+ * Past ~34 characters the value drops onto its own line, left-aligned, with the
+ * full width to breathe. Real biodata is full of these — a full job title, a
+ * father's business address, three degrees with years.
+ */
+const LONG_VALUE = 34;
+
 function Row({ label, value }: { label: string; value?: string | number | null }) {
   if (value === undefined || value === null || value === '') return null;
+  const text = String(value);
+  const stacked = text.length > LONG_VALUE;
+
   return (
     <div style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-      gap: 16, padding: '13px 0', borderBottom: '1px solid ' + C.lineSoft,
+      display: 'flex',
+      flexDirection: stacked ? 'column' : 'row',
+      justifyContent: 'space-between',
+      alignItems: stacked ? 'stretch' : 'baseline',
+      gap: stacked ? 4 : 16,
+      padding: '13px 0',
+      borderBottom: '1px solid ' + C.lineSoft,
     }}>
       <span style={{ ...meta, flexShrink: 0 }}>{label}</span>
       <span style={{
         fontFamily: BODY, fontSize: '0.95rem', fontWeight: 500,
-        color: C.ink, textAlign: 'right',
-      }}>{String(value)}</span>
+        color: C.ink, textAlign: stacked ? 'left' : 'right',
+        lineHeight: 1.5,
+      }}>{text}</span>
     </div>
   );
 }
 
-function Panel({ title, children, className }: {
+/**
+ * A section within the biodata card.
+ *
+ * These used to be three separate floating cards. Stacked boxes of label/value
+ * rows is the most generic layout there is, and it made the page feel longer
+ * than it was. One card with titled sections reads as a single document — which
+ * is what a biodata actually is.
+ */
+function Section({ title, first, children }: {
   title: string;
+  first?: boolean;
   children: ReactNode;
-  className?: string;
 }) {
   return (
-    <div className={className} style={{ ...CARD, padding: '18px 20px 8px' }}>
+    <section style={{
+      padding: first ? '20px 20px 8px' : '26px 20px 8px',
+      borderTop: first ? undefined : `1px solid ${C.line}`,
+    }}>
       <p style={{ ...SECTION_TITLE, marginBottom: 4 }}>{title}</p>
       {children}
-    </div>
+    </section>
   );
 }
 
@@ -99,6 +131,20 @@ export default function SharedRishtaView({
   const hasScore = share.gunaScore !== null && share.gunaScore !== undefined;
   const [lead, ...rest] = photos;
   const hasPhotos = photos.length > 0;
+
+  /**
+   * The one-line summary under the name. Deliberately short facts only.
+   * A full job title ("Chief Manager - Wealth Management at AUM Capital Pvt.
+   * Ltd, Kolkata") swamps the line AND repeats the city that follows it —
+   * "... Kolkata · Kolkata · Singhal". The full title is one row down in the
+   * introduction, where it belongs.
+   */
+  const headline = [
+    share.age ? `${share.age} yrs` : null,
+    share.city,
+    share.gotra,
+    share.diet,
+  ].filter(Boolean).join(' · ');
 
   const photoStyle: React.CSSProperties = {
     width: '100%', display: 'block', border: 0, padding: 0, cursor: 'zoom-in',
@@ -162,10 +208,7 @@ export default function SharedRishtaView({
         <div className="fam-hero__body">
           <div style={{ ...CARD, padding: '20px 20px 18px' }}>
             <h1 style={titleStyle}>{share.name}</h1>
-            <p style={{ ...meta, fontSize: '0.98rem', marginTop: 7 }}>
-              {[share.age ? `${share.age} yrs` : null, share.profession, share.city, share.gotra, share.diet]
-                .filter(Boolean).join(' · ')}
-            </p>
+            <p style={{ ...meta, fontSize: '0.98rem', marginTop: 7 }}>{headline}</p>
           </div>
 
           {hasScore && (
@@ -199,8 +242,8 @@ export default function SharedRishtaView({
       {/* ── Details left, decision tools right ── */}
       <div className="fam-detail">
         <div className="fam-detail__main">
-          <div className="fam-cols">
-            <Panel title={t.parichay} className="fam-span">
+          <div style={{ ...CARD }}>
+            <Section title={t.parichay} first>
               <Row label={f.age} value={share.age} />
               <Row label={f.height} value={share.height} />
               <Row label={f.education} value={share.education} />
@@ -213,23 +256,23 @@ export default function SharedRishtaView({
               <Row label={f.rashi} value={share.rashi} />
               <Row label={f.familyType} value={share.familyType} />
               <Row label={f.hobbies} value={share.hobbies?.length ? share.hobbies.join(', ') : undefined} />
-            </Panel>
+            </Section>
 
             {hasFamilyDetails && (
-              <Panel title={t.familyDetails}>
+              <Section title={t.familyDetails}>
                 <Row label={f.fatherOcc} value={share.fatherOcc} />
                 <Row label={f.motherOcc} value={share.motherOcc} />
                 <Row label={f.siblings} value={share.siblings} />
                 <Row label={f.property} value={share.property} />
-              </Panel>
+              </Section>
             )}
 
             {showBirth && (
-              <Panel title={t.birthDetails}>
+              <Section title={t.birthDetails}>
                 <Row label={f.dobDate} value={prettyDate(share.dobDate)} />
                 <Row label={f.dobTime} value={share.dobTime} />
                 <Row label={f.dobPlace} value={share.dobPlace} />
-              </Panel>
+              </Section>
             )}
           </div>
         </div>

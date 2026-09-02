@@ -35,17 +35,6 @@
 .fam-detail__main { display: flex; flex-direction: column; gap: 18px; }
 .fam-detail__rail { display: flex; flex-direction: column; gap: 18px; }
 
-/* Detail blocks sit side by side once there is room, so the page stops being
-   one very long ribbon of label/value rows. */
-.fam-cols { display: grid; gap: 18px; }
-
-@media (min-width: 700px) {
-  .fam-view:not(.fam-view--narrow) .fam-cols { grid-template-columns: 1fr 1fr; }
-  /* Parichay is much longer than the others — span it so the shorter blocks
-     below pack neatly instead of leaving one ragged column. */
-  .fam-view:not(.fam-view--narrow) .fam-cols > .fam-span { grid-column: 1 / -1; }
-}
-
 @media (min-width: 940px) {
   .fam-view:not(.fam-view--narrow) .fam-hero { grid-template-columns: 300px minmax(0, 1fr); }
   .fam-view:not(.fam-view--narrow) .fam-detail { grid-template-columns: minmax(0, 1fr) 340px; gap: 22px; }
