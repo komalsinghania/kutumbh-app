@@ -1,0 +1,53 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Layout for the family view.
+
+   The shortlist is a reading column and stays narrow. The rishta page is NOT a
+   reading column — it is where someone decides — so on a laptop it opens out:
+   a hero (photo beside the name and the kundli score), then the details on the
+   left with the things you decide WITH pinned on the right.
+
+   On a phone it collapses to one column in the order she expects:
+   photo → who he is → kundli → details → where things stand → her verdict.
+
+   Media queries live here rather than in inline styles so there is no layout
+   flash from measuring the viewport in JavaScript. They are scoped to
+   .fam-view:not(.fam-view--narrow) because the same component also renders
+   inside the owner's ~520px "Preview mummy's view" sheet, where a viewport-only
+   query would hand a two-column desktop grid to a narrow container and overflow.
+   ───────────────────────────────────────────────────────────────────────────*/
+
+.fam-hero {
+  display: grid;
+  gap: 18px;
+  align-items: start;
+}
+
+.fam-hero__media { display: flex; flex-direction: column; gap: 10px; }
+.fam-hero__body { display: flex; flex-direction: column; gap: 18px; }
+
+.fam-detail {
+  display: grid;
+  gap: 18px;
+  align-items: start;
+  margin-top: 18px;
+}
+
+.fam-detail__main { display: flex; flex-direction: column; gap: 18px; }
+.fam-detail__rail { display: flex; flex-direction: column; gap: 18px; }
+
+@media (min-width: 940px) {
+  .fam-view:not(.fam-view--narrow) .fam-hero { grid-template-columns: 300px minmax(0, 1fr); }
+  .fam-view:not(.fam-view--narrow) .fam-detail { grid-template-columns: minmax(0, 1fr) 340px; gap: 22px; }
+  .fam-view:not(.fam-view--narrow) .fam-detail__rail {
+    position: sticky;
+    top: 78px; /* clears the 60px sticky header plus breathing room */
+  }
+}
+
+/* Secondary photos, as an even strip under the lead image. */
+.fam-thumbs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 10px;
+}

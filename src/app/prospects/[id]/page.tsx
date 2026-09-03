@@ -783,7 +783,15 @@ export default function ProspectDetailPage() {
     { id: 'kundli', label: 'Kundli', step: '2' },
     { id: 'conversations', label: `Calls (${conversations.length})`, step: '3' },
     { id: 'meeting', label: meetingCount > 0 ? `Meetings (${meetingCount})` : 'Meetings', step: '4' },
-    { id: 'decision', label: DECISION_STAGES.includes(prospect.stage) ? 'Decision ✓' : 'Decision', step: '5' },
+    // The family's verdicts live inside the Decision tab, which is easy to miss
+    // from any other tab — so the count rides on the tab label itself.
+    {
+      id: 'decision',
+      label: verdicts.length > 0
+        ? `Decision · ${verdicts.length} 👩🏽`
+        : DECISION_STAGES.includes(prospect.stage) ? 'Decision ✓' : 'Decision',
+      step: '5',
+    },
   ];
   const referenceTabs: { id: Tab; label: string }[] = [
     { id: 'flags', label: `Flags (${flags.length})` },

@@ -143,7 +143,7 @@ export default function ShareSheet({
 
         {preview ? (
           <div style={{ padding: '16px 20px 20px' }}>
-            <SharedRishtaView share={previewShare} photos={prospect.photos ?? []} lang="hi" />
+            <SharedRishtaView share={previewShare} photos={prospect.photos ?? []} lang="hi" narrow />
             <button
               onClick={() => setPreview(false)}
               style={{

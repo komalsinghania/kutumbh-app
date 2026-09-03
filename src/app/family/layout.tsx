@@ -1,3 +1,4 @@
+import './family.css';
 import type { Metadata } from 'next';
 
 // Every page under /family shows someone else's personal details to a small,

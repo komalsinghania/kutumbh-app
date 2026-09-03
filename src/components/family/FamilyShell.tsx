@@ -29,11 +29,14 @@ export function useFamilyLang(): [FamilyLang, (l: FamilyLang) => void] {
 }
 
 export function FamilyHeader({
-  lang, onLang, left,
+  lang, onLang, left, wide = false,
 }: {
   lang: FamilyLang;
   onLang: (l: FamilyLang) => void;
   left?: React.ReactNode;
+  /** Must match the FamilyPage it sits above, or the logo drifts away from the
+   *  content beneath it. */
+  wide?: boolean;
 }) {
   return (
     <header style={{
@@ -44,7 +47,7 @@ export function FamilyHeader({
     }}>
       <div style={{
         display: "flex", alignItems: "center", gap: 12,
-        height: 60, padding: "0 20px", maxWidth: 620, margin: "0 auto",
+        height: 60, padding: "0 20px", maxWidth: wide ? 1120 : 620, margin: "0 auto",
       }}>
         {left}
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -83,7 +86,12 @@ export function FamilyHeader({
   );
 }
 
-export function FamilyPage({ children }: { children: React.ReactNode }) {
+export function FamilyPage({ children, wide = false }: {
+  children: React.ReactNode;
+  /** The shortlist is a reading column and stays narrow. One rishta is a
+   *  dossier someone decides from, so it gets the full width to work in. */
+  wide?: boolean;
+}) {
   return (
     <div style={{
       minHeight: "100vh",
@@ -93,7 +101,7 @@ export function FamilyPage({ children }: { children: React.ReactNode }) {
       fontSize: "17px",
     }}>
       <div style={{
-        maxWidth: 620, margin: "0 auto",
+        maxWidth: wide ? 1120 : 620, margin: "0 auto",
         padding: "28px 20px calc(48px + env(safe-area-inset-bottom))",
       }}>
         {children}
