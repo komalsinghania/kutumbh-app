@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { pageOpenGraph } from '@/lib/og';
+import { PRICING_BADGE } from '@/lib/pricing';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import './page.css';
@@ -194,7 +195,7 @@ export default function ArrangedMarriageTrackerPage() {
       {/* FINAL CTA */}
       <section className="final">
         <div className="wrap">
-          <span className="eyebrow">Early access — every feature free, no card needed</span>
+          <span className="eyebrow">{PRICING_BADGE}</span>
           <h2>
             Start tracking.
             <br />

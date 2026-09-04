@@ -26,6 +26,13 @@ export interface BlogPost {
   category: string;
   /** ISO date (YYYY-MM-DD) the post was published. */
   publishedAt: string;
+  /**
+   * ISO date (YYYY-MM-DD) of the last meaningful edit, if the post has been
+   * revised. Omit for posts that have not changed since publication.
+   * Surfaced as schema.org dateModified, which is how search and answer
+   * engines judge whether an article is still current.
+   */
+  updatedAt?: string;
   /** Rough reading time in minutes, shown next to the date. */
   readingMinutes: number;
   content: BlogBlock[];
@@ -260,6 +267,27 @@ export const BLOG_AUTHOR = {
   name: 'Komal Singhania',
   role: 'Founder, RokaMaybe',
 };
+
+/** A post's text with the markup stripped — used for word counts. */
+export function postPlainText(post: BlogPost): string {
+  return post.content
+    .map((block) => {
+      switch (block.type) {
+        case 'list':
+          return block.items.join(' ');
+        case 'cta':
+          return `${block.text} ${block.buttonText}`;
+        default:
+          return block.text;
+      }
+    })
+    .join(' ');
+}
+
+/** Rough word count of a post, for schema.org wordCount. */
+export function postWordCount(post: BlogPost): number {
+  return postPlainText(post).split(/\s+/).filter(Boolean).length;
+}
 
 // Each category gets its own on-brand accent, threaded through cards and the
 // article header via a CSS custom property (--cat) so everything stays in sync.

@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import BlogLayout from '@/components/BlogLayout';
 import ReadingProgress from '@/components/ReadingProgress';
-import { pageOpenGraph } from '@/lib/og';
+import JsonLd from '@/components/JsonLd';
+import { blogPostingJsonLd, breadcrumbJsonLd } from '@/lib/structured-data';
+import { articleOpenGraph } from '@/lib/og';
 import {
   BLOG_POSTS,
   BLOG_AUTHOR,
@@ -34,7 +36,12 @@ export async function generateMetadata({
     alternates: {
       canonical: `/blog/${slug}`,
     },
-    openGraph: pageOpenGraph(post.title, post.excerpt, 'article'),
+    openGraph: articleOpenGraph(post.title, post.excerpt, {
+      publishedTime: post.publishedAt,
+      modifiedTime: post.updatedAt,
+      authors: [BLOG_AUTHOR.name],
+      section: post.category,
+    }),
   };
 }
 
@@ -76,6 +83,15 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   return (
     <>
+      {/* Tells search and answer engines this is an article, who wrote it, and
+          when — none of which is inferable from the markup alone. */}
+      <JsonLd data={blogPostingJsonLd(post)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: 'Blog', path: '/blog' },
+          { name: post.title, path: `/blog/${post.slug}` },
+        ])}
+      />
       <ReadingProgress />
       <BlogLayout>
         <article
